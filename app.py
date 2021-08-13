@@ -9,18 +9,65 @@ logging.basicConfig(level = logging.DEBUG, format = ' %(asctime)s - $(levelname)
 logger = logging.getLogger(__name__)
 logger.debug('Start of program')
 
+
+### Callbacks and Session State Functions
+
+def update_page(page_name):
+    logger.info(f'Switching page to: {page_name}')
+    st.session_state['page'] = page_name
+
+def add_tag():
+    st.session_state['available_tags'] += [st.session_state['new_tag']]
+
+def submit_recipe(recipe):
+    logger.info('Submitting recipe')
+    st.session_state['submitted_recipe'] = recipe
+    st.session_state['page'] = 'edit recipe'
+
+def store_recipe(recipe):
+    add_to_recipe_file(recipe, overwrite = True) #we already checked if one exists
+    st.session_state['master_recipes'][recipe['Title']] = recipe
+    st.session_state['page'] = 'submit'
+
+
+def download_recipe():
+    logger.info('Downloading recipe')
+    url_to_download = st.session_state['url_to_download']
+    if url_to_download == '':
+        st.stop('enter a valid url silly!')
+    recipe = scrape_recipe(url_to_download)
+    recipe = parse_scraped_recipe(recipe)
+    recipe['URL'] = url_to_download
+    #TODO: check to see if we already have that recipe
+    if recipe['Title'] in st.session_state['master_recipes'].keys():
+        existing_recipe = st.session_state['master_recipes'][recipe['Title']]
+        st.write("We already have that recipe loaded, does this look right?")
+        st.write(recipe['Title'])
+        st.write(existing_recipe['Ingredients'])
+        st.write(existing_recipe['Instructions'])
+
+        st.button("Looks right to me!", on_click=update_page, args=('submit',))
+        st.button("Wrong, replace this recipe", on_click=submit_recipe, args = (recipe))
+    else:
+        submit_recipe(recipe)
+
 def load_config():
     cfg = load_yaml('config')
     master_recipes = load_yaml('recipes')
     return cfg, master_recipes
+
+##################
+#########App
+##################
+
+### Initialize Session
+
 cfg, original_master_recipes = load_config()
 
 if 'master_recipes' not in st.session_state.keys():
     st.session_state['master_recipes'] = original_master_recipes
 if 'page' not in st.session_state.keys():
     st.session_state['page'] = 'main'
-
-logger.info(f"Showing: {st.session_state['page']}")
 
 if 'available_tags' not in st.session_state.keys():
     base_tags = ['breakfast', 'lunch', 'dinner']
@@ -32,9 +79,11 @@ if 'available_tags' not in st.session_state.keys():
 
     st.session_state['available_tags'] = tags
 
-def update_page(page_name):
-    logger.info(f'Switching page to: {page_name}')
-    st.session_state['page'] = page_name
+
+###
+### Display:
+
+logger.info(f"Showing: {st.session_state['page']}")
 
 if st.session_state['page'] == 'main':
     title_cols = st.columns([3,1])
@@ -96,37 +145,7 @@ if st.session_state['page'] == 'main':
 
     #TODO: Export
 
-def submit_recipe(recipe):
-    logger.info('Submitting recipe')
-    st.session_state['submitted_recipe'] = recipe
-    st.session_state['page'] = 'edit recipe'
 
-def store_recipe(recipe):
-    add_to_recipe_file(recipe, overwrite = True) #we already checked if one exists
-    st.session_state['master_recipes'][recipe['Title']] = recipe
-    st.session_state['page'] = 'submit'
-
-
-def download_recipe():
-    logger.info('Downloading recipe')
-    url_to_download = st.session_state['url_to_download']
-    if url_to_download == '':
-        st.stop('enter a valid url silly!')
-    recipe = scrape_recipe(url_to_download)
-    recipe = parse_scraped_recipe(recipe)
-    recipe['URL'] = url_to_download
-    #TODO: check to see if we already have that recipe
-    if recipe['Title'] in st.session_state['master_recipes'].keys():
-        existing_recipe = st.session_state['master_recipes'][recipe['Title']]
-        st.write("We already have that recipe loaded, does this look right?")
-        st.write(recipe['Title'])
-        st.write(existing_recipe['Ingredients'])
-        st.write(existing_recipe['Instructions'])
-
-        st.button("Looks right to me!", on_click=update_page, args=('main',))
-        st.button("Wrong, replace this recipe", on_click=submit_recipe, args = (recipe))
-    else:
-        submit_recipe(recipe)
     
 
 if st.session_state['page'] == 'submit':
@@ -137,20 +156,6 @@ if st.session_state['page'] == 'submit':
     url_to_download = st.text_input("Enter the URL of the recipe:", on_change=download_recipe, key = 'url_to_download')
 
     st.button('Click here to enter one manually:', on_click=update_page, args=('manual_submit',))
-        #TODO: if we do have that recipe:
-            #
-            #TODO: show the recipe
-            #TODO: allow user to overwrite that recipe
-        #TODO: if we don't ahve that recipe
-            #TODO: download it using the scraper
-            #TODO: show results to user for confirmation + tagging
-            #TODO: if confirmed:
-                #TODO: store the results in the database
-            #TODO: else:
-                #TODO: allow for editing
-
-def add_tag():
-    st.session_state['available_tags'] += [st.session_state['new_tag']]
 
 if st.session_state['page'] == 'edit recipe':
     recipe = st.session_state['submitted_recipe']
@@ -159,10 +164,9 @@ if st.session_state['page'] == 'edit recipe':
     st.title(recipe['Title'])
     st.image(recipe['Image'])
     st.header('Ingredients:')
-    st.write('\n'.join([f for f in recipe['Ingredients']]))
+    st.write('\\n'.join([f for f in recipe['Ingredients']]))
     st.header('Instructions:')
     st.write(recipe['Instructions'])
-
 
     st.header('Add Tags')
     
@@ -214,3 +218,4 @@ if st.session_state['page'] == 'manually_submit':
     #             #TODO: parse name, instructions, tags
     #             #TODO: combine into one document
     #             #TODO: store
+
