@@ -228,7 +228,6 @@ def random_cookbook():
 # we can always bulk process into json format for faster read times
 
 
-
 def pick_recipes_randomly(cookbook, n_recipes):
     recipes = sample(
         [recipe for recipe in cookbook.recipes.values()], k=n_recipes)
@@ -276,11 +275,21 @@ def create_meal_plan_html(meal_plan):
     """
 
     html += """<h1 style='text-align:center'>Shopping List</h1>"""
-    html += """<ul>"""
 
-    for item in shopping_list:
-        html += "<li>" + item + "</li>"
-    html += "</ul>"
+    n_items = len(shopping_list)
+
+    shop1 = shopping_list[:int(n_items/2)]
+    shop2 = shopping_list[int(n_items/2):]
+
+    shop1_html = ''.join(["<li>" + item + "</li>" for item in shop1])
+    shop2_html = ''.join(["<li>" + item + "</li>" for item in shop2])
+    html += f"""
+        <div class="row";>
+            <div class="col"><ul>{shop1_html}</ul></div>
+            <div class="col"><ul>{shop2_html}</ul></div>
+        </div>
+        """
+
     html += "<hr>"
 
     for recipe in recipes:
@@ -298,13 +307,19 @@ def create_meal_plan_html(meal_plan):
         html += "</div>"
 
         ingredient_html = "<h2 style='text-align:center'> Ingredients: </h2>"
+        ingredient_html += f"<p> Yields: {recipe['Yield']}</p>"
         ingredient_html += "<ul>"
         for ingredient in recipe['Ingredients']:
             ingredient_html += "<li>" + ingredient + "</li>"
         ingredient_html += "</ul>"
 
         instructions_html = "<h2 style='text-align:center'> Instructions: </h2>"
-        instructions_html += "<p>"+recipe['Instructions']+"</p>"
+        instructions_html += "<ol>"
+        instructions = recipe['Instructions'].split('. ')
+        for instruction in instructions:
+            instructions_html += "<li>" + instruction + "</li>"
+        instructions_html += "</ol>"
+
         html += f"""
         <div class="row";>
             <div class="col left">{ingredient_html}</div>

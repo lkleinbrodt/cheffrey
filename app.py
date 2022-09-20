@@ -1,18 +1,25 @@
 
-import streamlit as st
-from src.cheffrey import *
-import pandas as pd
-from math import ceil, floor
-import yaml
-import logging
+
 import itertools
+import logging
+from datetime import datetime
+import yaml
+from math import ceil, floor
+import pandas as pd
+from src.cheffrey import *
+import streamlit as st
+st.set_page_config(
+    page_title='Cheffrey',
+    page_icon=None,
+    layout="wide",
+)
 logging.basicConfig(level=logging.DEBUG,
                     format=' %(asctime)s - $(levelname)s - $(message)s', filemode='w')
 logger = logging.getLogger(__name__)
 logger.debug('Start of program')
-
-
+stime = datetime.now()
 # Callbacks and Session State Functions
+
 
 def update_page(page_name):
     logger.info(f'Switching page to: {page_name}')
@@ -69,10 +76,38 @@ def regen_recipe(i, cookbook, method):
         new_recipe = pick_recipes_randomly(cookbook, 1)[0]
     elif method == 'searched':
         searched_value = st.session_state[f'search_{i}']
+        if searched_value == '...':
+            return
         new_recipe = cookbook.recipes[searched_value]
     else:
         raise ValueError(f"Unrecognized method: {method}")
     st.session_state['recipe_list'][i] = new_recipe
+
+
+def remove_recipe(i):
+    recipes = st.session_state['recipe_list']
+    if i == 0:
+        st.session_state['recipe_list'] = recipes[1:]
+    elif i == len(recipes):
+        st.session_state['recipe_list'] = recipes[:i]
+    else:
+        st.session_state['recipe_list'] = recipes[:i] + recipes[i+1:]
+
+
+def add_recipe(cookbook):
+    recipes = st.session_state['recipe_list']
+    picked_recipes = [r['Title'] for r in recipes]
+    available_recipes = {
+        i: v
+        for i, v in cookbook.recipes.items()
+        if i not in picked_recipes
+    }
+    if len(available_recipes) == 0:
+        available_recipes = cookbook.recipes
+    cookbook.recipes = available_recipes
+    new_recipe = pick_recipes_randomly(cookbook, 1)[0]
+
+    st.session_state['recipe_list'] += [new_recipe]
 
 
 def load_config():
@@ -129,14 +164,12 @@ if st.session_state['page'] == 'main':
 
     # in future, we want to be able to request a certain amount of each type
 
-    n_recipes = int(st.number_input(
-        'How many recipes are we making?',
-        min_value=1,
-        max_value=None,
-        value=4
-    ))
-
-    st.session_state['request'] = n_recipes
+    # n_recipes = int(st.number_input(
+    #     'How many recipes are we making?',
+    #     min_value=1,
+    #     max_value=None,
+    #     value=4
+    # ))
 
     # Read in relevant cookbook
     # TODO: this should be read from the cookbook database
@@ -148,16 +181,40 @@ if st.session_state['page'] == 'main':
 
     # TODO: Create Recipe List
 
-    @st.cache(allow_output_mutation=True)
-    def pick_recipes(cookbook, n_recipes):
-        recipe_list = pick_recipes_randomly(
-            cookbook, n_recipes)
+    # def pick_recipes(cookbook, n_recipes):
+
+    #     if st.session_state['recipe_list'] == []:
+    #         recipe_list = pick_recipes_randomly(
+    #             cookbook, n_recipes)
+    #     elif len(st.session_state['recipe_list']) < n_recipes:
+    #         available_recipes = cookbook.recipes
+    #         picked_recipes = [r['Title']
+    #                           for r in st.session_state['recipe_list']]
+    #         available_recipes = {
+    #             i: v for i, v in available_recipes.items() if i not in picked_recipes}
+    #         n_needed = n_recipes - len(picked_recipes)
+    #         if len(available_recipes) < n_needed:
+    #             pass
+    #         else:
+    #             cookbook.recipes = available_recipes
+    #         new_recipes = pick_recipes_randomly(
+    #             cookbook, n_needed)
+    #         recipe_list = st.session_state['recipe_list'] + new_recipes
+    #     elif len(st.session_state['recipe_list']) > n_recipes:
+    #         recipe_list = st.session_state['recipe_list'][:n_recipes]
+    #     else:
+    #         # list is same length as N, meaning we have just swapped one of the items,
+    #         # no need to re-run
+    #         recipe_list = st.session_state['recipe_list']
+
+    #     st.session_state['recipe_list'] = recipe_list
+    #     return recipe_list
+
+    if len(st.session_state['recipe_list']) == 0:
+        recipe_list = pick_recipes_randomly(cookbook, 4)
         st.session_state['recipe_list'] = recipe_list
-        return recipe_list
-
-    pick_recipes(cookbook, n_recipes)
-
-    recipe_list = st.session_state['recipe_list']
+    else:
+        recipe_list = st.session_state['recipe_list']
 
     # TODO: Determine Shopping List
 
@@ -169,10 +226,17 @@ if st.session_state['page'] == 'main':
 
     # TODO: Serve Meal plan
 
-    st.header("Heres what you'll be cooking this week:")
+    header_box = st.container()
+    with st.container():
+        header_cols = st.columns([4, 1])
+        with header_cols[0]:
+            st.header("Heres what you'll be cooking this week:")
 
-    n_cols = min([len(meal_plan['Recipes']), 4])
+    n_cols = min([len(meal_plan['Recipes']), 2])
     n_rows = ceil(len(meal_plan['Recipes']) / n_cols)
+
+    if (n_cols * n_rows) == len(meal_plan['Recipes']):
+        n_rows += 1
 
     def make_grid(n_cols, n_rows):
         grid = [0]*n_rows
@@ -183,31 +247,55 @@ if st.session_state['page'] == 'main':
 
     recipe_grid = make_grid(n_cols, n_rows)
 
-    for i, recipe in enumerate(meal_plan['Recipes']):
+    def grid_square(i):
         row_idx = floor(i / n_cols)
         col_idx = i % n_cols
         with recipe_grid[row_idx][col_idx]:
-            st.subheader(recipe['Title'])
-            # st.write(f"Time: {recipe['Time']}")
-            # st.write(f"Tags: {recipe['Tags']}")
-            st.image(recipe['Image'])
+            st.markdown(
+                f"""<h2 style="text-align:center">{recipe['Title']}</h2>""", unsafe_allow_html=True)
+
+            from PIL import Image
+            import requests
+            from io import BytesIO
+            r = requests.get(recipe['Image'])
+            image = Image.open(BytesIO(r.content))
+            new_image = image.resize((600, 400))
+            st.image(new_image, use_column_width='always')
 
             with st.expander(label='ingredients', expanded=False):
-                for r in recipe['Ingredients']:
-                    st.write(r)
+                st.markdown(f"""
+                <div class='row'>
+                    <div class='col'><ul>{''.join(['<li>'+r+'</li>' for r in recipe['Ingredients']])}</ul></div>
+                    <div class='col'>Yield: {recipe['Yield']}. Time: {recipe['Time']}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
             st.button(
                 label='Pick Again', key=f'regen_{i}',
                 on_click=regen_recipe, args=(i, cookbook, 'random')
             )
-
+            search_options = ['...'] + list(cookbook.recipes.keys())
             st.selectbox(
                 label='Search',
                 key=f'search_{i}',
-                options=cookbook.recipes.keys(),
+                options=search_options,
                 on_change=regen_recipe,
                 args=(i, cookbook, 'searched')
             )
+
+            st.button(
+                label='Remove', key=f'delete_{i}',
+                on_click=remove_recipe, args=(i,)
+            )
+
+    for i, recipe in enumerate(meal_plan['Recipes']):
+        grid_square(i)
+
+    i += 1
+    row_idx = floor(i / n_cols)
+    col_idx = i % n_cols
+    with recipe_grid[row_idx][col_idx]:
+        st.button('+1 Recipe', on_click=add_recipe, args=(cookbook,))
 
     # TODO: Allow for editing of plan
 
@@ -219,10 +307,11 @@ if st.session_state['page'] == 'main':
     with open('./meal_plan.html', 'w') as f:
         f.write(html)
 
-    st.download_button(
-        label='Generate Meal Plan',
-        data=html, file_name='meal_plan.html', mime='text/html'
-    )
+    with header_cols[1]:
+        st.download_button(
+            label='Generate Meal Plan',
+            data=html, file_name='meal_plan.html', mime='text/html'
+        )
 
 
 if st.session_state['page'] == 'submit':
@@ -300,3 +389,7 @@ if st.session_state['page'] == 'manual_submit':
         st.button("Looks right to me!", on_click=update_page, args=('submit',))
 
     st.button('Submit and Review', on_click=submit_recipe, args=(recipe,))
+
+etime = datetime.now()
+elapsed = etime - stime
+logger.info(f'Fully Refreshed in: {elapsed}')
