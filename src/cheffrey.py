@@ -22,14 +22,10 @@ from bisect import bisect
 from fractions import Fraction
 import itertools
 
-from xhtml2pdf import pisa
-import src.sugarcube as sc
+# from xhtml2pdf import pisa
+import sugarcube as sc
 import logging
-from recipe_scrapers import scrape_me as scrape_recipe
 import yaml
-import streamlit as st
-logging.basicConfig(level=logging.DEBUG,
-                    format=' %(asctime)s - $(levelname)s - $(message)s', filemode='w')
 logger = logging.getLogger(__name__)
 logger.debug('Start of program')
 
@@ -334,20 +330,20 @@ def create_meal_plan_html(meal_plan):
     return html
 
 
-def convert_html_to_pdf(source_html, output_filename):
-    # open output file for writing (truncated binary)
-    result_file = open(output_filename, "w+b")
+# def convert_html_to_pdf(source_html, output_filename):
+#     # open output file for writing (truncated binary)
+#     result_file = open(output_filename, "w+b")
 
-    # convert HTML to PDF
-    pisa_status = pisa.CreatePDF(
-        source_html,                # the HTML to convert
-        dest=result_file)           # file handle to recieve result
+#     # convert HTML to PDF
+#     pisa_status = pisa.CreatePDF(
+#         source_html,                # the HTML to convert
+#         dest=result_file)           # file handle to recieve result
 
-    # close output file
-    result_file.close()                 # close output file
+#     # close output file
+#     result_file.close()                 # close output file
 
-    # return False on success and True on errors
-    return pisa_status.err
+#     # return False on success and True on errors
+#     return pisa_status.err
 
 # d = {
 #         'Title': recipe.title(),
