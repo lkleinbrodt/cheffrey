@@ -148,10 +148,9 @@ if 'available_tags' not in st.session_state.keys():
 logger.info(f"Showing: {st.session_state['page']}")
 
 if st.session_state['page'] == 'main':
-    title_cols = st.columns([3, 1])
+    title_cols = st.columns([3, 1, 1])
 
-    title_cols[0].title("Howdy! I'm Cheffrey")
-
+    title_cols[0].header("Heres what you'll be cooking this week:")
     title_cols[1].button("Click here to submit a recipe",
                          on_click=update_page, args=('submit',))
 
@@ -226,13 +225,7 @@ if st.session_state['page'] == 'main':
 
     # TODO: Serve Meal plan
 
-    header_box = st.container()
-    with st.container():
-        header_cols = st.columns([4, 1])
-        with header_cols[0]:
-            st.header("Heres what you'll be cooking this week:")
-
-    n_cols = min([len(meal_plan['Recipes']), 2])
+    n_cols = min([len(meal_plan['Recipes']), 3])
     n_rows = ceil(len(meal_plan['Recipes']) / n_cols)
 
     if (n_cols * n_rows) == len(meal_plan['Recipes']):
@@ -247,19 +240,19 @@ if st.session_state['page'] == 'main':
 
     recipe_grid = make_grid(n_cols, n_rows)
 
-    def grid_square(i):
+    def grid_square(i, recipe):
         row_idx = floor(i / n_cols)
         col_idx = i % n_cols
         with recipe_grid[row_idx][col_idx]:
             st.markdown(
-                f"""<h2 style="text-align:center">{recipe['Title']}</h2>""", unsafe_allow_html=True)
+                f"""<h4 style="text-align:center">{recipe['Title']}</h4>""", unsafe_allow_html=True)
 
             from PIL import Image
             import requests
             from io import BytesIO
             r = requests.get(recipe['Image'])
             image = Image.open(BytesIO(r.content))
-            new_image = image.resize((600, 400))
+            new_image = image.resize((300, 200))
             st.image(new_image, use_column_width='always')
 
             with st.expander(label='ingredients', expanded=False):
@@ -289,12 +282,14 @@ if st.session_state['page'] == 'main':
             )
 
     for i, recipe in enumerate(meal_plan['Recipes']):
-        grid_square(i)
+        grid_square(i, recipe)
 
     i += 1
     row_idx = floor(i / n_cols)
     col_idx = i % n_cols
     with recipe_grid[row_idx][col_idx]:
+        for _ in range(10):
+            st.text('')
         st.button('+1 Recipe', on_click=add_recipe, args=(cookbook,))
 
     # TODO: Allow for editing of plan
@@ -307,9 +302,9 @@ if st.session_state['page'] == 'main':
     with open('./meal_plan.html', 'w') as f:
         f.write(html)
 
-    with header_cols[1]:
+    with title_cols[2]:
         st.download_button(
-            label='Generate Meal Plan',
+            label='Download Meal Plan',
             data=html, file_name='meal_plan.html', mime='text/html'
         )
 
