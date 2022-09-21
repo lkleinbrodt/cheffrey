@@ -1,11 +1,3 @@
-itertools
-logging
-datetime
-yaml
-math
-pandas
-streamlit
-random
-bisect
-fractions
-recipe_scrapers
+pandas==1.3.0
+streamlit==1.12.2
+recipe_scrapers==13.3.5
