@@ -23,7 +23,7 @@ from fractions import Fraction
 import itertools
 
 # from xhtml2pdf import pisa
-import sugarcube as sc
+from src import sugarcube as sc
 import logging
 import yaml
 logger = logging.getLogger(__name__)
