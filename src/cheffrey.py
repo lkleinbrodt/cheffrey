@@ -17,6 +17,8 @@ Generate the menu
         
 """
 
+import boto3
+import spacy
 from random import sample, randint, choice
 from bisect import bisect
 from fractions import Fraction
@@ -71,7 +73,13 @@ def add_to_recipe_file(recipe, overwrite=False):
 
 class Ingredient(sc.Ingredient):
 
-    def present(self):
+    def display(self):
+        # amount = self.display_amount()
+        # element = self.element
+        # return str(amount) + ' ' + str(element)
+        return str(self)
+
+    def display_amount(self):
         """
         Returns a human readable amount: 9 Quarts -> 2 Gallons 1 Quart
         It gets the highest unit where you're > 1, and then if necessary gives the remainder in terms of the next unit, rounded to one of the breakpoints
@@ -81,6 +89,12 @@ class Ingredient(sc.Ingredient):
 
         invalid_unit_names = [
             name for name in relevant_units.keys() if 'liter' in name]
+        
+        if self.amount.unit.name in ['teaspoon', 'tablespoon']:
+            invalid_unit_names += ['fluidOunce']
+        if self.amount.unit in sc.Mass.units:
+            relevant_units = [sc.Mass.units['ounce'], sc.Mass.units['pound']]
+
 
         unit_list = [(unit, round(self.to(unit).amount.value, 3))
                      for unit in relevant_units.values() if unit.name not in invalid_unit_names]
@@ -97,7 +111,7 @@ class Ingredient(sc.Ingredient):
         cutoffs = [i/8 for i in range(9)]
 
         try:
-            remainder = cutoffs[bisect(cutoffs, remainder)]
+            remainder = cutoffs[bisect(cutoffs, remainder)-1]
         except IndexError as err:
             logger.info(f"Remainder: {remainder}")
             logger.info(f"cutoffs: {cutoffs}")
@@ -220,8 +234,6 @@ def random_cookbook():
     my_cookbook.recipes = my_recipes
 
     return my_cookbook
-# Recipes are entered into an excel template sheet, I will format it so that it can be read in and parsed to this
-# we can always bulk process into json format for faster read times
 
 
 def pick_recipes_randomly(cookbook, n_recipes):
@@ -229,23 +241,97 @@ def pick_recipes_randomly(cookbook, n_recipes):
         [recipe for recipe in cookbook.recipes.values()], k=n_recipes)
     return recipes
 
+def combine_ingredients(ingredient_list: list):
+    out = {}
+    for ingredient in ingredient_list:
+        if type(ingredient) == Ingredient:
+            if ingredient.element in out.keys():
+                out[ingredient.element] += ingredient
+            else:
+                out[ingredient.element] = ingredient
+        else:
+            out[ingredient] = ingredient
+    
+    return list(out.values())
 
 def create_shopping_list(recipe_list):
-    ingredients = list(itertools.chain.from_iterable(
-        [rec['Ingredients'] for rec in recipe_list]))
-    return ingredients
-# def create_shopping_list(recipes):
-#     shopping_list = {}
+    all_ingredients = [item for recipe in recipe_list for item in recipe['Ingredients']]
+    nlp = spacy.load("en_core_web_sm")
+    parsed_ingredients = [parse_ingredient(ing, nlp) for ing in all_ingredients]
+    parsed_ingredients = [create_ingredient(p[0], p[1], p[2]) for p in parsed_ingredients]
+    shopping_list = combine_ingredients(parsed_ingredients)
+    return shopping_list
 
-#     ### Add Ingredients
-#     for recipe in recipes:
-#         for ingredient in recipe.ingredients:
-#             if ingredient.element.name in shopping_list.keys():
-#                 shopping_list[ingredient.element.name] += ingredient
-#             else:
-#                 shopping_list[ingredient.element.name] = ingredient
 
-#     return shopping_list
+def parse_ingredient(ingredient, nlp):
+    ing = ingredient.replace('-', ' ').split(',')[0]
+    ing = nlp(ing)
+    pos = [i.pos_ for i in ing]
+
+    if pos[0] == 'NUM':
+        if ing[0].text.lower() in number_dict:
+            modifier = number_dict[ing[0].text.lower()]
+            amount_list = []
+        else:
+            amount_list = [ing[0].text]
+            modifier = 1
+        
+        i = 1
+
+        while pos[i] == 'NUM':
+            amount_list += [ing[i].text]
+            if i == (len(pos)-1):
+                return (None, None, ing.text)
+            i += 1
+        amount = float(sum(Fraction(s) for s in amount_list))
+        amount *= modifier
+        
+        # while pos[i] not in ['NOUN', 'PROPN']:
+            # if i == (len(pos)-1):
+            #     return (None, None, ing.text)
+            # i += 1
+        while ing[i].text not in sc.available_measures:
+            if i == (len(pos)-1):
+                return (None, None, ing.text)
+
+            if ing[i].text in ['small', 'medium', 'large']:
+                item = ' '.join([i.text for i in ing[i:]])
+                measure = sc.Unit('', '')
+                return (amount, measure, item)
+
+            i += 1
+        
+        measure =  ing[i].text
+        item = ' '.join([i.text for i in ing[i+1:]])
+
+        if item == '':
+            return (None, None, ing.text)
+        else:
+            return (amount, measure, item)
+    
+    else:
+        return (None, None, ing.text)
+
+def create_ingredient(amount, measure, item):
+
+    if measure is None:
+        return item
+    elif measure in sc.Volume.units:
+        measure = sc.Volume.units[measure]
+    elif measure in sc.Mass.units:
+        measure = sc.Mass.units[measure]
+    else:
+        return str(amount) + ' ' + str(item)
+        #raise ValueError(f"Unknown measure: {x.Measure}")
+
+    element = sc.Element(item)
+
+    ing = Ingredient(
+        amount = amount * measure,
+        element = element
+    )
+
+    return ing
 
 
 def css_style():
@@ -277,8 +363,14 @@ def create_meal_plan_html(meal_plan):
     shop1 = shopping_list[:int(n_items/2)]
     shop2 = shopping_list[int(n_items/2):]
 
-    shop1_html = ''.join(["<li>" + item + "</li>" for item in shop1])
-    shop2_html = ''.join(["<li>" + item + "</li>" for item in shop2])
+    def item_to_html(i):
+        if isinstance(i, Ingredient):
+            return i.display()
+        else:
+            return i
+
+    shop1_html = ''.join(["<li>" + item_to_html(item) + "</li>" for item in shop1])
+    shop2_html = ''.join(["<li>" + item_to_html(item) + "</li>" for item in shop2])
     html += f"""
         <div class="row";>
             <div class="col"><ul>{shop1_html}</ul></div>
@@ -366,3 +458,27 @@ known_elements = {
     'salsa': sc.Element('salsa'),
     'eggs': sc.Element('eggs', is_int=True)
 }
+
+number_dict = {
+            'one':1,
+            'two': 2,
+            'three': 3,
+            'four': 4,
+            'five': 5,
+            'six': 6,
+            'seven': 7,
+            'eight': 8,
+            'nine': 9,
+            'ten': 10,
+            'eleven': 11,
+            'twelve': 12,
+            'dozen': 12
+        }
+
+# import os
+# s3 = boto3.client(
+#     's3',
+#     aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
+#     aws_secret_access_key=os.getenv('AWS_SECRET_KEY'),
+# )
+# s3.download_file('cheffrey', 'recipes.yaml', './test.yaml')

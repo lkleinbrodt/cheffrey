@@ -172,6 +172,8 @@ class Measure(object):
             raise ValueError("%s already contains a unit named %s" % (self.name, unit.name))
         unit.measure = self
         self.units[unit.name] = unit
+        for name in unit.alternate_names:
+            self.units[name] = unit
         setattr(self, unit.name, unit)
     def addUnits(self, units):
         """ add a collection of units
@@ -236,7 +238,7 @@ Converter.Neutral = Converter.Linear(1)
 
 class Unit(object):
     """Unit of a measure, i.e. gram (mass), liter (volume) etc."""
-    def __init__(self, name='Unknown unit', abrev='?unit', preFix=False, converter=Converter.Neutral):
+    def __init__(self, name='Unknown unit', abrev='?unit', preFix=False, converter=Converter.Neutral, alternate_names = []):
         """ create a unit by name
 
         parameters:
@@ -254,6 +256,7 @@ class Unit(object):
         self.preFix = preFix
         self.converter = converter
         self.measure = None # set by Measures when they add a unit
+        self.alternate_names = alternate_names
     def __mul__(self, other):
         return self.__rmul__(other)
     def __rmul__(self, other):
@@ -330,22 +333,26 @@ POUND_IN_GRAMS  = 453.59237     # NIST pound definition
 
 Volume.addUnits([
     # FDA units
-    Unit('pinch',           'pinch',    converter=Converter.Linear(CUP_IN_LITER / 768)),
-    Unit('teaspoon',        'tsp.',     converter=Converter.Linear(CUP_IN_LITER / 48)),
-    Unit('tablespoon',      'tbsp.',    converter=Converter.Linear(CUP_IN_LITER / 16)),
-    Unit('fluidOunce',      'fl. oz.',  converter=Converter.Linear(CUP_IN_LITER / 8)),
-    Unit('cup',             'cup',      converter=Converter.Linear(CUP_IN_LITER)),
-
+    Unit('pinch',           'pinch',    converter=Converter.Linear(CUP_IN_LITER / 768), alternate_names = ['pinches']),
+    Unit('teaspoon',        'tsp.',     converter=Converter.Linear(CUP_IN_LITER / 48), alternate_names = ['teaspoons']),
+    Unit('tablespoon',      'tbsp.',    converter=Converter.Linear(CUP_IN_LITER / 16), alternate_names = ['tablespoons']),
+    Unit('fluidOunce',      'fl. oz.',  converter=Converter.Linear(CUP_IN_LITER / 8), alternate_names = ['fluidOunces', 'fluid ounce', 'fluid ounces']),
+    Unit('cup',             'cup',      converter=Converter.Linear(CUP_IN_LITER), alternate_names=['cups']),
     #other units
-    Unit('pint',            'pt.',      converter=Converter.Linear(GALLON_IN_LITER / 8)),
-    Unit('quart',           'qt',       converter=Converter.Linear(GALLON_IN_LITER / 4)),
-    Unit('gallon',          'gal.',     converter=Converter.Linear(GALLON_IN_LITER))
+    Unit('pint',            'pt.',      converter=Converter.Linear(GALLON_IN_LITER / 8), alternate_names=['pints']),
+    Unit('quart',           'qt',       converter=Converter.Linear(GALLON_IN_LITER / 4), alternate_names=['quarts']),
+    Unit('gallon',          'gal.',     converter=Converter.Linear(GALLON_IN_LITER), alternate_names=['gallons']),
+    Unit('bunch',   'bunch', alternate_names=['sticks']),
 ])
 
 Mass.addUnits([
-    Unit('ounce',   'oz',       converter=Converter.Linear(POUND_IN_GRAMS / 16)),
-    Unit('stick',   'stick',    converter=Converter.Linear(POUND_IN_GRAMS / 4)),
-    Unit('pound',   'lb',       converter=Converter.Linear(POUND_IN_GRAMS))
+    Unit('ounce',   'oz',       converter=Converter.Linear(POUND_IN_GRAMS / 16), alternate_names=['ounces']),
+    # Unit('stick',   'stick',    converter=Converter.Linear(POUND_IN_GRAMS / 4), alternate_names=['sticks']),
+    Unit('stick',   'stick', alternate_names=['sticks']),
+    Unit('pound',   'lb',       converter=Converter.Linear(POUND_IN_GRAMS), alternate_names=['pounds']),
+    Unit('head',   'head', alternate_names=['heads']),
+    Unit('clove',   'clove', alternate_names=['cloves']),
+    
 ])
 
 # Common Ingredients
@@ -355,7 +362,12 @@ Sugar  = Element('Sugar',  density=1.2)
 Salt   = Element('Salt',   density=1.2)
 Butter = Element('Butter', density=0.9)
 
+available_measures = dict(Volume.units, **Mass.units)
+available_measures.update(Mass.units)
+
+
 # run the module to make it test itself
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
