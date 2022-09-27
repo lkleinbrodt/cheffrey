@@ -4,6 +4,7 @@ from datetime import datetime
 from math import ceil, floor
 from src.cheffrey import *
 import streamlit as st
+import spacy
 st.set_page_config(
     page_title='Cheffrey',
     page_icon=None,
@@ -12,10 +13,9 @@ st.set_page_config(
 logging.basicConfig(level=logging.DEBUG,
                     format=' %(asctime)s - $(levelname)s - $(message)s', filemode='w')
 logger = logging.getLogger(__name__)
-logger.debug('Start of program')
+logger.info('Start of program')
 stime = datetime.now()
 # Callbacks and Session State Functions
-
 
 def update_page(page_name):
     logger.info(f'Switching page to: {page_name}')
@@ -106,7 +106,9 @@ def add_recipe(cookbook):
     st.session_state['recipe_list'] += [new_recipe]
 
 
+@st.cache()
 def load_config():
+    logger.info('Loading config and master recipes')
     cfg = load_yaml('config')
     master_recipes = load_yaml('recipes')
     return cfg, master_recipes
@@ -125,6 +127,10 @@ if 'page' not in st.session_state.keys():
     st.session_state['page'] = 'main'
 if 'recipe_list' not in st.session_state.keys():
     st.session_state['recipe_list'] = []
+if 'meal_plan_html' not in st.session_state.keys():
+    st.session_state['meal_plan_html'] = ''
+if 'nlp' not in st.session_state.keys():
+    st.session_state['nlp'] = spacy.load("en_core_web_sm")
 
 if 'available_tags' not in st.session_state.keys():
     base_tags = ['breakfast', 'lunch', 'dinner']
@@ -137,7 +143,7 @@ if 'available_tags' not in st.session_state.keys():
 
     st.session_state['available_tags'] = tags
 
-
+nlp = st.session_state['nlp']
 ###
 # Display:
 
@@ -206,25 +212,22 @@ if st.session_state['page'] == 'main':
     #     return recipe_list
 
     if len(st.session_state['recipe_list']) == 0:
+        logger.info('Initializing Recipes')
         recipe_list = pick_recipes_randomly(cookbook, 4)
         st.session_state['recipe_list'] = recipe_list
     else:
         recipe_list = st.session_state['recipe_list']
 
     # TODO: Determine Shopping List
-
-    shopping_list = create_shopping_list(recipe_list)
-
+    
     # TODO: Create Meal Plan
-
-    meal_plan = {'Recipes': recipe_list, 'Shopping List': shopping_list}
 
     # TODO: Serve Meal plan
 
-    n_cols = min([len(meal_plan['Recipes']), 3])
-    n_rows = ceil(len(meal_plan['Recipes']) / n_cols)
+    n_cols = min([len(recipe_list), 3])
+    n_rows = ceil(len(recipe_list) / n_cols)
 
-    if (n_cols * n_rows) == len(meal_plan['Recipes']):
+    if (n_cols * n_rows) == len(recipe_list):
         n_rows += 1
 
     def make_grid(n_cols, n_rows):
@@ -234,7 +237,9 @@ if st.session_state['page'] == 'main':
                 grid[i] = st.columns(n_cols)
         return grid
 
+    logger.info('making grid')
     recipe_grid = make_grid(n_cols, n_rows)
+    logger.info('done making grid')
 
     def grid_square(i, recipe):
         row_idx = floor(i / n_cols)
@@ -277,9 +282,10 @@ if st.session_state['page'] == 'main':
                 on_click=remove_recipe, args=(i,)
             )
 
-    for i, recipe in enumerate(meal_plan['Recipes']):
+    logger.info('Populating grid')
+    for i, recipe in enumerate(recipe_list):
         grid_square(i, recipe)
-
+    
     i += 1
     row_idx = floor(i / n_cols)
     col_idx = i % n_cols
@@ -288,20 +294,32 @@ if st.session_state['page'] == 'main':
             st.text('')
         st.button('+1 Recipe', on_click=add_recipe, args=(cookbook,))
 
+    logger.info('Done populating grid')
     # TODO: Allow for editing of plan
 
     # TODO: and Regenerating
 
     # TODO: Export
 
-    html = create_meal_plan_html(meal_plan)
-    with open('./meal_plan.html', 'w') as f:
-        f.write(html)
+    def create_meal_plan(recipe_list):
+
+        shopping_list = create_shopping_list(recipe_list, nlp)
+
+        meal_plan = {'Recipes': recipe_list, 'Shopping List': shopping_list}
+
+        html = create_meal_plan_html(meal_plan)
+        # with open('./meal_plan.html', 'w') as f:
+        #     f.write(html)
+
+        return html
+    
+    meal_plan_html = create_meal_plan(recipe_list)
 
     with title_cols[2]:
         st.download_button(
             label='Download Meal Plan',
-            data=html, file_name='meal_plan.html', mime='text/html'
+            data=meal_plan_html, 
+            file_name='meal_plan.html', mime='text/html',
         )
 
 

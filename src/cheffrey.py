@@ -254,9 +254,8 @@ def combine_ingredients(ingredient_list: list):
     
     return list(out.values())
 
-def create_shopping_list(recipe_list):
+def create_shopping_list(recipe_list, nlp):
     all_ingredients = [item for recipe in recipe_list for item in recipe['Ingredients']]
-    nlp = spacy.load("en_core_web_sm")
     parsed_ingredients = [parse_ingredient(ing, nlp) for ing in all_ingredients]
     parsed_ingredients = [create_ingredient(p[0], p[1], p[2]) for p in parsed_ingredients]
     shopping_list = combine_ingredients(parsed_ingredients)
