@@ -22,7 +22,6 @@ import spacy
 from random import sample, randint, choice
 from bisect import bisect
 from fractions import Fraction
-import itertools
 
 # from xhtml2pdf import pisa
 from src import sugarcube as sc
@@ -267,61 +266,88 @@ def parse_ingredient(ingredient, nlp):
     ing = nlp(ing)
     pos = [i.pos_ for i in ing]
 
-    if pos[0] == 'NUM':
-        if ing[0].text.lower() in number_dict:
-            modifier = number_dict[ing[0].text.lower()]
-            amount_list = []
-        else:
-            amount_list = [ing[0].text]
-            modifier = 1
-        
-        i = 1
+    if pos[0] != 'NUM':
+        return create_ingredient(
+            amount = None, 
+            measure = None, 
+            item = ing.text
+        )
 
+    else:
+        
+        modifier = 1
+        i = 0
+        amount_list = []
         while pos[i] == 'NUM':
-            amount_list += [ing[i].text]
-            if i == (len(pos)-1):
-                return (None, None, ing.text)
+            
+            if ing[i].text.lower() in number_dict.keys():
+                x = number_dict[ing[i].text.lower()]
+                modifier = x
+            else:
+                amount_list += [ing[i].text]
+            if i == (len(pos) - 1):
+                return create_ingredient(None, None, ing.text)
             i += 1
+        
         amount = float(sum(Fraction(s) for s in amount_list))
         amount *= modifier
+        non_numerical_start = i
+
+        if ing[i].text == '(':
+
+            end_idx = i
+            while ')' not in ing[end_idx].text:
+                end_idx += 1
+                if end_idx > len(ing):
+                    return create_ingredient(None, None, ing.text)
+            
+            paran_text = [ing[x].text for x in range(i+1, end_idx)]
+            
+            if any([measure in paran_text for measure in sc.available_measures]):
+                modifier = amount
+                unit = float(ing[i+1].text)
+                measure = ing[i+2].text
+                item = ' '.join([x.text for x in ing[i+4:]])
+                return create_ingredient(modifier*unit, measure, item)
+            else:
+                return create_ingredient(None, None, ing.text)
+
         
-        # while pos[i] not in ['NOUN', 'PROPN']:
-            # if i == (len(pos)-1):
-            #     return (None, None, ing.text)
-            # i += 1
         while ing[i].text not in sc.available_measures:
             if i == (len(pos)-1):
-                return (None, None, ing.text)
+                t = ' '.join([x.text for x in ing[non_numerical_start:]])
+                a = amount if amount else ''
+                return create_ingredient(a, 'unit', t)
 
-            if ing[i].text in ['small', 'medium', 'large']:
+            if ing[i].text in ['small', 'medium', 'large', 'fat']:
                 item = ' '.join([i.text for i in ing[i:]])
-                measure = sc.Unit('', '')
-                return (amount, measure, item)
+                return create_ingredient(
+                    amount = amount,
+                    measure = 'unit',
+                    item = item
+                )
 
             i += 1
         
-        measure =  ing[i].text
+        measure = ing[i].text
         item = ' '.join([i.text for i in ing[i+1:]])
 
         if item == '':
-            return (None, None, ing.text)
+            return create_ingredient(None, None, ing.text)
         else:
-            return (amount, measure, item)
-    
-    else:
-        return (None, None, ing.text)
+            return create_ingredient(amount, measure, item)
 
 def create_ingredient(amount, measure, item):
 
+    measure = sc.available_measures.get(measure, None)
+
+    if amount is None:
+        amount = ''
+
     if measure is None:
-        return item
-    elif measure in sc.Volume.units:
-        measure = sc.Volume.units[measure]
-    elif measure in sc.Mass.units:
-        measure = sc.Mass.units[measure]
-    else:
         return str(amount) + ' ' + str(item)
-        #raise ValueError(f"Unknown measure: {x.Measure}")
+
+    
 
     element = sc.Element(item)
 

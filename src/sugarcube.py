@@ -317,6 +317,10 @@ Time.addUnits([
     Unit('hour', 'h', converter=Converter.Linear(3600))
 ])
 
+Count = Measure('Count', Unit('unit', ''))
+Count.addUnits([
+    Unit('dozen', 'doz', converter = Converter.Linear(12))
+])
 # measure conversion
 
 milliliter = Volume.milliliter
@@ -355,6 +359,8 @@ Mass.addUnits([
     
 ])
 
+
+
 # Common Ingredients
 
 Flour  = Element('Flour',  density=0.7)
@@ -362,8 +368,9 @@ Sugar  = Element('Sugar',  density=1.2)
 Salt   = Element('Salt',   density=1.2)
 Butter = Element('Butter', density=0.9)
 
-available_measures = dict(Volume.units, **Mass.units)
+available_measures = dict(Volume.units, **Mass.units, **Count.units)
 available_measures.update(Mass.units)
+available_measures.update(Count.units)
 
 
 # run the module to make it test itself
