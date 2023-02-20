@@ -1,24 +1,6 @@
-
-
-"""
-Storage system for recipes:
-    Must have: 
-        Holding recipes
-        Adding recipes
-        Retrieving recipes
-        
-Adding a recipe
-    Parsing, 
-    validation
-
-Generate the menu
-    ...
-    features:
-        
-"""
-
 import boto3
 import spacy
+from src.s3 import *
 from random import sample, randint, choice
 from bisect import bisect
 from fractions import Fraction
@@ -55,7 +37,7 @@ def parse_scraped_recipe(recipe):
 
 
 def add_to_recipe_file(recipe, overwrite=False):
-    all_recipes = load_yaml('recipes')
+    all_recipes = load_s3_recipes()
 
     if (recipe['Title'] in all_recipes.keys()) & (overwrite == False):
         raise FileExistsError(
@@ -63,11 +45,7 @@ def add_to_recipe_file(recipe, overwrite=False):
 
     all_recipes[recipe['Title']] = recipe
 
-    with open(f"data/recipes.yaml", 'w') as f:
-        yaml.safe_dump(all_recipes, f)
-
-# Yknow what. let's just build a simple version first
-# No combining ingredients, just picking meals and pasting the ingredients together
+    return save_s3_recipes(all_recipes)
 
 
 class Ingredient(sc.Ingredient):
@@ -506,3 +484,51 @@ number_dict = {
 #     aws_secret_access_key=os.getenv('AWS_SECRET_KEY'),
 # )
 # s3.download_file('cheffrey', 'recipes.yaml', './test.yaml')
+
+def load_s3_recipes():
+    return load_s3_yaml('recipes.yaml')
+
+def save_s3_recipes(recipes):
+    return save_s3_yaml(recipes, 'recipes.yaml')
+
+carriers = {
+    'att': 'txt.att.net',
+    'verizon': 'vtext.com',
+    'tmobile': 'tmomail.net',
+    'sprint': 'messaging.sprintpcs.com',
+}
+
+import smtplib
+import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+
+def text_meal_plan(phone_number, meal_plan):
+    email_address = 'lkleinbrodt@gmail.com'
+    try:
+        email_password = st.secrets['email_password']
+        
+    except FileNotFoundError:
+        email_password = os.getenv('email_password')
+    
+    phone_carrier_domain = carriers['att'] #TODO: try all combos
+    msg = MIMEMultipart()
+    msg['From'] = email_address
+    msg['To'] = f"{phone_number}@{phone_carrier_domain}"
+
+    html_part = MIMEText(meal_plan, 'html')
+    msg.attach(html_part)
+    
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
+        server.login(email_address, email_password)
+
+        # Send the message
+        server.sendmail(
+            email_address, 
+            f"{phone_number}@{phone_carrier_domain}", 
+            msg.as_string()
+        )
+
+

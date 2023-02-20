@@ -1,15 +1,21 @@
-import itertools
-import logging
-from datetime import datetime
-from math import ceil, floor
-from src.cheffrey import *
 import streamlit as st
-import spacy
 st.set_page_config(
     page_title='Cheffrey',
     page_icon=None,
     layout="wide",
 )
+
+import itertools
+import logging
+from datetime import datetime
+from math import ceil, floor
+from src.cheffrey import *
+import spacy
+
+from PIL import Image
+import requests
+from io import BytesIO
+
 logging.basicConfig(level=logging.DEBUG,
                     format=' %(asctime)s - $(levelname)s - $(message)s', filemode='w')
 logger = logging.getLogger(__name__)
@@ -72,7 +78,7 @@ def regen_recipe(i, cookbook, method):
         new_recipe = pick_recipes_randomly(cookbook, 1)[0]
     elif method == 'searched':
         searched_value = st.session_state[f'search_{i}']
-        if searched_value == '...':
+        if searched_value == ' ':
             return
         new_recipe = cookbook.recipes[searched_value]
     else:
@@ -90,27 +96,53 @@ def remove_recipe(i):
         st.session_state['recipe_list'] = recipes[:i] + recipes[i+1:]
 
 
-def add_recipe(cookbook):
-    recipes = st.session_state['recipe_list']
-    picked_recipes = [r['Title'] for r in recipes]
-    available_recipes = {
-        i: v
-        for i, v in cookbook.recipes.items()
-        if i not in picked_recipes
-    }
-    if len(available_recipes) == 0:
-        available_recipes = cookbook.recipes
-    cookbook.recipes = available_recipes
-    new_recipe = pick_recipes_randomly(cookbook, 1)[0]
+def add_recipe(cookbook, method = 'random'):
+    if method == 'random':
+        recipes = st.session_state['recipe_list']
+        picked_recipes = [r['Title'] for r in recipes]
+        available_recipes = {
+            i: v
+            for i, v in cookbook.recipes.items()
+            if i not in picked_recipes
+        }
+        if len(available_recipes) == 0:
+            available_recipes = cookbook.recipes
+        cookbook.recipes = available_recipes
+        new_recipe = pick_recipes_randomly(cookbook, 1)[0]
+    elif method == 'searched':
+        searched_value = st.session_state[f'searchbar']
+        if searched_value == ' ':
+            return
+        new_recipe = cookbook.recipes[searched_value]
+    else:
+        raise ValueError(f"Unrecognized method: {method}. Must be either random or searched")
 
     st.session_state['recipe_list'] += [new_recipe]
 
+import re
 
-@st.cache()
+def send_meal_plan(meal_plan):
+    num = st.session_state['phone_number']
+    if bool(re.search(r'[^0-9-]', num)):
+        st.warning('Phone numbers should only contain numbers and hyphens')
+        return False
+    # Replace all non-numeric characters with an empty string
+    num = re.sub(r'[^0-9]+', '', num)
+    if len(num) != 10:
+        st.warning('Phone number must have 10 digits')
+        return False
+    
+    try:
+        text_meal_plan(phone_number=num, meal_plan = meal_plan)
+    except Exception as e:
+        logger.error(e)
+        st.warning('Sorry. failed to text you')
+    
+
 def load_config():
     logger.info('Loading config and master recipes')
     cfg = load_yaml('config')
-    master_recipes = load_yaml('recipes')
+    master_recipes = load_s3_recipes()
     return cfg, master_recipes
 
 
@@ -119,10 +151,12 @@ def load_config():
 ##################
 
 # Initialize Session
-cfg, original_master_recipes = load_config()
+
 
 if 'master_recipes' not in st.session_state.keys():
+    cfg, original_master_recipes = load_config()
     st.session_state['master_recipes'] = original_master_recipes
+
 if 'page' not in st.session_state.keys():
     st.session_state['page'] = 'main'
 if 'recipe_list' not in st.session_state.keys():
@@ -150,11 +184,14 @@ nlp = st.session_state['nlp']
 logger.info(f"Showing: {st.session_state['page']}")
 
 if st.session_state['page'] == 'main':
-    title_cols = st.columns([3, 1, 1])
+    title_cols = st.columns([3, 1.5, 1.5])
 
-    title_cols[0].header("Heres what you'll be cooking this week:")
-    title_cols[1].button("Click here to submit a recipe",
+    # title_cols[0].header("Heres what you'll be cooking this week:")
+    title_cols[0].subheader("Let's get cooking")
+    title_cols[1].button("Submit a recipe",
                          on_click=update_page, args=('submit',))
+
+    st.write('---')
 
     # st.selectbox(
     #     "Who's recipes are we using today?",
@@ -224,75 +261,135 @@ if st.session_state['page'] == 'main':
 
     # TODO: Serve Meal plan
 
-    n_cols = min([len(recipe_list), 3])
-    n_rows = ceil(len(recipe_list) / n_cols)
+    def display_recipe_image(recipe, shape = (300, 200)):
+        r = requests.get(recipe['Image'])
+        image = Image.open(BytesIO(r.content))
+        new_image = image.resize(shape)
+        st.image(new_image, use_column_width='always')
 
-    if (n_cols * n_rows) == len(recipe_list):
-        n_rows += 1
+    def list_presentation(recipe_list):
+        logger.info('creating recipe list')
 
-    def make_grid(n_cols, n_rows):
-        grid = [0]*n_rows
-        for i in range(n_rows):
-            with st.container():
-                grid[i] = st.columns(n_cols)
-        return grid
+        def list_item(i, recipe):
+            # st.header(recipe['Title'])
+            st.markdown(
+                    f"""<h4 style="text-align:center">{recipe['Title']}</h4>""", unsafe_allow_html=True)
+            cols = st.columns([3, 3, 1, 1])
 
-    logger.info('making grid')
-    recipe_grid = make_grid(n_cols, n_rows)
-    logger.info('done making grid')
+            with cols[0]:
+                display_recipe_image(recipe, shape = (300, 200))
+            
+            with cols[1]:
+                with st.expander(label='More info:', expanded=False):
+                        st.markdown(f"""
+                        <div class='row'>
+                            <div class='col'><ul>{''.join(['<li>'+r+'</li>' for r in recipe['Ingredients']])}</ul></div>
+                            <div class='col'>Yield: {recipe['Yield']}. Time: {recipe['Time']}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            with cols[2]:
+                st.button(
+                    label='Refresh', key=f'regen_{i}',
+                    on_click=regen_recipe, args=(i, cookbook, 'random')
+                )
+                
 
-    def grid_square(i, recipe):
+            with cols[3]:
+                st.button(
+                    label='Remove', key=f'delete_{i}',
+                    on_click=remove_recipe, args=(i,)
+                )
+
+            st.write('---')
+
+        for i, recipe in enumerate(recipe_list):
+            list_item(i, recipe)
+
+        st.button('+1 Recipe', on_click=add_recipe, args=(cookbook,))
+
+        search_options = [' '] + list(cookbook.recipes.keys())
+
+        st.selectbox(
+            label='Search for a recipe',
+            key=f'searchbar',
+            options=search_options,
+            on_change=add_recipe,
+            args=(i, cookbook, 'searched')
+        )
+
+    
+    list_presentation(recipe_list)
+
+    
+
+
+
+    def grid_presentation(recipe_list):
+
+        n_cols = min([len(recipe_list), 3])
+        n_rows = ceil(len(recipe_list) / n_cols)
+
+        if (n_cols * n_rows) == len(recipe_list):
+            n_rows += 1
+
+        def make_grid(n_cols, n_rows):
+            grid = [0]*n_rows
+            for i in range(n_rows):
+                with st.container():
+                    grid[i] = st.columns(n_cols)
+            return grid
+
+        logger.info('making grid')
+        recipe_grid = make_grid(n_cols, n_rows)
+        logger.info('done making grid')
+
+        def grid_square(i, recipe):
+            row_idx = floor(i / n_cols)
+            col_idx = i % n_cols
+            with recipe_grid[row_idx][col_idx]:
+                st.markdown(
+                    f"""<h4 style="text-align:center">{recipe['Title']}</h4>""", unsafe_allow_html=True)
+
+                display_recipe_image(recipe)
+
+                with st.expander(label='ingredients', expanded=False):
+                    st.markdown(f"""
+                    <div class='row'>
+                        <div class='col'><ul>{''.join(['<li>'+r+'</li>' for r in recipe['Ingredients']])}</ul></div>
+                        <div class='col'>Yield: {recipe['Yield']}. Time: {recipe['Time']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.button(
+                    label='Pick Again', key=f'regen_{i}',
+                    on_click=regen_recipe, args=(i, cookbook, 'random')
+                )
+                search_options = [' '] + list(cookbook.recipes.keys())
+                st.selectbox(
+                    label='Search',
+                    key=f'search_{i}',
+                    options=search_options,
+                    on_change=regen_recipe,
+                    args=(i, cookbook, 'searched')
+                )
+
+                st.button(
+                    label='Remove', key=f'delete_{i}',
+                    on_click=remove_recipe, args=(i,)
+                )
+
+        logger.info('Populating grid')
+        for i, recipe in enumerate(recipe_list):
+            grid_square(i, recipe)
+        
+        i += 1
         row_idx = floor(i / n_cols)
         col_idx = i % n_cols
         with recipe_grid[row_idx][col_idx]:
-            st.markdown(
-                f"""<h4 style="text-align:center">{recipe['Title']}</h4>""", unsafe_allow_html=True)
-
-            from PIL import Image
-            import requests
-            from io import BytesIO
-            r = requests.get(recipe['Image'])
-            image = Image.open(BytesIO(r.content))
-            new_image = image.resize((300, 200))
-            st.image(new_image, use_column_width='always')
-
-            with st.expander(label='ingredients', expanded=False):
-                st.markdown(f"""
-                <div class='row'>
-                    <div class='col'><ul>{''.join(['<li>'+r+'</li>' for r in recipe['Ingredients']])}</ul></div>
-                    <div class='col'>Yield: {recipe['Yield']}. Time: {recipe['Time']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            st.button(
-                label='Pick Again', key=f'regen_{i}',
-                on_click=regen_recipe, args=(i, cookbook, 'random')
-            )
-            search_options = ['...'] + list(cookbook.recipes.keys())
-            st.selectbox(
-                label='Search',
-                key=f'search_{i}',
-                options=search_options,
-                on_change=regen_recipe,
-                args=(i, cookbook, 'searched')
-            )
-
-            st.button(
-                label='Remove', key=f'delete_{i}',
-                on_click=remove_recipe, args=(i,)
-            )
-
-    logger.info('Populating grid')
-    for i, recipe in enumerate(recipe_list):
-        grid_square(i, recipe)
-    
-    i += 1
-    row_idx = floor(i / n_cols)
-    col_idx = i % n_cols
-    with recipe_grid[row_idx][col_idx]:
-        for _ in range(10):
-            st.text('')
-        st.button('+1 Recipe', on_click=add_recipe, args=(cookbook,))
+            for _ in range(10):
+                st.text('')
+            st.button('+1 Recipe', on_click=add_recipe, args=(cookbook,))
 
     logger.info('Done populating grid')
     # TODO: Allow for editing of plan
@@ -321,6 +418,12 @@ if st.session_state['page'] == 'main':
             data=meal_plan_html, 
             file_name='meal_plan.html', mime='text/html',
         )
+        # st.text_input(
+        #     label = 'Text me the meal plan', 
+        #     key = 'phone_number',
+        #     placeholder = 'Your phone #...', 
+        #     on_change = send_meal_plan, args=(meal_plan_html, )
+        # )
 
 
 if st.session_state['page'] == 'submit':
