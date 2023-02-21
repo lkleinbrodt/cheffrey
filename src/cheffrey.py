@@ -1,12 +1,11 @@
-import boto3
-import spacy
-from src.s3 import *
+
 from random import sample, randint, choice
 from bisect import bisect
 from fractions import Fraction
 
 # from xhtml2pdf import pisa
-from src import sugarcube as sc
+import sugarcube as sc
+from s3 import *
 import logging
 import yaml
 logger = logging.getLogger(__name__)
@@ -341,6 +340,46 @@ def css_style():
         x = f.read()
     return x
 
+def create_recipe_html(recipe, standalone = False):
+
+    if standalone:
+        html = ""
+    else:
+        html = "<div style='break-before:all'>"
+        html += "<hr><hr>"
+    html += f"""<h1 style='text-align:center'> {recipe['Title']}</h1>"""
+    html += "<br>"
+    html += f"""
+    <img 
+        src='{recipe['Image']}'; 
+        alt='{recipe['Title']}'; 
+        class='center';
+    >"""
+
+    html += "</div>"
+
+    ingredient_html = "<h2 style='text-align:center'> Ingredients: </h2>"
+    ingredient_html += f"<p> Yields: {recipe['Yield']}</p>"
+    ingredient_html += "<ul>"
+    for ingredient in recipe['Ingredients']:
+        ingredient_html += "<li>" + ingredient + "</li>"
+    ingredient_html += "</ul>"
+
+    instructions_html = "<h2 style='text-align:center'> Instructions: </h2>"
+    instructions_html += "<ol>"
+    instructions = recipe['Instructions'].split('. ')
+    for instruction in instructions:
+        instructions_html += "<li>" + instruction + "</li>"
+    instructions_html += "</ol>"
+
+    html += f"""
+    <div class="row";>
+        <div class="col left">{ingredient_html}</div>
+        <div class="col right">{instructions_html}</div>
+    </div>
+    """
+
+    return html
 
 def create_meal_plan_html(meal_plan):
     shopping_list = meal_plan['Shopping List']
@@ -383,39 +422,8 @@ def create_meal_plan_html(meal_plan):
     html += "<hr>"
 
     for recipe in recipes:
-        html += "<div style='break-before:all'>"
-        html += "<hr><hr>"
-        html += f"""<h1 style='text-align:center'> {recipe['Title']}</h1>"""
-        html += "<br>"
-        html += f"""
-        <img 
-            src='{recipe['Image']}'; 
-            alt='{recipe['Title']}'; 
-            class='center';
-        >"""
-
-        html += "</div>"
-
-        ingredient_html = "<h2 style='text-align:center'> Ingredients: </h2>"
-        ingredient_html += f"<p> Yields: {recipe['Yield']}</p>"
-        ingredient_html += "<ul>"
-        for ingredient in recipe['Ingredients']:
-            ingredient_html += "<li>" + ingredient + "</li>"
-        ingredient_html += "</ul>"
-
-        instructions_html = "<h2 style='text-align:center'> Instructions: </h2>"
-        instructions_html += "<ol>"
-        instructions = recipe['Instructions'].split('. ')
-        for instruction in instructions:
-            instructions_html += "<li>" + instruction + "</li>"
-        instructions_html += "</ol>"
-
-        html += f"""
-        <div class="row";>
-            <div class="col left">{ingredient_html}</div>
-            <div class="col right">{instructions_html}</div>
-        </div>
-        """
+        html += create_recipe_html(recipe)
+        
 
     html += """
     </body>

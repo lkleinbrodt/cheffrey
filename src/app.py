@@ -9,7 +9,7 @@ import itertools
 import logging
 from datetime import datetime
 from math import ceil, floor
-from src.cheffrey import *
+from cheffrey import *
 import spacy
 
 from PIL import Image
@@ -27,6 +27,10 @@ def update_page(page_name):
     logger.info(f'Switching page to: {page_name}')
     st.session_state['page'] = page_name
 
+def switch_to_recipe_info_page(i):
+    st.session_state['active_recipe'] = st.session_state['recipe_list'][i]
+    logger.info(f"Getting more info on {st.session_state['active_recipe']['Title']}")
+    update_page('recipe_info')
 
 def add_tag():
     st.session_state['available_tags'] += [st.session_state['new_tag']]
@@ -190,6 +194,15 @@ if st.session_state['page'] == 'main':
     title_cols[0].subheader("Let's get cooking")
     title_cols[1].button("Submit a recipe",
                          on_click=update_page, args=('submit',))
+    with st.expander(label = 'How to use Cheffrey', expanded = False):
+        st.markdown("""
+        <ul>
+        <li>Browse Cheffrey's suggestions for what to eat this week.</li>
+        <li>Explore more information about each dish or read the full recipe.</li>
+        <li>You can replace any dish with a new suggestion, or search for one yourself.</li>
+        <li>When ready, download all the recipes, as well as a shopping list of all the ingredients!</li>
+        </ul>
+        """, unsafe_allow_html = True)
 
     st.write('---')
 
@@ -287,6 +300,12 @@ if st.session_state['page'] == 'main':
                             <div class='col'>Yield: {recipe['Yield']}. Time: {recipe['Time']}</div>
                         </div>
                         """, unsafe_allow_html=True)
+                
+                st.button(
+                    label = 'Full Recipe',
+                    key = f'recipe_info_{i}',
+                    on_click = switch_to_recipe_info_page, args = (i, )
+                )
             
             with cols[2]:
                 st.button(
@@ -424,6 +443,19 @@ if st.session_state['page'] == 'main':
         #     placeholder = 'Your phone #...', 
         #     on_change = send_meal_plan, args=(meal_plan_html, )
         # )
+
+if st.session_state['page'] == 'recipe_info':
+    recipe = st.session_state['active_recipe']
+
+    st.button('Back', key = 'back_1', on_click = update_page, args=('main', ))
+    
+    st.markdown(
+        create_recipe_html(recipe, standalone=True),
+        True
+    )
+
+    st.button('Back', key = 'back_2', on_click = update_page, args=('main', ))
+
 
 
 if st.session_state['page'] == 'submit':
