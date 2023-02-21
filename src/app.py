@@ -443,6 +443,12 @@ if st.session_state['page'] == 'main':
         #     placeholder = 'Your phone #...', 
         #     on_change = send_meal_plan, args=(meal_plan_html, )
         # )
+    st.download_button(
+            label='Download Meal Plan',
+            key = 'download_meal_plan_2',
+            data=meal_plan_html, 
+            file_name='meal_plan.html', mime='text/html',
+        )
 
 if st.session_state['page'] == 'recipe_info':
     recipe = st.session_state['active_recipe']
