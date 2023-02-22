@@ -199,8 +199,8 @@ if st.session_state['page'] == 'main':
         <ul>
         <li>Browse Cheffrey's suggestions for what to eat this week.</li>
         <li>Explore more information about each dish or read the full recipe.</li>
-        <li>You can replace any dish with a new suggestion, or search for one yourself.</li>
-        <li>When ready, download all the recipes, as well as a shopping list of all the ingredients!</li>
+        <li>You can replace any dish with a new suggestion or search for one yourself.</li>
+        <li>When you're ready, download all the recipes as well as a shopping list with all the ingredients!</li>
         </ul>
         """, unsafe_allow_html = True)
 

@@ -6,7 +6,7 @@ import os
 
 
 def pull_existing_recipes():
-    master_recipes = load_yaml('recipes')
+    master_recipes = load_s3_recipes()
     titles = list(master_recipes.keys())
     urls = [r['URL'] for r in master_recipes.values()]
     return titles, urls
@@ -14,6 +14,7 @@ def pull_existing_recipes():
 
 def download_recipe(url_to_download, existing_titles, existing_urls):
     if url_to_download in existing_urls:
+        print(f"Skipping. Already in database")
         return
     recipe = scrape_recipe(url_to_download)
     recipe = parse_scraped_recipe(recipe)
@@ -45,9 +46,14 @@ def download_nyt_recipes(collection_url):
 
 def main():
     url_list = [
-        'https://cooking.nytimes.com/68861692-nyt-cooking/442044-quick-stir-fries',
-        'https://cooking.nytimes.com/68861692-nyt-cooking/22792-best-tofu-recipes',
-        'https://cooking.nytimes.com/68861692-nyt-cooking/413086-easy-pasta-recipes'
+        # 'https://cooking.nytimes.com/68861692-nyt-cooking/442044-quick-stir-fries',
+        # 'https://cooking.nytimes.com/68861692-nyt-cooking/22792-best-tofu-recipes',
+        # 'https://cooking.nytimes.com/68861692-nyt-cooking/413086-easy-pasta-recipes',
+        # 'https://cooking.nytimes.com/68861692-nyt-cooking/42777420-our-most-popular-recipes-of-2022',
+        # 'https://cooking.nytimes.com/topics/our-most-popular-recipes',
+        # 'https://cooking.nytimes.com/topics/easy-weeknight',
+        # 'https://cooking.nytimes.com/35208363-sam-sifton/29654275-our-50-most-popular-vegetarian-recipes-of-2020',
+        # 'https://cooking.nytimes.com/42668502-kim-severson/29190084-51-vegetarian-dishes-you-can-cook-in-30-minutes-or-fewer'
     ]
     for url in url_list:
         download_nyt_recipes(url)
