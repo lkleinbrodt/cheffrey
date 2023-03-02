@@ -334,7 +334,7 @@ if st.session_state['page'] == 'main':
             key=f'searchbar',
             options=search_options,
             on_change=add_recipe,
-            args=(i, cookbook, 'searched')
+            args=(cookbook, 'searched')
         )
 
     

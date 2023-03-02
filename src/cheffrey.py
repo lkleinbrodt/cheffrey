@@ -5,6 +5,7 @@ from fractions import Fraction
 
 # from xhtml2pdf import pisa
 import sugarcube as sc
+from config import *
 from s3 import *
 import logging
 import yaml
@@ -15,7 +16,7 @@ logger.debug('Start of program')
 def load_yaml(name):
     valid_names = ['config', 'recipes']
     if name in valid_names:
-        with open(f"data/{name}.yaml", 'r') as f:
+        with open(ROOT_DIR/f"data/{name}.yaml", 'r') as f:
             return yaml.safe_load(f)
     else:
         raise ValueError(
