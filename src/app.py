@@ -287,7 +287,7 @@ if st.session_state['page'] == 'main':
             # st.header(recipe['Title'])
             st.markdown(
                     f"""<h4 style="text-align:center">{recipe['Title']}</h4>""", unsafe_allow_html=True)
-            cols = st.columns([3, 3, 1, 1])
+            cols = st.columns([3, 2.5, 1.25, 1])
 
             with cols[0]:
                 display_recipe_image(recipe, shape = (300, 200))
@@ -309,7 +309,7 @@ if st.session_state['page'] == 'main':
             
             with cols[2]:
                 st.button(
-                    label='Refresh', key=f'regen_{i}',
+                    label='Pick again', key=f'regen_{i}',
                     on_click=regen_recipe, args=(i, cookbook, 'random')
                 )
                 
