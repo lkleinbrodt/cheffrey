@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-# sugarcube.py
 """Convert cooking ingredients to various measurements
 
 Usage and examples:
@@ -26,8 +22,6 @@ thermostat 7
 >>> (Temperature.thermostat * 6).to(Temperature.fahrenheit)
 356 °F
 """
-
-# python 2 compatibility
 from __future__ import division
 from builtins import int, str
 
@@ -278,8 +272,7 @@ class Converter(object):
 
 
 Converter.Neutral = Converter.Linear(1)
-""" Converter that doesn't change the value
-"""
+" Converter that doesn't change the value\n"
 
 
 class Unit(object):
@@ -309,7 +302,7 @@ class Unit(object):
         self.abrev = abrev
         self.preFix = preFix
         self.converter = converter
-        self.measure = None  # set by Measures when they add a unit
+        self.measure = None
         self.alternate_names = alternate_names
 
     def __mul__(self, other):
@@ -324,13 +317,19 @@ class Unit(object):
 
 
 def SIUnitsFromUnit(unit):
-    """list the most common SI units based of a base unit
-    result does NOT include the base unit
-    prefixes: milli, centi, deci, deca, hecto, kilo
+    """Return a list of the most common SI units based of a base unit.
+    The result does NOT include the base unit.
+    This function accepts an object of type Unit as the input parameter(unit).
+    A TypeError exception is raised if the input parameter is not of type Unit.
+    SI Prefixes used: milli, centi, deci, deca, hecto, kilo
 
+
+    Example usage:
     >>> list(SIUnitsFromUnit(Unit('liter', 'l')))
-    [milliliter, centiliter, deciliter, decaliter, hectoliter, kiloliter]
+    [Unit('milliliter', 'ml'), Unit('centiliter', 'cl'), Unit('deciliter', 'dl'), Unit('decaliter', 'dal'), Unit('hectoliter', 'hl'), Unit('kiloliter', 'kl')]
     """
+    ""
+    "list the most common SI units based of a base unit\n    result does NOT include the base unit\n    prefixes: milli, centi, deci, deca, hecto, kilo\n\n    >>> list(SIUnitsFromUnit(Unit('liter', 'l')))\n    [milliliter, centiliter, deciliter, decaliter, hectoliter, kiloliter]\n    "
     if not isinstance(unit, Unit):
         raise TypeError("Expected type Unit, but unit is type " + type(unit).__name__)
     return map(
@@ -351,14 +350,10 @@ def SIUnitsFromUnit(unit):
     )
 
 
-# Common cooking measures
-
 Mass = Measure("Mass", Unit("gram", "g"))
 Mass.addUnits(SIUnitsFromUnit(Mass.gram))
-
 Volume = Measure("Volume", Unit("liter", "l"))
 Volume.addUnits(SIUnitsFromUnit(Volume.liter))
-
 Temperature = Measure("Temperature", Unit("celsius", "°C"))
 Temperature.addUnits(
     [
@@ -367,12 +362,8 @@ Temperature.addUnits(
         Unit("thermostat", "thermostat", converter=Converter.Linear(30), preFix=True),
     ]
 )
-
-# other measures
-
 Length = Measure("Length", Unit("meter", "m"))
 Length.addUnits(SIUnitsFromUnit(Length.meter))
-
 Time = Measure("Time", Unit("second", "s"))
 Time.addUnits(
     [
@@ -380,30 +371,21 @@ Time.addUnits(
         Unit("hour", "h", converter=Converter.Linear(3600)),
     ]
 )
-
 Count = Measure("Count", Unit("unit", ""))
 Count.addUnits([Unit("dozen", "doz", converter=Converter.Linear(12))])
-# measure conversion
-
 milliliter = Volume.milliliter
 gram = Mass.gram
-
 Volume.addTransform(
     Mass, lambda volume, element: (element.density * volume.to(milliliter)).value * gram
 )
 Mass.addTransform(
-    Volume, lambda mass, element: ((mass.to(gram)).value / element.density) * milliliter
+    Volume, lambda mass, element: mass.to(gram).value / element.density * milliliter
 )
-
-# USA cooking units
-
-CUP_IN_LITER = 0.236588  # 'US legal' cup definition
-GALLON_IN_LITER = 0.231 * 2.54**3  # 231 cubic inches
-POUND_IN_GRAMS = 453.59237  # NIST pound definition
-
+CUP_IN_LITER = 0.236588
+GALLON_IN_LITER = 0.231 * 2.54**3
+POUND_IN_GRAMS = 453.59237
 Volume.addUnits(
     [
-        # FDA units
         Unit(
             "pinch",
             "pinch",
@@ -434,7 +416,6 @@ Volume.addUnits(
             converter=Converter.Linear(CUP_IN_LITER),
             alternate_names=["cups"],
         ),
-        # other units
         Unit(
             "pint",
             "pt.",
@@ -456,7 +437,6 @@ Volume.addUnits(
         Unit("bunch", "bunch", alternate_names=["sticks"]),
     ]
 )
-
 Mass.addUnits(
     [
         Unit(
@@ -465,7 +445,6 @@ Mass.addUnits(
             converter=Converter.Linear(POUND_IN_GRAMS / 16),
             alternate_names=["ounces"],
         ),
-        # Unit('stick',   'stick',    converter=Converter.Linear(POUND_IN_GRAMS / 4), alternate_names=['sticks']),
         Unit("stick", "stick", alternate_names=["sticks"]),
         Unit(
             "pound",
@@ -477,21 +456,13 @@ Mass.addUnits(
         Unit("clove", "clove", alternate_names=["cloves"]),
     ]
 )
-
-
-# Common Ingredients
-
 Flour = Element("Flour", density=0.7)
 Sugar = Element("Sugar", density=1.2)
 Salt = Element("Salt", density=1.2)
 Butter = Element("Butter", density=0.9)
-
 available_measures = dict(Volume.units, **Mass.units, **Count.units)
 available_measures.update(Mass.units)
 available_measures.update(Count.units)
-
-
-# run the module to make it test itself
 if __name__ == "__main__":
     import doctest
 
