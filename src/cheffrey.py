@@ -9,8 +9,30 @@ from config import *
 from s3 import *
 import logging
 import yaml
+# import openai
+import numpy as np
+import gensim
+import json
+from annoy import AnnoyIndex
 logger = logging.getLogger(__name__)
-logger.debug('Start of program')
+
+# openai.api_key = os.getenv("OPENAI_KEY")
+
+def get_embedding(model: gensim.models.KeyedVectors, text: str):
+    tokens = text.lower().split()  # Tokenize and preprocess the text
+    embeddings = [model[word] for word in tokens if word in model]  # Get embeddings for each token
+    num_embeddings = len(embeddings)
+    if num_embeddings > 0:
+        embedding = np.sum(embeddings, axis=0) / num_embeddings  # Calculate the average embedding
+        return embedding
+    else:
+        return None
+
+def search_recipes(query: str, annoy_index: AnnoyIndex, embedding_model: gensim.models.KeyedVectors, recipe_id_to_title: dict, n = 5) -> list:
+    query_embedding = get_embedding(embedding_model, query)
+    nearest_indices = annoy_index.get_nns_by_vector(query_embedding, n)
+    recommended_recipes = [recipe_id_to_title[i] for i in nearest_indices]
+    return recommended_recipes
 
 
 def load_yaml(name):
@@ -23,20 +45,18 @@ def load_yaml(name):
             f"Unrecognized name: {name}. Valid types are: {valid_names}")
 
 
-def parse_scraped_recipe(recipe):
-    d = {
-        'Title': recipe.title(),
-        'Time': recipe.total_time(),
-        'Yield': recipe.yields(),
-        'Ingredients': recipe.ingredients(),
-        'Instructions': recipe.instructions(),
-        'Image': recipe.image(),
-        'Tags': None
-    }
-    return d
+def load_annoy_index(embedding_dim):
+    new_index = AnnoyIndex(embedding_dim, metric = 'euclidean')
+    new_index.load(str(ROOT_DIR/'data/annoy_index.ann'))
+    return new_index
 
+
+def load_embedding_model():
+    path = ROOT_DIR/'data/embedding_model.pkl'
+    return gensim.models.KeyedVectors.load(str(path))
 
 def add_to_recipe_file(recipe, overwrite=False):
+    #TODO: inefficient
     all_recipes = load_s3_recipes()
 
     if (recipe['Title'] in all_recipes.keys()) & (overwrite == False):
@@ -196,7 +216,7 @@ def random_ingredient():
 
     unit = sc.Volume.units[choice(list(sc.Volume.units.keys()))]
     amount = sc.Amount(i, unit=unit)
-    sample_elements = [sc.Element(f'Ingredient_{i}') for i in range(20)]
+    sample_elements = [sc.Element(f'ingredient_{i}') for i in range(20)]
     element = sample(sample_elements, 1)[0]
     return Ingredient(amount, element)
 
@@ -231,14 +251,30 @@ def combine_ingredients(ingredient_list: list):
     
     return list(out.values())
 
-def create_shopping_list(recipe_list, nlp):
-    all_ingredients = [item for recipe in recipe_list for item in recipe['Ingredients']]
-    parsed_ingredients = [parse_ingredient(ing, nlp) for ing in all_ingredients]
+from urllib import request as ulreq
+from PIL import ImageFile
+def getsizes(uri):
+    # get image size (None if not known)
+    with  ulreq.urlopen(uri) as file:
+        p = ImageFile.Parser()
+        while 1:
+            data = file.read(1024)
+            if not data:
+                break
+            p.feed(data)
+            if p.image:
+                return p.image.size
+
+def __create_shopping_list(recipe_list, nlp):
+    """deprecated, back when using spacy for parsing ingredients"""
+    all_ingredients = [item for recipe in recipe_list for item in recipe['ingredients']]
+    parsed_ingredients = [__parse_ingredient(ing, nlp) for ing in all_ingredients]
     shopping_list = combine_ingredients(parsed_ingredients)
     return shopping_list
 
 
-def parse_ingredient(ingredient, nlp):
+def __parse_ingredient(ingredient, nlp):
+    """deprecated, back when using spacy for parsing ingredients"""
     ing = ingredient.replace('-', ' ').split(',')[0]
     ing = nlp(ing)
     pos = [i.pos_ for i in ing]
@@ -348,27 +384,36 @@ def create_recipe_html(recipe, standalone = False):
     else:
         html = "<div style='break-before:all'>"
         html += "<hr><hr>"
-    html += f"""<h1 style='text-align:center'> {recipe['Title']}</h1>"""
+    html += f"""<h1 style='text-align:center'> {recipe['title']}</h1>"""
     html += "<br>"
+    
+    image_size = getsizes(recipe['image'])
+    if image_size:
+        image_width, image_height = image_size
+        image_height /= (image_width / 350)
+        image_width = 350
+
     html += f"""
     <img 
-        src='{recipe['Image']}'; 
-        alt='{recipe['Title']}'; 
+        src='{recipe['image']}'; 
+        alt='{recipe['title']}'; 
+        width='{image_width}';
+        height='{image_height}';
         class='center';
     >"""
 
     html += "</div>"
 
     ingredient_html = "<h2 style='text-align:center'> Ingredients: </h2>"
-    ingredient_html += f"<p> Yields: {recipe['Yield']}</p>"
+    ingredient_html += f"<p> Yields: {recipe['yields']}</p>"
     ingredient_html += "<ul>"
-    for ingredient in recipe['Ingredients']:
+    for ingredient in recipe['ingredients']:
         ingredient_html += "<li>" + ingredient + "</li>"
     ingredient_html += "</ul>"
 
     instructions_html = "<h2 style='text-align:center'> Instructions: </h2>"
     instructions_html += "<ol>"
-    instructions = recipe['Instructions'].split('. ')
+    instructions = recipe['instructions'].split('. ')
     for instruction in instructions:
         instructions_html += "<li>" + instruction + "</li>"
     instructions_html += "</ol>"
@@ -494,6 +539,12 @@ number_dict = {
 # )
 # s3.download_file('cheffrey', 'recipes.yaml', './test.yaml')
 
+def load_local_recipes():
+    with open(ROOT_DIR/'data/recipes.json', 'r') as f:
+        x = json.load(f)
+    return x
+
+
 def load_s3_recipes():
     return load_s3_yaml('recipes.yaml')
 
@@ -540,4 +591,20 @@ def text_meal_plan(phone_number, meal_plan):
             msg.as_string()
         )
 
-
+import re
+def send_meal_plan(meal_plan):
+    num = st.session_state['phone_number']
+    if bool(re.search(r'[^0-9-]', num)):
+        st.warning('Phone numbers should only contain numbers and hyphens')
+        return False
+    # Replace all non-numeric characters with an empty string
+    num = re.sub(r'[^0-9]+', '', num)
+    if len(num) != 10:
+        st.warning('Phone number must have 10 digits')
+        return False
+    
+    try:
+        text_meal_plan(phone_number=num, meal_plan = meal_plan)
+    except Exception as e:
+        logger.error(e)
+        st.warning('Sorry. failed to text you') 

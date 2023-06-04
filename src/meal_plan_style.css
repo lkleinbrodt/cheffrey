@@ -1,0 +1,30 @@
+body {background-color: #45ede850;}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 90%
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 100%;
+    flex: 1;
+}
+
+.left {
+    flex: 1
+}
+
+.right {
+    flex: 2
+}
+
+.center {
+    display: block;
+    text-align:center;
+    margin-left: auto;
+    margin-right: auto;
+}
