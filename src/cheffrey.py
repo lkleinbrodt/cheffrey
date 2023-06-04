@@ -59,7 +59,7 @@ def add_to_recipe_file(recipe, overwrite=False):
     #TODO: inefficient
     all_recipes = load_s3_recipes()
 
-    if (recipe['Title'] in all_recipes.keys()) & (overwrite == False):
+    if (recipe['title'] in all_recipes.keys()) & (overwrite == False):
         raise FileExistsError(
             f"{recipe.title()} already found in the file, and overwrite set to false")
 
