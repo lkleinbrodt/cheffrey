@@ -373,7 +373,7 @@ def create_ingredient(amount, measure, item):
 
 
 def css_style():
-    with open('./meal_plan_style.css', 'r') as f:
+    with open(ROOT_DIR/'meal_plan_style.css', 'r') as f:
         x = f.read()
     return x
 
