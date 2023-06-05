@@ -82,10 +82,13 @@ def recommend_random():
 
 
 if st.session_state['page'] == 'main':
+    display.how_to()
+
     build_tab, meal_plan_tab = st.tabs(['Add Recipes', meal_plan_title])
 
+
     with build_tab:
-        title_cols = st.columns([3, 1.5, 1.5])
+        title_cols = st.columns([3, 1.5, 2])
 
         title_cols[0].subheader("What do you feel like cooking?")
         # title_cols[1].button("Submit a recipe",on_click=state.update_page, args=('submit',))
@@ -102,8 +105,14 @@ if st.session_state['page'] == 'main':
 
         if len(st.session_state['searched_recipes']) > 0:
             search_cols[1].button(
-                label = ':arrows_counterclockwise:',
+                label = ':arrows_counterclockwise: Refresh',
                 on_click=refresh_search,
+                help='Get 3 new recipes based on your search',
+            )
+        else:
+            search_cols[1].button(
+                label = 'Search',
+                on_click=search_for_recipes,
                 help='Get 3 new recipes based on your search'
             )
 
@@ -114,7 +123,8 @@ if st.session_state['page'] == 'main':
         )
 
         if len(st.session_state['recommended_recipes']) == 0:
-            pass
+            if st.session_state['searchbar'] != '':
+                st.warning(f"Sorry, I couldn't find any recipes that matched your search.")
             # st.info('Search for recipes or ask Cheffrey to surprise you.')
         else:
             display.search_results(st.session_state['recommended_recipes'])

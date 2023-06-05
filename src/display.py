@@ -17,9 +17,10 @@ def how_to():
         st.markdown(
             """
     <ul>
-    <li>Browse Cheffrey's suggestions for what to eat this week.</li>
-    <li>Explore more information about each dish or read the full recipe.</li>
-    <li>You can replace any dish with a new suggestion or search for one yourself.</li>
+    <li>Cheffrey is a tool that helps you brainstorm, shop for, and prepare delicious recipes.</li>
+    <li>Feeling something in particular? Use the search bar to find whatever it is your feeling.</li>
+    <li>Looking for something new? Ask Cheffrey to make you some recommendations.</li>
+    <li>Manage your list of recipes in the Meal Plan tab.</li>
     <li>When you're ready, download all the recipes as well as a shopping list with all the ingredients!</li>
     </ul>
     """,
