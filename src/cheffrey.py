@@ -32,7 +32,7 @@ def search_recipes(query: str, annoy_index: AnnoyIndex, embedding_model: gensim.
     query_embedding = get_embedding(embedding_model, query)
     if query_embedding is None:
         return []
-    nearest_indices = annoy_index.get_nns_by_vector(query_embedding, n)
+    nearest_indices = annoy_index.get_nns_by_vector(query_embedding, n, search_k=100_000)
     recommended_recipes = [recipe_id_to_title[i] for i in nearest_indices]
     return recommended_recipes
 

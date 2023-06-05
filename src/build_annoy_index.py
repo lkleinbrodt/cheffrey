@@ -65,5 +65,5 @@ with open(ROOT_DIR/'data/recipes.json', 'w') as f:
     json.dump(recipes, f)
     
 # Build the index to enable searching
-annoy_index.build(n_trees=100)
+annoy_index.build(n_trees=1000)
 annoy_index.save(str(ROOT_DIR/'data/annoy_index.ann'))
