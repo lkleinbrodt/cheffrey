@@ -93,6 +93,13 @@ def meal_plan():
                 on_click = state.switch_to_recipe_info_page, args = (recipe, )
             )
 
+        with cols[2]:
+            st.button(
+                label = ':heart: Favorite',
+                key = f'favorite_{i}',
+                on_click = state.favorite_recipe, args = (recipe, )
+            )
+
         with cols[3]:
             st.button(
                 label='Remove', key=f'delete_{i}',
@@ -104,6 +111,50 @@ def meal_plan():
     for i, recipe in enumerate(st.session_state['recipe_list']):
         list_item(i, recipe)
 
+def favorites():
+    def list_item(i, recipe):
+        # st.header(recipe['Title'])
+        st.markdown(
+                f"""<h4 style="text-align:center">{recipe['title']}</h4>""", unsafe_allow_html=True)
+        cols = st.columns([3, 3, 1, 1])
+
+        with cols[0]:
+            recipe_image(recipe, shape = (300, 200))
+        
+        with cols[1]:
+            # with st.expander(label='More info:', expanded=False):
+            #         st.markdown(f"""
+            #         <div class='row'>
+            #             <div class='col'><ul>{''.join(['<li>'+r+'</li>' for r in recipe['ingredients']])}</ul></div>
+            #             <div class='col'>Yield: {recipe.get('yields', None)}. Time: {recipe['total_time']}</div>
+            #         </div>
+            #         """, unsafe_allow_html=True)
+            
+            st.button(
+                label = 'See full recipe',
+                key = f'favorites_info_{i}',
+                on_click = state.switch_to_recipe_info_page, args = (recipe, )
+            )
+
+        with cols[2]:
+            st.button(
+                label = 'Add to meal plan',
+                key = f'add_from_favorites_{i}',
+                on_click = state.add_to_meal_plan, args = (recipe, i),
+                type = 'primary'
+            )
+
+        with cols[3]:
+            st.button(
+                label='Unfavorite', key=f'unfavorite_{i}',
+                on_click=state.unfavorite_recipe, args=(recipe, )
+            )
+
+        st.write('---')
+    
+    for i, title in enumerate(st.session_state['user_config'][st.session_state['current_user']]['favorites']):
+        recipe = st.session_state['master_recipes'][title]
+        list_item(i, recipe)
 
 
 

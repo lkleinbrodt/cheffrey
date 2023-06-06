@@ -82,15 +82,29 @@ def recommend_random():
 
 
 if st.session_state['page'] == 'main':
-    display.how_to()
 
-    build_tab, meal_plan_tab = st.tabs(['Add Recipes', meal_plan_title])
+    _, user_col = st.columns([8,1])
+
+    user_col.selectbox(
+        'Current User:',
+        index = 0,
+        key = 'current_user',
+        options=[None] + list(st.session_state['user_config'].keys()),
+    )
+
+    # display.how_to()
+
+
+    build_tab, meal_plan_tab, favorites_tab = st.tabs(['Add Recipes', meal_plan_title, 'Favorites'])
 
 
     with build_tab:
         title_cols = st.columns([3, 1.5, 2])
 
-        title_cols[0].subheader("What do you feel like cooking?")
+        if st.session_state['current_user']:
+            title_cols[0].subheader(f"Hi {st.session_state['current_user']}, what do you feel like cooking?")
+        else:
+            title_cols[0].subheader("What do you feel like cooking?")
         # title_cols[1].button("Submit a recipe",on_click=state.update_page, args=('submit',))
 
         search_cols = st.columns([4, 2, 2])
@@ -105,7 +119,7 @@ if st.session_state['page'] == 'main':
 
         if len(st.session_state['searched_recipes']) > 0:
             search_cols[1].button(
-                label = ':arrows_counterclockwise: Refresh',
+                label = ':arrows_counterclockwise: More',
                 on_click=refresh_search,
                 help='Get 3 new recipes based on your search',
             )
@@ -152,9 +166,6 @@ if st.session_state['page'] == 'main':
 
             return html
         
-
-
-
     with meal_plan_tab:
         header_cols = st.columns([4, 3, 4])
         if len(st.session_state['recipe_list']) > 0:
@@ -166,6 +177,18 @@ if st.session_state['page'] == 'main':
                     file_name=f'Cheffrey Meal Plan {today().strftime("%B %d")}.html', mime='text/html',
                 )
         display.meal_plan()
+
+    with favorites_tab:
+        if st.session_state['current_user'] is None:
+            st.warning('Use the dropdown in the topright to log in and see your favorite recipes')
+        else:
+            favorites = st.session_state['user_config'][st.session_state['current_user']]['favorites']
+            if len(favorites) == 0:
+                st.warning('No favorites yet. Add a recipe to your meal plan and favorite it to save it here.')
+            else:
+                display.favorites()
+
+
 
 if st.session_state['page'] == 'recipe_info':
     recipe = st.session_state['active_recipe']

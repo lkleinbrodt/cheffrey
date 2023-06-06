@@ -36,9 +36,15 @@ def search_recipes(query: str, annoy_index: AnnoyIndex, embedding_model: gensim.
     recommended_recipes = [recipe_id_to_title[i] for i in nearest_indices]
     return recommended_recipes
 
+def load_users_config():
+    return load_s3_yaml('users.yaml')
+
+def save_users_config(data):
+    save_s3_yaml(data, 'users.yaml')
+
 
 def load_yaml(name):
-    valid_names = ['config', 'recipes']
+    valid_names = ['config', 'users']
     if name in valid_names:
         with open(ROOT_DIR/f"data/{name}.yaml", 'r') as f:
             return yaml.safe_load(f)
@@ -46,6 +52,15 @@ def load_yaml(name):
         raise ValueError(
             f"Unrecognized name: {name}. Valid types are: {valid_names}")
 
+def save_yaml(name, data):
+    valid_names = ['config', 'users']
+    if name in valid_names:
+        with open(ROOT_DIR/f"data/{name}.yaml", 'w') as f:
+            yaml.dump(data, f)
+    else:
+        raise ValueError(
+            f"Unrecognized name: {name}. Valid types are: {valid_names}")
+    
 
 def load_annoy_index(embedding_dim):
     new_index = AnnoyIndex(embedding_dim, metric = 'euclidean')

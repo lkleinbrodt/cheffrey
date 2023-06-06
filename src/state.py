@@ -34,7 +34,8 @@ def initialize_state():
     if 'searched_recipes' not in st.session_state.keys():
         st.session_state['searched_recipes'] = []
 
-    
+    if 'user_config' not in st.session_state:
+        st.session_state['user_config'] = cheffrey.load_users_config()
 
     if 'available_tags' not in st.session_state.keys():
         base_tags = ['breakfast', 'lunch', 'dinner']
@@ -62,7 +63,8 @@ def initialize_state():
 def add_to_meal_plan(recipe, i):
     #TODO: not great that terminology doesnt match
     #and that we need recipe and also index
-    st.session_state['recipe_list'] += [recipe]
+    if recipe['title'] not in [r['title'] for r in st.session_state['recipe_list']]:
+        st.session_state['recipe_list'] += [recipe]
     regen_recipe(i)
 
 def update_page(page_name):
@@ -139,6 +141,17 @@ def remove_recipe(i):
     else:
         st.session_state['recipe_list'] = recipes[:i] + recipes[i+1:]
 
+def unfavorite_recipe(recipe):
+    favorites = st.session_state['user_config'][st.session_state['current_user']]['favorites']
+    new_favorites = [r for r in favorites if recipe['title']!=r]
+    st.session_state['user_config'][st.session_state['current_user']]['favorites'] = new_favorites
+    cheffrey.save_users_config(st.session_state['user_config'])
+
+def favorite_recipe(recipe):
+    #TODO: improve
+    if recipe['title'] not in st.session_state['user_config'][st.session_state['current_user']]['favorites']:
+        st.session_state['user_config'][st.session_state['current_user']]['favorites'] += [recipe['title']]
+        cheffrey.save_users_config(st.session_state['user_config'])
 
 def add_recipe(method = 'random'):
     cookbook = st.session_state['cookbook']
