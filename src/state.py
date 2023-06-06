@@ -65,7 +65,8 @@ def add_to_meal_plan(recipe, i):
     #and that we need recipe and also index
     if recipe['title'] not in [r['title'] for r in st.session_state['recipe_list']]:
         st.session_state['recipe_list'] += [recipe]
-    regen_recipe(i)
+    if i is not None:
+        regen_recipe(i)
 
 def update_page(page_name):
     logger.info(f'Switching page to: {page_name}')

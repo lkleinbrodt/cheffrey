@@ -140,7 +140,7 @@ def favorites():
             st.button(
                 label = 'Add to meal plan',
                 key = f'add_from_favorites_{i}',
-                on_click = state.add_to_meal_plan, args = (recipe, i),
+                on_click = state.add_to_meal_plan, args = (recipe, None),
                 type = 'primary'
             )
 
