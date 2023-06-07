@@ -28,7 +28,8 @@ def how_to():
         )
 
 
-def search_results(recipe_list):
+def _search_results(recipe_list):
+    """each item in a column"""
     n = 3
     title_cols = st.columns(n)
     title_placeholders = []
@@ -52,6 +53,42 @@ def search_results(recipe_list):
             #             <div class='col'>Yield: {recipe.get('yields', None)}. Time: {recipe['total_time']}</div>
             #         </div>
             #         """, unsafe_allow_html=True)
+            
+            st.button(
+                label = 'Add to meal plan',
+                key = f'add_{i}',
+                on_click = state.add_to_meal_plan, args = (recipe, i),
+                type = 'primary'
+            )
+
+            st.button(
+                label = 'See full recipe',
+                key = f'recipe_info_{i}',
+                on_click = state.switch_to_recipe_info_page, args = (recipe, ),
+                type = 'secondary'
+            )
+
+def search_results(recipe_list):
+
+    n = 3
+    recipe_list = recipe_list[:n]
+    cols = st.columns(n)
+
+
+    max_n_lines = floor(max([len(recipe['title']) / 40 for recipe in recipe_list]))
+    
+    for i, recipe in enumerate(recipe_list):
+        with cols[i]:
+
+            n_buffers = max_n_lines - floor(len(recipe['title']) / 40)
+
+            while n_buffers:
+                st.markdown('<h4> </h4>', unsafe_allow_html=True)
+                n_buffers-=1
+            st.markdown(
+                f"""<h4 style="text-align:center; position:aboslute; bottom:0px;">{recipe['title']}</h4>""", unsafe_allow_html=True
+            )
+            recipe_image(recipe)
             
             st.button(
                 label = 'Add to meal plan',
