@@ -2,11 +2,10 @@
 from random import sample, randint, choice
 from bisect import bisect
 from fractions import Fraction
-
+from dataloader import S3Loader
 # from xhtml2pdf import pisa
 import sugarcube as sc
 from config import *
-from s3 import *
 import logging
 import yaml
 # import openai
@@ -15,6 +14,8 @@ import gensim
 import json
 from annoy import AnnoyIndex
 logger = logging.getLogger(__name__)
+
+s3 = S3Loader('cheffrey')
 
 # openai.api_key = os.getenv("OPENAI_KEY")
 
@@ -37,11 +38,10 @@ def search_recipes(query: str, annoy_index: AnnoyIndex, embedding_model: gensim.
     return recommended_recipes
 
 def load_users_config():
-    return load_s3_yaml('users.yaml')
+    return s3.read_yaml('users.yaml')
 
 def save_users_config(data):
-    save_s3_yaml(data, 'users.yaml')
-
+    s3.save_yaml(data, 'users.yaml')
 
 def load_yaml(name):
     valid_names = ['config', 'users']
