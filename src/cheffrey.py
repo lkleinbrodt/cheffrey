@@ -1,94 +1,113 @@
-
 from random import sample, randint, choice
 from bisect import bisect
 from fractions import Fraction
 from dataloader import S3Loader
+
 # from xhtml2pdf import pisa
 import sugarcube as sc
 from config import *
 import logging
 import yaml
+
 # import openai
 import numpy as np
 import gensim
 import json
 from annoy import AnnoyIndex
+
 logger = logging.getLogger(__name__)
 
 s3 = S3Loader()
 
 # openai.api_key = os.getenv("OPENAI_KEY")
 
+
 def get_embedding(model: gensim.models.KeyedVectors, text: str):
     tokens = text.lower().split()  # Tokenize and preprocess the text
-    embeddings = [model[word] for word in tokens if word in model]  # Get embeddings for each token
+    embeddings = [
+        model[word] for word in tokens if word in model
+    ]  # Get embeddings for each token
     num_embeddings = len(embeddings)
     if num_embeddings > 0:
-        embedding = np.sum(embeddings, axis=0) / num_embeddings  # Calculate the average embedding
+        embedding = (
+            np.sum(embeddings, axis=0) / num_embeddings
+        )  # Calculate the average embedding
         return embedding
     else:
         return None
 
-def search_recipes(query: str, annoy_index: AnnoyIndex, embedding_model: gensim.models.KeyedVectors, recipe_id_to_title: dict, n = 5) -> list:
+
+def search_recipes(
+    query: str,
+    annoy_index: AnnoyIndex,
+    embedding_model: gensim.models.KeyedVectors,
+    recipe_id_to_title: dict,
+    n=5,
+) -> list:
     query_embedding = get_embedding(embedding_model, query)
     if query_embedding is None:
         return []
-    nearest_indices = annoy_index.get_nns_by_vector(query_embedding, n, search_k=100_000)
+    nearest_indices = annoy_index.get_nns_by_vector(
+        query_embedding, n, search_k=100_000
+    )
     recommended_recipes = [recipe_id_to_title[i] for i in nearest_indices]
     return recommended_recipes
 
+
 def load_users_config():
-    return load_yaml('users')
+    return load_yaml("users")
     # return s3.load_yaml('users.yaml')
 
+
 def save_users_config(data):
-    return save_yaml('users', data)
+    return save_yaml("users", data)
     # s3.save_yaml(data, 'users.yaml')
 
+
 def load_yaml(name):
-    valid_names = ['config', 'users']
+    valid_names = ["config", "users"]
     if name in valid_names:
-        with open(ROOT_DIR/f"data/{name}.yaml", 'r') as f:
+        with open(ROOT_DIR / f"data/{name}.yaml", "r") as f:
             return yaml.safe_load(f)
     else:
-        raise ValueError(
-            f"Unrecognized name: {name}. Valid types are: {valid_names}")
+        raise ValueError(f"Unrecognized name: {name}. Valid types are: {valid_names}")
+
 
 def save_yaml(name, data):
-    valid_names = ['config', 'users']
+    valid_names = ["config", "users"]
     if name in valid_names:
-        with open(ROOT_DIR/f"data/{name}.yaml", 'w') as f:
+        with open(ROOT_DIR / f"data/{name}.yaml", "w") as f:
             yaml.dump(data, f)
     else:
-        raise ValueError(
-            f"Unrecognized name: {name}. Valid types are: {valid_names}")
-    
+        raise ValueError(f"Unrecognized name: {name}. Valid types are: {valid_names}")
+
 
 def load_annoy_index(embedding_dim):
-    new_index = AnnoyIndex(embedding_dim, metric = 'euclidean')
-    new_index.load(str(ROOT_DIR/'data/annoy_index.ann'))
+    new_index = AnnoyIndex(embedding_dim, metric="euclidean")
+    new_index.load(str(ROOT_DIR / "data/annoy_index.ann"))
     return new_index
 
 
 def load_embedding_model():
-    path = ROOT_DIR/'data/embedding_model.pkl'
+    path = ROOT_DIR / "data/embedding_model.pkl"
     return gensim.models.KeyedVectors.load(str(path))
 
+
 def add_to_recipe_file(recipe, overwrite=False):
-    #TODO: inefficient
+    # TODO: inefficient
     all_recipes = load_local_recipes()
 
-    if (recipe['title'] in all_recipes.keys()) & (overwrite == False):
+    if (recipe["title"] in all_recipes.keys()) & (overwrite == False):
         raise FileExistsError(
-            f"{recipe.title()} already found in the file, and overwrite set to false")
+            f"{recipe.title()} already found in the file, and overwrite set to false"
+        )
 
-    all_recipes[recipe['Title']] = recipe
+    all_recipes[recipe["Title"]] = recipe
 
     return save_s3_recipes(all_recipes)
 
 
 class Ingredient(sc.Ingredient):
-
     def display(self):
         # amount = self.display_amount()
         # element = self.element
@@ -103,17 +122,18 @@ class Ingredient(sc.Ingredient):
 
         relevant_units = self.amount.unit.measure.units
 
-        invalid_unit_names = [
-            name for name in relevant_units.keys() if 'liter' in name]
-        
-        if self.amount.unit.name in ['teaspoon', 'tablespoon']:
-            invalid_unit_names += ['fluidOunce']
+        invalid_unit_names = [name for name in relevant_units.keys() if "liter" in name]
+
+        if self.amount.unit.name in ["teaspoon", "tablespoon"]:
+            invalid_unit_names += ["fluidOunce"]
         if self.amount.unit in sc.Mass.units:
-            relevant_units = [sc.Mass.units['ounce'], sc.Mass.units['pound']]
+            relevant_units = [sc.Mass.units["ounce"], sc.Mass.units["pound"]]
 
-
-        unit_list = [(unit, round(self.to(unit).amount.value, 3))
-                     for unit in relevant_units.values() if unit.name not in invalid_unit_names]
+        unit_list = [
+            (unit, round(self.to(unit).amount.value, 3))
+            for unit in relevant_units.values()
+            if unit.name not in invalid_unit_names
+        ]
         unit_list.sort(key=lambda x: x[1], reverse=True)
 
         whole_list = [(unit, value) for unit, value in unit_list if value >= 1]
@@ -124,10 +144,10 @@ class Ingredient(sc.Ingredient):
         remainder = first[1] % 1
 
         # Granularity down to the 1/8 of a unit
-        cutoffs = [i/8 for i in range(9)]
+        cutoffs = [i / 8 for i in range(9)]
 
         try:
-            remainder = cutoffs[bisect(cutoffs, remainder)-1]
+            remainder = cutoffs[bisect(cutoffs, remainder) - 1]
         except IndexError as err:
             logger.info(f"Remainder: {remainder}")
             logger.info(f"cutoffs: {cutoffs}")
@@ -145,26 +165,40 @@ class Ingredient(sc.Ingredient):
         if isinstance(other, Ingredient):
             if self.element.name != other.element.name:
                 raise TypeError(
-                    f'Your trying to add ingredients that are different elements: {self.element.name} and {other.element.name}')
+                    f"Your trying to add ingredients that are different elements: {self.element.name} and {other.element.name}"
+                )
 
-            return Ingredient(sc.Amount(self.amount.value + other.to(self.amount.unit).amount.value, self.amount.unit), self.element)
+            return Ingredient(
+                sc.Amount(
+                    self.amount.value + other.to(self.amount.unit).amount.value,
+                    self.amount.unit,
+                ),
+                self.element,
+            )
 
         elif isinstance(other, (int, float)):
             if self.element.is_int:
                 assert (
-                    other % 1) == 0, f"{self.element.name} is a whole ingredient, can only add whole numbers"
-            return Ingredient(sc.Amount(self.amount.value + other, self.amount.unit), self.element)
+                    other % 1
+                ) == 0, f"{self.element.name} is a whole ingredient, can only add whole numbers"
+            return Ingredient(
+                sc.Amount(self.amount.value + other, self.amount.unit), self.element
+            )
         else:
             raise TypeError(
-                f"Dont know how to add an ingredient and an object of type {type(other)}")
+                f"Dont know how to add an ingredient and an object of type {type(other)}"
+            )
 
     def __mul__(self, other):
         if isinstance(other, (int, float)):
             # Can you multiply 1 egg by 1.5? or should that be illegal? It might blow up scaling :/
-            return Ingredient(sc.Amount(self.amount.value * other, self.amount.unit), self.element)
+            return Ingredient(
+                sc.Amount(self.amount.value * other, self.amount.unit), self.element
+            )
         else:
             raise TypeError(
-                f"Dont know how to multiply an ingredient and an object of type {type(other)}")
+                f"Dont know how to multiply an ingredient and an object of type {type(other)}"
+            )
 
     def __rmul__(self, other):
         return self.__mul__(other)
@@ -177,7 +211,7 @@ class Ingredient(sc.Ingredient):
         value = float(amount_list[0])
         if (value % 1) == 0:
             value = int(value)
-        unit_str = ' '.join(amount_list[1:])
+        unit_str = " ".join(amount_list[1:])
 
         matched = False
         for u in sc.Volume.units:
@@ -193,11 +227,12 @@ class Ingredient(sc.Ingredient):
                 unit = u
                 matched = True
         if not matched:
-            raise ValueError(f'Unrecognized unit: {unit_str}')
+            raise ValueError(f"Unrecognized unit: {unit_str}")
 
         if element_str not in known_elements.keys():
             raise ValueError(
-                f"Unrecognized element: {element_str}, you might need to add it to the master list")
+                f"Unrecognized element: {element_str}, you might need to add it to the master list"
+            )
 
         element = known_elements[element_str]
 
@@ -216,36 +251,40 @@ class Recipe(object):
 
 def yaml_to_recipe(recipe_name, recipe_dict):
     logger.info(recipe_dict)
-    ingredients = {ingredient_name: Ingredient._from_strings(
-        amount_str, ingredient_name) for ingredient_name, amount_str in recipe_dict['ingredients'].items()}
-    return Recipe(recipe_name, ingredients, recipe_dict['instructions'])
+    ingredients = {
+        ingredient_name: Ingredient._from_strings(amount_str, ingredient_name)
+        for ingredient_name, amount_str in recipe_dict["ingredients"].items()
+    }
+    return Recipe(recipe_name, ingredients, recipe_dict["instructions"])
 
 
 class Cookbook(object):
     def __init__(self, title, recipe_dict):
         self.title = title
         self.recipes = recipe_dict
-        #self.recipes = {name: yaml_to_recipe(name, rec) for name, rec in recipe_dict.items()}
+        # self.recipes = {name: yaml_to_recipe(name, rec) for name, rec in recipe_dict.items()}
 
 
 # Populating Classes
+
 
 def random_ingredient():
     i = randint(1, 10)
 
     unit = sc.Volume.units[choice(list(sc.Volume.units.keys()))]
     amount = sc.Amount(i, unit=unit)
-    sample_elements = [sc.Element(f'ingredient_{i}') for i in range(20)]
+    sample_elements = [sc.Element(f"ingredient_{i}") for i in range(20)]
     element = sample(sample_elements, 1)[0]
     return Ingredient(amount, element)
 
 
 def random_cookbook():
+    instructions = "Cook them up real nice"
 
-    instructions = 'Cook them up real nice'
-
-    my_recipes = [Recipe(f'sammy_{i}', [random_ingredient()
-                         for i in range(6)], instructions) for i in range(50)]
+    my_recipes = [
+        Recipe(f"sammy_{i}", [random_ingredient() for i in range(6)], instructions)
+        for i in range(50)
+    ]
     my_cookbook = Cookbook("Lando's Cookbook")
     my_cookbook.recipes = my_recipes
 
@@ -253,9 +292,9 @@ def random_cookbook():
 
 
 def pick_recipes_randomly(cookbook, n_recipes):
-    recipes = sample(
-        [recipe for recipe in cookbook.recipes.values()], k=n_recipes)
+    recipes = sample([recipe for recipe in cookbook.recipes.values()], k=n_recipes)
     return recipes
+
 
 def combine_ingredients(ingredient_list: list):
     out = {}
@@ -267,14 +306,17 @@ def combine_ingredients(ingredient_list: list):
                 out[ingredient.element] = ingredient
         else:
             out[ingredient] = ingredient
-    
+
     return list(out.values())
+
 
 from urllib import request as ulreq
 from PIL import ImageFile
+
+
 def getsizes(uri):
     # get image size (None if not known)
-    with  ulreq.urlopen(uri) as file:
+    with ulreq.urlopen(uri) as file:
         p = ImageFile.Parser()
         while 1:
             data = file.read(1024)
@@ -284,9 +326,10 @@ def getsizes(uri):
             if p.image:
                 return p.image.size
 
+
 def __create_shopping_list(recipe_list, nlp):
     """deprecated, back when using spacy for parsing ingredients"""
-    all_ingredients = [item for recipe in recipe_list for item in recipe['ingredients']]
+    all_ingredients = [item for recipe in recipe_list for item in recipe["ingredients"]]
     parsed_ingredients = [__parse_ingredient(ing, nlp) for ing in all_ingredients]
     shopping_list = combine_ingredients(parsed_ingredients)
     return shopping_list
@@ -294,24 +337,18 @@ def __create_shopping_list(recipe_list, nlp):
 
 def __parse_ingredient(ingredient, nlp):
     """deprecated, back when using spacy for parsing ingredients"""
-    ing = ingredient.replace('-', ' ').split(',')[0]
+    ing = ingredient.replace("-", " ").split(",")[0]
     ing = nlp(ing)
     pos = [i.pos_ for i in ing]
 
-    if pos[0] != 'NUM':
-        return create_ingredient(
-            amount = None, 
-            measure = None, 
-            item = ing.text
-        )
+    if pos[0] != "NUM":
+        return create_ingredient(amount=None, measure=None, item=ing.text)
 
     else:
-        
         modifier = 1
         i = 0
         amount_list = []
-        while pos[i] == 'NUM':
-            
+        while pos[i] == "NUM":
             if ing[i].text.lower() in number_dict.keys():
                 x = number_dict[ing[i].text.lower()]
                 modifier = x
@@ -320,84 +357,73 @@ def __parse_ingredient(ingredient, nlp):
             if i == (len(pos) - 1):
                 return create_ingredient(None, None, ing.text)
             i += 1
-        
+
         amount = float(sum(Fraction(s) for s in amount_list))
         amount *= modifier
         non_numerical_start = i
 
-        if ing[i].text == '(':
-
+        if ing[i].text == "(":
             end_idx = i
-            while ')' not in ing[end_idx].text:
+            while ")" not in ing[end_idx].text:
                 end_idx += 1
                 if end_idx > len(ing):
                     return create_ingredient(None, None, ing.text)
-            
-            paran_text = [ing[x].text for x in range(i+1, end_idx)]
-            
+
+            paran_text = [ing[x].text for x in range(i + 1, end_idx)]
+
             if any([measure in paran_text for measure in sc.available_measures]):
                 modifier = amount
-                unit = float(ing[i+1].text)
-                measure = ing[i+2].text
-                item = ' '.join([x.text for x in ing[i+4:]])
-                return create_ingredient(modifier*unit, measure, item)
+                unit = float(ing[i + 1].text)
+                measure = ing[i + 2].text
+                item = " ".join([x.text for x in ing[i + 4 :]])
+                return create_ingredient(modifier * unit, measure, item)
             else:
                 return create_ingredient(None, None, ing.text)
 
-        
         while ing[i].text not in sc.available_measures:
-            if i == (len(pos)-1):
-                t = ' '.join([x.text for x in ing[non_numerical_start:]])
-                a = amount if amount else ''
-                return create_ingredient(a, 'unit', t)
+            if i == (len(pos) - 1):
+                t = " ".join([x.text for x in ing[non_numerical_start:]])
+                a = amount if amount else ""
+                return create_ingredient(a, "unit", t)
 
-            if ing[i].text in ['small', 'medium', 'large', 'fat']:
-                item = ' '.join([i.text for i in ing[i:]])
-                return create_ingredient(
-                    amount = amount,
-                    measure = 'unit',
-                    item = item
-                )
+            if ing[i].text in ["small", "medium", "large", "fat"]:
+                item = " ".join([i.text for i in ing[i:]])
+                return create_ingredient(amount=amount, measure="unit", item=item)
 
             i += 1
-        
-        measure = ing[i].text
-        item = ' '.join([i.text for i in ing[i+1:]])
 
-        if item == '':
+        measure = ing[i].text
+        item = " ".join([i.text for i in ing[i + 1 :]])
+
+        if item == "":
             return create_ingredient(None, None, ing.text)
         else:
             return create_ingredient(amount, measure, item)
 
-def create_ingredient(amount, measure, item):
 
+def create_ingredient(amount, measure, item):
     measure = sc.available_measures.get(measure, None)
 
     if amount is None:
-        amount = ''
+        amount = ""
 
     if measure is None:
-        return str(amount) + ' ' + str(item)
-
-    
+        return str(amount) + " " + str(item)
 
     element = sc.Element(item)
 
-    ing = Ingredient(
-        amount = amount * measure,
-        element = element
-    )
+    ing = Ingredient(amount=amount * measure, element=element)
 
     return ing
 
 
 def css_style():
-    with open(ROOT_DIR/'meal_plan_style.css', 'r') as f:
+    with open(ROOT_DIR / "meal_plan_style.css", "r") as f:
         x = f.read()
     return x
 
-def create_recipe_html(recipe, standalone = False):
 
+def create_recipe_html(recipe, standalone=False):
     if standalone:
         html = ""
     else:
@@ -405,11 +431,11 @@ def create_recipe_html(recipe, standalone = False):
         html += "<hr><hr>"
     html += f"""<h1 style='text-align:center'> {recipe['title']}</h1>"""
     html += "<br>"
-    
-    image_size = getsizes(recipe['image'])
+
+    image_size = getsizes(recipe["image"])
     if image_size:
         image_width, image_height = image_size
-        image_height /= (image_width / 350)
+        image_height /= image_width / 350
         image_width = 350
 
     html += f"""
@@ -426,13 +452,13 @@ def create_recipe_html(recipe, standalone = False):
     ingredient_html = "<h2 style='text-align:center'> Ingredients: </h2>"
     ingredient_html += f"<p> Yields: {recipe['yields']}</p>"
     ingredient_html += "<ul>"
-    for ingredient in recipe['ingredients']:
+    for ingredient in recipe["ingredients"]:
         ingredient_html += "<li>" + ingredient + "</li>"
     ingredient_html += "</ul>"
 
     instructions_html = "<h2 style='text-align:center'> Instructions: </h2>"
     instructions_html += "<ol>"
-    instructions = recipe['instructions'].split('. ')
+    instructions = recipe["instructions"].split(". ")
     for instruction in instructions:
         instructions_html += "<li>" + instruction + "</li>"
     instructions_html += "</ol>"
@@ -446,9 +472,10 @@ def create_recipe_html(recipe, standalone = False):
 
     return html
 
+
 def create_meal_plan_html(meal_plan):
-    shopping_list = meal_plan['Shopping List']
-    recipes = meal_plan['Recipes']
+    shopping_list = meal_plan["Shopping List"]
+    recipes = meal_plan["Recipes"]
 
     # <link rel="stylesheet" type="text/css" href="example.css" media=”screen” />
     html = f"""
@@ -466,8 +493,8 @@ def create_meal_plan_html(meal_plan):
 
     n_items = len(shopping_list)
 
-    shop1 = shopping_list[:int(n_items/2)]
-    shop2 = shopping_list[int(n_items/2):]
+    shop1 = shopping_list[: int(n_items / 2)]
+    shop2 = shopping_list[int(n_items / 2) :]
 
     def item_to_html(i):
         if isinstance(i, Ingredient):
@@ -475,8 +502,8 @@ def create_meal_plan_html(meal_plan):
         else:
             return i
 
-    shop1_html = ''.join(["<li>" + item_to_html(item) + "</li>" for item in shop1])
-    shop2_html = ''.join(["<li>" + item_to_html(item) + "</li>" for item in shop2])
+    shop1_html = "".join(["<li>" + item_to_html(item) + "</li>" for item in shop1])
+    shop2_html = "".join(["<li>" + item_to_html(item) + "</li>" for item in shop2])
     html += f"""
         <div class="row";>
             <div class="col"><ul>{shop1_html}</ul></div>
@@ -488,7 +515,6 @@ def create_meal_plan_html(meal_plan):
 
     for recipe in recipes:
         html += create_recipe_html(recipe)
-        
 
     html += """
     </body>
@@ -525,30 +551,30 @@ def create_meal_plan_html(meal_plan):
 
 # This should really be in a separate file:
 known_elements = {
-    'flour': sc.Element('Flour',  density=0.7),
-    'sugar': sc.Element('Sugar',  density=1.2),
-    'salt': sc.Element('Salt',   density=1.2),
-    'butter': sc.Element('Butter', density=0.9),
-    'chicken': sc.Element('Chicken'),
-    'salsa': sc.Element('salsa'),
-    'eggs': sc.Element('eggs', is_int=True)
+    "flour": sc.Element("Flour", density=0.7),
+    "sugar": sc.Element("Sugar", density=1.2),
+    "salt": sc.Element("Salt", density=1.2),
+    "butter": sc.Element("Butter", density=0.9),
+    "chicken": sc.Element("Chicken"),
+    "salsa": sc.Element("salsa"),
+    "eggs": sc.Element("eggs", is_int=True),
 }
 
 number_dict = {
-            'one':1,
-            'two': 2,
-            'three': 3,
-            'four': 4,
-            'five': 5,
-            'six': 6,
-            'seven': 7,
-            'eight': 8,
-            'nine': 9,
-            'ten': 10,
-            'eleven': 11,
-            'twelve': 12,
-            'dozen': 12
-        }
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "dozen": 12,
+}
 
 # import os
 # s3 = boto3.client(
@@ -558,38 +584,43 @@ number_dict = {
 # )
 # s3.download_file('cheffrey', 'recipes.yaml', './test.yaml')
 
+
 def load_local_recipes():
-    with open(ROOT_DIR/'data/recipes.json', 'r') as f:
+    with open(ROOT_DIR / "data/recipes.json", "r") as f:
         x = json.load(f)
     return x
 
+
 def save_local_recipes(recipes):
-    with open(ROOT_DIR/'data/recipes.json', 'w') as f:
+    with open(ROOT_DIR / "data/recipes.json", "w") as f:
         json.dump(recipes, f)
     return True
 
-def load_s3_recipes()-> dict: 
-    return s3.load_yaml('recipes.yaml')
+
+def load_s3_recipes() -> dict:
+    return s3.load_yaml("recipes.yaml")
+
 
 def save_s3_recipes(recipes):
-    return s3.save_yaml(recipes, 'recipes.yaml')
+    return s3.save_yaml(recipes, "recipes.yaml")
+
 
 def load_deleted_recipes():
-    with open(ROOT_DIR/'data/to_delete.json', 'r') as f:
+    with open(ROOT_DIR / "data/to_delete.json", "r") as f:
         x = json.load(f)
     return x
 
+
 def delete_recipe(recipe: Recipe):
-    # we cant delete it, it will break the annoy index 
+    # we cant delete it, it will break the annoy index
     # logger.info('deleting', recipe['title'])
     # recipes = load_local_recipes()
     # del recipes[recipe['title']]
     # save_local_recipes(recipes)
-    with open(ROOT_DIR/'data/to_delete.json', 'r') as f:
+    with open(ROOT_DIR / "data/to_delete.json", "r") as f:
         x = json.load(f)
-    x[recipe['title']] = recipe
-    with open(ROOT_DIR/'data/to_delete.json', 'w') as f:
+    x[recipe["title"]] = recipe
+    with open(ROOT_DIR / "data/to_delete.json", "w") as f:
         json.dump(x, f)
-    
+
     return True
-    
