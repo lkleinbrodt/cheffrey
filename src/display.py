@@ -3,6 +3,7 @@ import streamlit as st
 from PIL import Image
 from io import BytesIO
 import state
+import cheffrey
 
 
 def recipe_image(recipe, shape=(300, 200)):
@@ -320,3 +321,14 @@ def grid_presentation(recipe_list):
         for _ in range(10):
             st.text('')
         st.button('+1 Recipe', on_click=state.add_recipe)
+        
+def meal_plan_title():
+    title = 'Meal Plan'
+    if len(st.session_state['recipe_list']) == 0:
+        title += ' (Empty)'
+    elif len(st.session_state['recipe_list']) == 1:
+        title += f" (1 Recipe)"
+    else:
+        title += f" ({len(st.session_state['recipe_list'])} Recipes)"
+    return title
+

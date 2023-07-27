@@ -1,3 +1,4 @@
+from config import *
 import streamlit as st
 st.set_page_config(
     page_title='Cheffrey',
@@ -5,19 +6,18 @@ st.set_page_config(
     layout="wide",
 )
 
-
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
+local_css(ROOT_DIR/"style.css")
+
 import datetime
 today = datetime.date.today
 from datetime import datetime
-from cheffrey import *
-local_css(ROOT_DIR/"style.css")
-
 stime = datetime.now()
 
+import cheffrey
 import state
 import display
 
@@ -37,20 +37,11 @@ state.initialize_state()
 
 logger.info(f"Showing: {st.session_state['page']}")
 
-meal_plan_title = 'Meal Plan'
-if len(st.session_state['recipe_list']) == 0:
-    meal_plan_title += ' (Empty)'
-elif len(st.session_state['recipe_list']) == 1:
-    meal_plan_title += f" (1 Recipe)"
-else:
-    meal_plan_title += f" ({len(st.session_state['recipe_list'])} Recipes)"
-    
-
 
 def search_for_recipes():
     st.session_state['recommendation_source'] = 'searched'
     n = 3
-    recipes = search_recipes(
+    recipes = cheffrey.search_recipes(
         query = st.session_state['searchbar'],
         annoy_index = st.session_state['annoy_index'],
         embedding_model = st.session_state['embedding_model'],
@@ -78,7 +69,7 @@ def refresh_search():
 
 def recommend_random():
     st.session_state['recommendation_source'] = 'random'
-    st.session_state['recommended_recipes'] = pick_recipes_randomly(st.session_state['cookbook'], 3)
+    st.session_state['recommended_recipes'] = cheffrey.pick_recipes_randomly(st.session_state['cookbook'], 3)
 
 
 if st.session_state['page'] == 'main':
@@ -95,7 +86,7 @@ if st.session_state['page'] == 'main':
     # display.how_to()
 
 
-    build_tab, meal_plan_tab, favorites_tab = st.tabs(['Add Recipes', meal_plan_title, 'Favorites'])
+    build_tab, meal_plan_tab, favorites_tab = st.tabs(['Add Recipes', display.meal_plan_title(), 'Favorites'])
 
 
     with build_tab:
@@ -160,7 +151,7 @@ if st.session_state['page'] == 'main':
 
             meal_plan = {'Recipes': recipe_list, 'Shopping List': shopping_list}
 
-            html = create_meal_plan_html(meal_plan)
+            html = cheffrey.create_meal_plan_html(meal_plan)
             # with open('./meal_plan.html', 'w') as f:
             #     f.write(html)
 
@@ -196,11 +187,28 @@ if st.session_state['page'] == 'recipe_info':
     st.button('Back', key = 'back_1', on_click = state.update_page, args=('main', ))
     
     st.markdown(
-        create_recipe_html(recipe, standalone=True),
+        cheffrey.create_recipe_html(recipe, standalone=True),
         True
     )
 
-    st.button('Back', key = 'back_2', on_click = state.update_page, args=('main', ))
+    cols = st.columns([3, 5, 2.5, 2.5])
+    cols[0].button('Back', key = 'back_2', on_click = state.update_page, args=('main', ))
+
+
+    def prompt_delete():
+        st.session_state['delete_recipe'] = True
+    
+    def delete_final(recipe):
+        st.session_state['delete_recipe'] = False
+        cheffrey.delete_recipe(recipe)
+        state.initialize_master_recipes()
+        st.session_state['page'] = 'main'
+        idx = [i for i, x in enumerate(st.session_state['recommended_recipes']) if x==recipe][0]
+        state.regen_recipe(idx)
+        
+    cols[2].button('Delete Recipe', key = 'delete_recipe_first', on_click = prompt_delete)
+    if st.session_state['delete_recipe']:
+        cols[3].button('Are you sure?', key = 'delete_recipe_final', on_click= delete_final, args = (recipe,))
 
 
 

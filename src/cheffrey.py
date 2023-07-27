@@ -15,7 +15,7 @@ import json
 from annoy import AnnoyIndex
 logger = logging.getLogger(__name__)
 
-s3 = S3Loader('cheffrey')
+s3 = S3Loader()
 
 # openai.api_key = os.getenv("OPENAI_KEY")
 
@@ -38,10 +38,12 @@ def search_recipes(query: str, annoy_index: AnnoyIndex, embedding_model: gensim.
     return recommended_recipes
 
 def load_users_config():
-    return s3.read_yaml('users.yaml')
+    return load_yaml('users')
+    # return s3.load_yaml('users.yaml')
 
 def save_users_config(data):
-    s3.save_yaml(data, 'users.yaml')
+    return save_yaml('users', data)
+    # s3.save_yaml(data, 'users.yaml')
 
 def load_yaml(name):
     valid_names = ['config', 'users']
@@ -74,7 +76,7 @@ def load_embedding_model():
 
 def add_to_recipe_file(recipe, overwrite=False):
     #TODO: inefficient
-    all_recipes = load_s3_recipes()
+    all_recipes = load_local_recipes()
 
     if (recipe['title'] in all_recipes.keys()) & (overwrite == False):
         raise FileExistsError(
@@ -561,67 +563,33 @@ def load_local_recipes():
         x = json.load(f)
     return x
 
+def save_local_recipes(recipes):
+    with open(ROOT_DIR/'data/recipes.json', 'w') as f:
+        json.dump(recipes, f)
+    return True
 
-def load_s3_recipes():
-    return load_s3_yaml('recipes.yaml')
+def load_s3_recipes()-> dict: 
+    return s3.load_yaml('recipes.yaml')
 
 def save_s3_recipes(recipes):
-    return save_s3_yaml(recipes, 'recipes.yaml')
+    return s3.save_yaml(recipes, 'recipes.yaml')
 
-carriers = {
-    'att': 'txt.att.net',
-    'verizon': 'vtext.com',
-    'tmobile': 'tmomail.net',
-    'sprint': 'messaging.sprintpcs.com',
-}
+def load_deleted_recipes():
+    with open(ROOT_DIR/'data/to_delete.json', 'r') as f:
+        x = json.load(f)
+    return x
 
-import smtplib
-import os
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
-
-def text_meal_plan(phone_number, meal_plan):
-    email_address = 'lkleinbrodt@gmail.com'
-    try:
-        email_password = st.secrets['email_password']
-        
-    except FileNotFoundError:
-        email_password = os.getenv('email_password')
+def delete_recipe(recipe: Recipe):
+    # we cant delete it, it will break the annoy index 
+    # logger.info('deleting', recipe['title'])
+    # recipes = load_local_recipes()
+    # del recipes[recipe['title']]
+    # save_local_recipes(recipes)
+    with open(ROOT_DIR/'data/to_delete.json', 'r') as f:
+        x = json.load(f)
+    x[recipe['title']] = recipe
+    with open(ROOT_DIR/'data/to_delete.json', 'w') as f:
+        json.dump(x, f)
     
-    phone_carrier_domain = carriers['att'] #TODO: try all combos
-    msg = MIMEMultipart()
-    msg['From'] = email_address
-    msg['To'] = f"{phone_number}@{phone_carrier_domain}"
-
-    html_part = MIMEText(meal_plan, 'html')
-    msg.attach(html_part)
+    return True
     
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(email_address, email_password)
-
-        # Send the message
-        server.sendmail(
-            email_address, 
-            f"{phone_number}@{phone_carrier_domain}", 
-            msg.as_string()
-        )
-
-import re
-def send_meal_plan(meal_plan):
-    num = st.session_state['phone_number']
-    if bool(re.search(r'[^0-9-]', num)):
-        st.warning('Phone numbers should only contain numbers and hyphens')
-        return False
-    # Replace all non-numeric characters with an empty string
-    num = re.sub(r'[^0-9]+', '', num)
-    if len(num) != 10:
-        st.warning('Phone number must have 10 digits')
-        return False
-    
-    try:
-        text_meal_plan(phone_number=num, meal_plan = meal_plan)
-    except Exception as e:
-        logger.error(e)
-        st.warning('Sorry. failed to text you') 

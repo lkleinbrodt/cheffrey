@@ -7,20 +7,26 @@ import gensim
 
 logger = create_logger(__name__)
 
+def initialize_master_recipes():
+    original_master_recipes = cheffrey.load_local_recipes()
+    # for recipe in cheffrey.load_deleted_recipes().keys():
+    #     del original_master_recipes[recipe]
+    #   breaks annoy index
+    st.session_state['master_recipes'] = original_master_recipes
+    id_to_title = {
+        recipe['uid']: recipe['title']
+        for recipe in original_master_recipes.values()
+    }
+    st.session_state['recipe_id_to_title'] = id_to_title
+
+    st.session_state['cookbook'] = cheffrey.Cookbook(
+        'master',
+        recipe_dict=st.session_state['master_recipes']
+    )
+    
 def initialize_state():
     if 'master_recipes' not in st.session_state.keys():
-        original_master_recipes = cheffrey.load_local_recipes()
-        st.session_state['master_recipes'] = original_master_recipes
-        id_to_title = {
-            recipe['uid']: recipe['title']
-            for recipe in original_master_recipes.values()
-        }
-        st.session_state['recipe_id_to_title'] = id_to_title
-
-        st.session_state['cookbook'] = cheffrey.Cookbook(
-            'master',
-            recipe_dict=st.session_state['master_recipes']
-        )
+        initialize_master_recipes()
 
     if 'page' not in st.session_state.keys():
         st.session_state['page'] = 'main'
@@ -59,6 +65,9 @@ def initialize_state():
 
     if 'recommended_recipes' not in st.session_state:
         st.session_state['recommended_recipes'] = []
+    
+    if 'delete_recipe' not in st.session_state:
+        st.session_state['delete_recipe'] = False
         
 def add_to_meal_plan(recipe, i):
     #TODO: not great that terminology doesnt match

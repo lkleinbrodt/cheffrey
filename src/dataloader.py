@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from io import BytesIO, StringIO
 import streamlit as st
+import pandas as pd
 import os
 
 def create_s3():
@@ -22,12 +23,12 @@ def create_s3():
     return s3
 
 class S3Loader:
-    def __init__(self, bucket):
-        self.bucket = bucket
+    def __init__(self):
+        self.bucket = 'cheffrey'
         self.s3 = create_s3()
         
     def load_csv(self, path):
-        s3_object = self.s3.get_object(Bucket=self.bucket, Key=key)
+        s3_object = self.s3.get_object(Bucket=self.bucket, Key=path)
         contents = s3_object['Body'].read()
         df = pd.read_csv(BytesIO(contents))
         return df
@@ -50,7 +51,7 @@ class S3Loader:
                 break
             continuation_token = response.get('NextContinuationToken')
     
-    def read_yaml(self, path):
+    def load_yaml(self, path):
         obj = self.s3.get_object(Bucket=self.bucket, Key=path)
         return yaml.safe_load(obj['Body'].read())
 
