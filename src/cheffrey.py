@@ -55,13 +55,13 @@ def search_recipes(
 
 
 def load_users_config():
-    return load_yaml("users")
-    # return s3.load_yaml('users.yaml')
+    # return load_yaml("users")
+    return s3.load_yaml('users.yaml')
 
 
 def save_users_config(data):
-    return save_yaml("users", data)
-    # s3.save_yaml(data, 'users.yaml')
+    # return save_yaml("users", data)
+    s3.save_yaml(data, 'users.yaml')
 
 
 def load_yaml(name):
