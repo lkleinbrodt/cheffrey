@@ -26,7 +26,7 @@ def recipe_embedding(recipe):
         if type == "ingredients":
             text = " ".join(text)
             text = remove_non_alphabetic_chars(text)
-        embeddings = cheffrey.get_embedding(model, title)
+        embeddings = cheffrey.get_embedding(model, text)
         if embeddings is not None:
             l.append(embeddings * modifier)
 

@@ -92,8 +92,10 @@ def load_annoy_index(embedding_dim):
 @st.cache_resource()
 def load_embedding_model():
     print('Loading embedding model')
-    path = ROOT_DIR / "data/twitter_w2vec.txt"
-    glove_model = gensim.models.KeyedVectors.load_word2vec_format(str(path), binary=False)
+    # path = ROOT_DIR / "data/twitter_w2vec.txt"
+    # glove_model = gensim.models.KeyedVectors.load_word2vec_format(str(path), binary=False)
+    path = ROOT_DIR / 'data/lexvec.enwiki+newscrawl.300d.W.pos.vectors'
+    glove_model = gensim.models.KeyedVectors.load_word2vec_format(path)
     return glove_model
 
 
