@@ -1,12 +1,14 @@
 import boto3
 import yaml
 from dotenv import load_dotenv
+from config import *
 
 load_dotenv()
 from io import BytesIO, StringIO
 import streamlit as st
 import pandas as pd
 import os
+from annoy import AnnoyIndex
 
 
 def create_s3():
@@ -63,3 +65,15 @@ class S3Loader:
         yaml.safe_dump(obj, buffer)
         self.s3.put_object(Body=buffer.getvalue(), Bucket=self.bucket, Key=path)
         return True
+    
+    def download_file(self, s3_path, local_path):
+        self.s3.download_file(Bucket = self.bucket, Key = s3_path, Filename=local_path)
+        return True
+    
+    def download_annoy_index(self):
+        print('Downloading Annoy Index')
+        self.download_file('annoy_index.ann', local_path = str(ROOT_DIR /'data/annoy_index.ann'))
+
+    def download_glove_file(self):
+        print('Downloading Glove File')
+        self.download_file('twitter_w2vec.txt', local_path = str(ROOT_DIR /'data/glove_file.txt'))

@@ -62,4 +62,11 @@ with open(ROOT_DIR / "data/recipes.json", "w") as f:
 
 # Build the index to enable searching
 annoy_index.build(n_trees=1000)
-annoy_index.save(str(ROOT_DIR / "data/annoy_index.ann"))
+path = str(ROOT_DIR / "data/annoy_index.ann")
+annoy_index.save(path)
+
+from dataloader import S3Loader, create_s3
+s3 = S3Loader()
+from boto3 import client
+s3.s3.upload_file(path, s3.bucket, 'annoy_index.ann', ExtraArgs=None, Callback=None, Config=None)
+

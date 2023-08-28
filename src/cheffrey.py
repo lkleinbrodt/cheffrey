@@ -2,6 +2,7 @@ from random import sample, randint, choice
 from bisect import bisect
 from fractions import Fraction
 from dataloader import S3Loader
+import streamlit as st
 
 # from xhtml2pdf import pisa
 import sugarcube as sc
@@ -81,16 +82,19 @@ def save_yaml(name, data):
     else:
         raise ValueError(f"Unrecognized name: {name}. Valid types are: {valid_names}")
 
-
+@st.cache_resource()
 def load_annoy_index(embedding_dim):
+    print('Loading annoy index')
     new_index = AnnoyIndex(embedding_dim, metric="euclidean")
     new_index.load(str(ROOT_DIR / "data/annoy_index.ann"))
     return new_index
 
-
+@st.cache_resource()
 def load_embedding_model():
-    path = ROOT_DIR / "data/embedding_model.pkl"
-    return gensim.models.KeyedVectors.load(str(path))
+    print('Loading embedding model')
+    path = ROOT_DIR / "data/twitter_w2vec.txt"
+    glove_model = gensim.models.KeyedVectors.load_word2vec_format(str(path), binary=False)
+    return glove_model
 
 
 def add_to_recipe_file(recipe, overwrite=False):

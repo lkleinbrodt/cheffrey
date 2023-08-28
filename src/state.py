@@ -4,6 +4,7 @@ import cheffrey
 import itertools
 from my_logger import create_logger
 import gensim
+from dataloader import S3Loader
 
 logger = create_logger(__name__)
 
@@ -61,15 +62,33 @@ def initialize_state():
         st.session_state["available_tags"] = tags
 
     if "embedding_model" not in st.session_state:
-        st.session_state["embedding_model"] = cheffrey.load_embedding_model()
-
+        s3 = S3Loader()
+        try:
+            embedding_model = cheffrey.load_embedding_model()
+        except FileNotFoundError:
+            s3.download_glove_file()
+            embedding_model = cheffrey.load_embedding_model()
+        
+        st.session_state["embedding_model"] = embedding_model
+         
+            
     if "selected_recipes" not in st.session_state:
         st.session_state["selected_recipes"] = []
 
     if "annoy_index" not in st.session_state.keys():
-        st.session_state["annoy_index"] = cheffrey.load_annoy_index(
-            st.session_state["embedding_model"].vector_size
-        )
+        
+        s3 = S3Loader()
+        try:
+            annoy_index = cheffrey.load_annoy_index(
+                st.session_state["embedding_model"].vector_size
+            )
+        except FileNotFoundError:
+            s3.download_annoy_index()
+            annoy_index = cheffrey.cheffrey.load_annoy_index(
+                st.session_state["embedding_model"].vector_size
+            )
+         
+        st.session_state["annoy_index"] = annoy_index
 
     if "recommended_recipes" not in st.session_state:
         st.session_state["recommended_recipes"] = []
