@@ -76,4 +76,4 @@ class S3Loader:
 
     def download_glove_file(self):
         print('Downloading Glove File')
-        self.download_file('twitter_w2vec.txt', local_path = str(ROOT_DIR /'data/glove_file.txt'))
+        self.download_file('twitter_w2vec.txt', local_path = str(ROOT_DIR /'data/twitter_w2vec.txt'))
