@@ -2,6 +2,7 @@ import boto3
 import yaml
 from dotenv import load_dotenv
 from config import *
+import json
 
 load_dotenv()
 from io import BytesIO, StringIO
@@ -59,6 +60,15 @@ class S3Loader:
     def load_yaml(self, path):
         obj = self.s3.get_object(Bucket=self.bucket, Key=path)
         return yaml.safe_load(obj["Body"].read())
+    
+    def load_to_delete(self):
+        print('loading to delete')
+        obj = self.s3.get_object(Bucket=self.bucket, Key = 'to_delete.json')
+        return json.loads(obj['Body'].read())
+
+    def save_to_delete(self, to_delete):
+        print('saving to delete')
+        self.s3.put_object(Body = json.dumps(to_delete), Bucket=self.bucket, Key = 'to_delete.json')
 
     def save_yaml(self, obj, path):
         buffer = StringIO()

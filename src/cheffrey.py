@@ -621,10 +621,15 @@ def delete_recipe(recipe: Recipe):
     # recipes = load_local_recipes()
     # del recipes[recipe['title']]
     # save_local_recipes(recipes)
-    with open(ROOT_DIR / "data/to_delete.json", "r") as f:
-        x = json.load(f)
-    x[recipe["title"]] = recipe
-    with open(ROOT_DIR / "data/to_delete.json", "w") as f:
-        json.dump(x, f)
+    
+    # with open(ROOT_DIR / "data/to_delete.json", "r") as f:
+    #     x = json.load(f)
+    # x[recipe["title"]] = recipe
+    # with open(ROOT_DIR / "data/to_delete.json", "w") as f:
+    #     json.dump(x, f)
+    
+    to_delete = s3.load_to_delete()
+    to_delete[recipe['title']] = recipe
+    s3.save_to_delete(to_delete)
 
     return True
