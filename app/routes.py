@@ -16,6 +16,7 @@ from app.models import User, Recipe, RecipeList, Favorite
 from app.forms import LoginForm, RegistrationForm, SettingsForm
 from sqlalchemy.sql import func  # Import the func function
 
+import json
 import random
 
 
@@ -36,11 +37,18 @@ def index():
 @app.route('/home')
 @login_required
 def home():
-    random_recipes = Recipe.query.filter(Recipe.description != None).order_by(func.random()).limit(5).all()
-    print(random_recipes)
-    return render_template('home.html', recipes = random_recipes)
+    return render_template('home.html')
 
-
+@app.route('/load-more-recipes/<int:page>')
+def load_more_recipes(page):
+    per_page = 6  # Adjust as needed
+    recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
+    
+    ##TODO: improve
+    for recipe in recipes:
+        recipe.ingredient_list = eval(recipe.ingredients)
+        recipe.instruction_list = eval(recipe.instructions_list)
+    return render_template('recipe_partial.html', recipes=recipes)
 
 @app.route('/login', methods=['POST', 'GET'])
 @limiter.limit("5 per 5 seconds")  # Adjust the limit as needed
