@@ -1,6 +1,9 @@
 *.html
 *.DS_Store
 .DS_Store
+app.db
+.flaskenv
+data/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
