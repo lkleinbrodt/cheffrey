@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <a href="{{ url_for('home') }}" class="btn btn-outline-primary mb-3"><i class="fas fa-chevron-left"></i> Back to Home</a>
+
+    <div class="card">
+        <img src="{{ recipe.image_url }}" class="card-img-top img-fluid" alt="{{ recipe.title }}">
+        <div class="card-body">
+            <h2 class="card-title">{{ recipe.title }}</h2>
+            <p class="card-text">{{ recipe.description }}</p>
+            <!-- Add more details about the recipe as needed -->
+        </div>
+    </div>
+</div>
+{% endblock %}

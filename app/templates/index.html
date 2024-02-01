@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ bootstrap.load_css() }}
+    <style>
+        body {
+            background-color: #f8f9fa; /* Light gray background color */
+        }
+
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .brand-logo {
+            font-family: 'Roboto', serif;
+            font-weight: bold;
+            font-size: 10em;
+            color: #666; /* Slightly lighter grey text color */
+            margin-bottom: 0px;
+            padding: 5px 10px; /* Optional padding for better visibility */
+            
+
+        }
+
+        .tagline {
+            font-family: 'Robot', sans-serif;
+            font-style: italic;
+            color: #888888; /* Gray text color */
+            margin-bottom: 20px;
+        }
+
+        .login-button {
+            color: #888888;
+
+            font-size: 2em;
+            padding: 8px 30px; /* Initial padding for the button */
+            border: none;
+            border-radius: 10px;
+            transition: background-color 0.3s ease;
+            background-color: rgba(0,0,0,0);
+            border: 2.5px solid #888888;
+            transition: background-color 0.5s ease, border 0.5s ease, color 0.5s ease, scale 0.5s ease;
+        }
+
+        .login-button:hover {
+            background-color: rgba(136, 136, 136, 0.2); /* Light purple background color with transparency */
+            color: #888888;
+            border: 2.5px solid #888888;
+            scale: 1.1;
+        }
+
+        .shadow-line {
+            box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1); /* Added shadow for a better look */
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1 class="brand-logo">Cheffrey</h1>
+        <h4 class="tagline">Your AI sous-chef</h4>
+        <a class="btn btn-primary login-button" href="{{ url_for('login') }}" role="button">Log In</a>
+    </div>
+</body>
+</html>

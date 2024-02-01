@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS Link -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-size: 1.5em; /* Make everything bigger */
+        }
+        .card {
+            width: 30vw; /* Adjust the width of the card */
+        }
+
+        ul {
+            list-style-type: none;
+          }
+
+        .list-group {
+            font-weight: bold;
+            justify-content: center;
+        }
+
+        .list-group-item {
+            background-color: transparent;
+            border: none;
+            margin-left: 2em;
+            padding: 0.5em;
+            text-align: left;
+            opacity: 0;
+            transform: translateY(100%); /* Adjusted initial position */
+        }
+        
+        .progress-list li::before {
+            content: "➤"; /* Add a dynamic bullet character */
+            color: blue; /* Set the color of the bullet */
+            margin-right: 0.5em;
+            opacity: 0;
+            transform: translateY(100%); /* Adjusted initial position */
+        }
+
+
+        .list-group-item, .progress-list li::before {
+            animation: slideInFromBottom 1.0s forwards;
+        }
+        
+        @keyframes slideInFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+    </style>
+</head>
+
+<body class="d-flex align-items-center justify-content-center vh-100">
+
+    <div class="card text-center">
+        <div class="card-body">
+            <div class="spinner-container" id="loadingSpinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <ul class="list-group progress-list mt-3">
+                    <li class='list-group-item'>Fetching Data</li>
+                    <li class='list-group-item'>Processing Data</li>
+                    <li class='list-group-item'>Generating Report</li>
+                    <li class='list-group-item'>Sending Email</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js Links (for Bootstrap features) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

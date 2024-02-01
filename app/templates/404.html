@@ -1,0 +1,12 @@
+{% extends "errors.html" %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="text-center">            
+            <h1 class="mt-3">404 - Oops! You're Lost</h1>
+            <p class="lead">Looks like you've ventured into uncharted territory!</p>
+            <p class="mb-4">Don't worry, even the best pirates get lost. Follow the map and you might find the treasure!</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Go Back to Safety</a>
+        </div>
+    </div>
+{% endblock %}

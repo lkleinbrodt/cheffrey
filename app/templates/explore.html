@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<head>
+    <style>
+
+        .card {
+            height: 100%; /* Set a fixed height for the card */
+        }
+
+        .card-body {
+            height: 100%; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-img-top {
+            object-fit: cover; /* Ensure the image covers the entire card */
+            height: 35%; /* Set the image height (adjust as needed) */
+        }
+
+        .refresh-button {
+            display: block;
+            margin: 0 auto; /* Center the button */
+            font-size: 2em; /* Adjust the font size for larger text */
+            padding: 15px 25px; /* Adjust the padding for a larger and more rounded button */
+            border-radius: 25px; /* Add rounded edges */
+            border: none; /* Remove the default button border */
+            /* Optional: Add box shadow for a subtle lift */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .top {
+            margin-top: 5vh;
+            margin-bottom: 5vh;
+        }
+
+        .bottom {
+            margin-bottom: 10vh;
+        }
+
+</style>
+</head>
+<body>
+<div class="container-fluid mt-4">
+
+    <button type='button' class="btn btn-primary refresh-button top" id = 'refresh-btn'>Get new recipes</button>
+
+    <div class="row" id="recipe-container"></div>
+
+    <button type='button' class="btn btn-primary refresh-button bottom" id = 'refresh-btn'>Get new recipes</button>
+
+
+</div>
+</body>
+<script>
+    var page = 1; // Initial page number
+    const max_page = 10; //keep up to date with routes
+    var loading = false; // Flag to prevent multiple requests
+
+    function loadMoreRecipes() {
+        if (!loading && page <= max_page) {
+            loading = true;
+            
+
+            $.ajax({
+                url: '/load-more-recipes/' + page,
+                type: "GET",
+                success: function (data) {
+                    if (data.trim() !== "") {
+                        $("#recipe-container").append(data);
+                        loading = false;
+                        page += 1;
+                    }
+                },
+                error: function () {
+                    loading = false;
+                }
+            });
+        }
+    }
+
+    $(document).on('click', '.save-btn', function() {
+        var recipeId = $(this).data('recipe-id');
+        toggleRecipeInList(recipeId);
+    });
+
+    $(document).on('click', '#refresh-btn', function() {
+        $.ajax({
+            url: '/refresh-explore',
+            type: 'GET',
+            success: function (data) {
+                // Redirect to the explore page
+                window.location.href = '/explore';
+            },
+            error: function () {
+                // Handle error if needed
+            }
+        });
+    });
+
+    function toggleRecipeInList(recipeId) {
+
+        // Send the recipe ID to the server to toggle its state
+        $.ajax({
+            url: '/toggle-recipe-in-list/' + recipeId,
+            type: "GET",
+            success: function (data) {
+                
+                updateButtonState(recipeId);
+                
+                // You may want to provide feedback to the user if needed
+            },
+            error: function () {
+                console.error('Failed to toggle recipe in list');
+                // Handle error if needed
+            }
+        });
+    }
+
+    function updateButtonState(recipeId, inList) {
+        var button = $('.save-btn[data-recipe-id="' + recipeId + '"]');
+        button.toggleClass('btn-success btn-danger').text(function(i, text) {
+            return text === 'Save to List' ? 'Remove from List' : 'Save to List';
+        });
+    }
+
+    
+
+    $(document).ready(function () {
+        
+        // Initial load
+        loadMoreRecipes();
+
+        $(window).scroll(function () {
+            if ($(window).scrollTop() + $(window).height() >= $(document).height() - 200) {
+                loadMoreRecipes();
+            }
+        })
+        ;
+    });
+</script>
+{% endblock %}

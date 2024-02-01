@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ bootstrap.load_css() }}
+    <style>
+        body {
+            font-size: 1.5em; /* Make everything bigger */
+        }
+        .card {
+            width: 30vw; /* Adjust the width of the card */
+        }
+        
+        .spinner-container {
+            height: 50vh;
+            max-height: 50vh;
+        }
+
+        ul {
+            list-style-type: none;
+          }
+
+        .list-group {
+            font-weight: bold;
+            justify-content: center;
+        }
+
+        .list-group-item {
+            background-color: transparent;
+            border: none;
+            margin-left: 2em;
+            padding: 0.5em;
+            text-align: left;
+            opacity: 0;
+            transform: translateY(100%); /* Adjusted initial position */
+        }
+        
+        .progress-list li::before {
+            content: "➤"; /* Add a dynamic bullet character */
+            color: blue; /* Set the color of the bullet */
+            margin-right: 0.5em;
+            opacity: 0;
+            transform: translateY(100%); /* Adjusted initial position */
+        }
+
+
+        .list-group-item, .progress-list li::before {
+            animation: slideInFromBottom 1.0s forwards;
+        }
+        
+        @keyframes slideInFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                width: 80vw; /* Adjust the width of the card */
+            }
+
+            .spinner-container {
+                margin-top: 10vh;
+            }
+
+            body {
+                font-size: 1.25em;
+            }
+        }
+        
+    </style>
+</head>
+
+<body class="d-flex align-items-center justify-content-center vh-100">
+
+    <div class="card text-center">
+        <div class="card-body">
+            <div class="spinner-container" id="loadingSpinner">
+                <div class="spinner-border text-primary" role="status">
+                </div>
+                <ul class="list-group progress-list mt-3">
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js Links (for Bootstrap features) -->
+    
+</body>
+
+
+{{ bootstrap.load_js() }}
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        var progressItems = [
+            "Preheating the oven" ,
+            "Chopping vegetables" ,
+            "Running to the store for milk",
+            "Setting the table",
+            "Polishing the silverware",
+            "Grating the cheese",
+            "Boiling the pasta",
+            "Whipping up a soufflé",
+            "Basting the roast",
+            "Steaming some veggies",
+            "Deglazing the pan",
+            "Zesting some citrus",
+            "Kneading the dough",
+            "Melting two sticks of butter",
+            "Cracking some eggs eggs",
+            "Caramelizing the sugar",
+            "Brewing a pot of coffee",
+            "Blending the smoothie",
+            "Roasting the nuts",
+            "Infusing the herbs",
+            "Sharpening our knives",
+            "Warming up the stovetop",
+            "Seasoning the skillet",
+            "Slicing the tomatoes",
+            "Searing the steak",
+            "Grilling the asparagus",
+            "Mincing some garlic",
+            "Simmering the sauce",
+            "Whisking the vinaigrette",
+            "Fluffing the rice",
+            "Toasting the bread crumbs",
+            "Sauteing some onions",
+            "Chilling a bottle of wine" ,
+        ]
+    
+        function getRandomIndex(arr) {
+            return Math.floor(Math.random() * arr.length);
+        }
+        
+        function getRandomDelay() {
+            // Generate a random delay between 2 and 5 seconds
+            return Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000;
+        }
+        
+        function appendMessage(index) {
+            if (index < progressItems.length) {
+                var ul = document.querySelector('.progress-list');
+                var li = document.createElement('li');
+        
+                // Get a random index from progressItems
+                var randomIndex = getRandomIndex(progressItems);
+                
+                li.textContent = progressItems[randomIndex];
+                li.classList.add('list-group-item');
+                ul.appendChild(li);
+        
+                // Remove the selected item from progressItems
+                progressItems.splice(randomIndex, 1);
+        
+                setTimeout(function () {
+                    // Call the function recursively for the next item
+                    appendMessage(index + 1);
+                }, getRandomDelay());
+            }
+        }
+    
+        // Start appending messages
+        appendMessage(0);
+    });
+
+
+    function generateMealPlan() {
+        fetch('generate-meal-plan')
+            .then(response => {
+                if (!response.ok) {
+                    // Flash an error message
+                    alert('Something went wrong, please try again later.');
+                    // Redirect to the recipe_list url
+                    window.location.href = 'recipe_list';
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'meal_plan.html';
+                link.click();
+                window.URL.revokeObjectURL(url);
+                window.location.href = 'recipe_list';
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+            });
+    }
+    
+    // Call this function to generate the meal plan
+    generateMealPlan();
+
+        
+</script>
+

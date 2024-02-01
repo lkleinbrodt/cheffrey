@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"></script>
+    {{ bootstrap.load_css() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    
+
+    
+    <style>
+        body {
+            padding-top: 7.5vh; /* Adjust according to your navbar height */
+        }
+        
+        .flash-message {
+            text-align: center;
+            font-weight: bold;
+            color: blue;
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: red;
+        }
+
+        .custom-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .main-container {
+            max-width: 90%
+        }
+
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.9);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            top: 0;
+            height: 7.5vh;
+        }
+
+        nav a {
+            color: #333333; /* Dark dark grey text color for links */
+        }
+
+        .navbar-item {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .navbar-item a {
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+            color: darkgrey;
+            text-decoration: none;
+        }
+
+        .navbar-item a:hover {
+            transform: scale(1.25);
+        }
+
+        .navbar-item.explore a,
+        .navbar-item.recipe_list a {
+            color: #666; /* Emphasize Explore and recipe_list pages */
+            text-decoration: underline;
+        }
+
+        .navbar-item.secondary-nav:first-child {
+            justify-content: flex-start; /* Align the first secondary-nav to the left */
+        }
+    
+        .navbar-item.secondary-nav:last-child {
+            justify-content: flex-end; /* Align the last secondary-nav to the right */
+        }
+
+        .secondary-nav a {
+            color: grey;
+            font-size: 1.5em;
+            font-weight: regular;
+            text-decoration: none;
+            
+        }
+
+        .secondary-nav a:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+
+            .navbar {
+                height: 10vh;
+            }
+
+            .main-container {
+                max-width: 100%
+            }
+
+            body {
+                padding-top: 7.5vh;
+            }
+            .navbar-item a {
+                font-size: 1.25em;
+                margin: 0;
+                padding: 5px;
+            }
+
+            .secondary-nav a {
+                font-size: 0.75em;
+                margin: 0;
+                padding: 5px;
+
+            }
+        }
+        
+    </style>
+
+    <title>{% if title %}{{ title }}{% else %}Cheffrey{% endif %}</title>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container custom-container">
+
+            <div class="navbar-item secondary-nav left">
+                <a class="nav-link" href="{{ url_for('index') }}">
+                    <i class="fas fa-home"></i>
+                </a>
+            </div>
+
+            <div class="navbar-item primary explore">
+                <a class="nav-link" href="{{ url_for('explore') }}">
+                    Explore
+                </a>
+            </div>
+
+            <div class="navbar-item primary recipe_list">
+                <a class="nav-link" href="{{ url_for('recipe_list') }}">
+                    My List
+                </a>
+            </div>
+
+            <div class="navbar-item secondary-nav right" id="navbarNav">
+                {% if current_user.is_anonymous %}
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                {% else %}
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    <div class="container main-container">
+        <div class="flash-message">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if message.type == 'error' %}
+                            <h3 class="error-message">{{ message }}</h3>
+                        {% elif message.type == 'message' %}
+                            <h3 class="message-message">{{ message }}</h3>
+                        {% else %}
+                            <h3>{{ message }}</h3>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </div>
+    
+    {{ bootstrap.load_js() }}
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script>
+        // You can add any additional scripts here
+    </script>
+</body>
+
+{% block tail%}{% endblock %}
+</html>
