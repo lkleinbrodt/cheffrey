@@ -10,7 +10,7 @@ from flask_session import Session
 from flask_caching import Cache
 
 
-app = Flask(__name__, instance_relative_config=True)
+app = Flask(__name__, template_folder='templates')
 app.config.from_object(Config)
 
 bootstrap = Bootstrap5(app)
