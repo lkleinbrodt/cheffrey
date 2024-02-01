@@ -1,0 +1,16 @@
+{
+    "landon": {
+        "id": 1,
+        "username": "landon",
+        "password": "lando",
+        "favorites": [],
+        "role": "admin"
+    },
+    "erin": {
+        "id": 2,
+        "username": "erin",
+        "password": "ero",
+        "favorites": [],
+        "role": "user"
+    }
+}

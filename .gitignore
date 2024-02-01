@@ -1,6 +1,10 @@
 *.html
 *.DS_Store
+flask_session/
 .DS_Store
+app.db
+.flaskenv
+data/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
