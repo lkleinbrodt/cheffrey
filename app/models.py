@@ -40,10 +40,10 @@ class User(UserMixin, db.Model):
 class Recipe(db.Model):
     __tablename__ = 'recipes'
     id = sa.Column(sa.Integer, primary_key=True)
-    title = sa.Column(sa.String(64), index=True, unique=True)
+    title = sa.Column(sa.String(255), index=True, unique=True)
     author = sa.Column(sa.String(64))
-    canonical_url = sa.Column(sa.String(255))
-    category = sa.Column(sa.String(128))
+    canonical_url = sa.Column(sa.String(256))
+    category = sa.Column(sa.String(256))
     image_url = sa.Column(sa.String(255))
     ingredients = sa.Column(sa.String(5000))
     description = sa.Column(sa.String(1024))
