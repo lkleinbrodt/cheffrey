@@ -40,7 +40,7 @@ def add_recipes_to_db():
             recipes_data = json.load(file)
             
         for recipe_data in recipes_data.values():
-            title = recipe_data.get('title')
+            title = recipe_data.get('title')[:255]
             existing_recipe = Recipe.query.filter_by(title=title).first()
 
             if existing_recipe:
@@ -48,10 +48,10 @@ def add_recipes_to_db():
                 existing_recipe.canonical_url = recipe_data.get('canonical_url')
                 existing_recipe.category = recipe_data.get('category')
                 existing_recipe.image_url = recipe_data.get('image')
-                existing_recipe.ingredients = str(recipe_data.get('ingredients'))
+                existing_recipe.ingredients = str(recipe_data.get('ingredients'))[:5_000]
                 existing_recipe.description = recipe_data.get('description')
-                existing_recipe.instructions = recipe_data.get('instructions')
-                existing_recipe.instructions_list = str(recipe_data.get('instructions_list'))
+                existing_recipe.instructions = recipe_data.get('instructions')[:10_000]
+                existing_recipe.instructions_list = str(recipe_data.get('instructions_list'))[:10_000]
                 existing_recipe.total_time = recipe_data.get('total_time')
                 existing_recipe.yields = recipe_data.get('yields')
             else:
@@ -61,10 +61,10 @@ def add_recipes_to_db():
                     canonical_url=recipe_data.get('canonical_url'),
                     category=recipe_data.get('category'),
                     image_url=recipe_data.get('image'),
-                    ingredients=str(recipe_data.get('ingredients')),
+                    ingredients=str(recipe_data.get('ingredients'))[:5_000],
                     description=recipe_data.get('description'),
-                    instructions=recipe_data.get('instructions'),
-                    instructions_list=str(recipe_data.get('instructions_list')),
+                    instructions=recipe_data.get('instructions')[:10_000],
+                    instructions_list=str(recipe_data.get('instructions_list'))[:10_000],
                     total_time=recipe_data.get('total_time'),
                     yields=recipe_data.get('yields')
                 )
