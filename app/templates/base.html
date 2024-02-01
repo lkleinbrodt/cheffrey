@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script
-  src="https://code.jquery.com/jquery-3.7.1.min.js"
-  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-  crossorigin="anonymous"></script>
+    <script 
+        src="https://code.jquery.com/jquery-3.7.1.min.js" 
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" 
+        crossorigin="anonymous">
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/colors.css') }}">
     {{ bootstrap.load_css() }}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     
@@ -15,7 +17,8 @@
     
     <style>
         body {
-            padding-top: 7.5vh; /* Adjust according to your navbar height */
+            padding-top: 10vh; /* Adjust according to your navbar height */
+            background-color: var(--background-color);
         }
         
         .flash-message {
@@ -37,20 +40,16 @@
         }
 
         .main-container {
-            max-width: 90%
+            max-width: 90%;
         }
 
         .navbar {
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(var(--background-color-rgb), .9); /* have to keep this in sync with primary color var*/
             position: fixed;
             width: 100%;
             z-index: 1000;
             top: 0;
-            height: 7.5vh;
-        }
-
-        nav a {
-            color: #333333; /* Dark dark grey text color for links */
+            height: 10vh;
         }
 
         .navbar-item {
@@ -64,17 +63,21 @@
             font-size: 2.5em;
             font-weight: bold;
             transition: transform 0.3s ease;
-            color: darkgrey;
-            text-decoration: none;
+            color: rgba(var(--primary-color-rgb), .5); 
         }
 
         .navbar-item a:hover {
-            transform: scale(1.25);
+            transform: scale(1.15);
+            color: rgba(var(--primary-color-rgb), 1); 
         }
 
-        .navbar-item.explore a,
-        .navbar-item.recipe_list a {
-            color: #666; /* Emphasize Explore and recipe_list pages */
+        .secondary-nav a {
+            font-size: 1.5em;
+            font-weight: normal;
+        }
+
+        .active-nav a {
+            color: var(--primary-color);
             text-decoration: underline;
         }
 
@@ -86,16 +89,34 @@
             justify-content: flex-end; /* Align the last secondary-nav to the right */
         }
 
-        .secondary-nav a {
-            color: grey;
-            font-size: 1.5em;
-            font-weight: regular;
-            text-decoration: none;
-            
+        .btn-primary {
+            color: var(--primary-color);
+            font-size: 2em;
+            padding: 8px 30px; /* Initial padding for the button */
+            border-radius: .5em;
+            transition: background-color 0.3s ease;
+            background-color: var(--secondary-color);
+            border: 2.5px solid;
+            border-color: var(--primary-color);
+            transition: background-color 0.5s ease, border 0.5s ease, color 0.5s ease, text-shadow 0.5s ease;
         }
 
-        .secondary-nav a:hover {
-            transform: scale(1.05);
+        .btn-secondary {
+            background-color: var(--tertiary-color);
+            border: none;
+            color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: rgba(var(--secondary-color-rgb), .66);
+            color: var(--primary-color);
+            text-shadow: 0px 0px .5px black;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(var(--tertiary-color-rgb), .66);
+            color: var(--primary-color);
+            border: none;
         }
 
         @media (max-width: 768px) {
@@ -131,28 +152,28 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-dark">
         <div class="container custom-container">
 
-            <div class="navbar-item secondary-nav left">
+            <div class="navbar-item secondary-nav">
                 <a class="nav-link" href="{{ url_for('index') }}">
                     <i class="fas fa-home"></i>
                 </a>
             </div>
 
-            <div class="navbar-item primary explore">
+            <div class="navbar-item primary-nav {% if request.path == url_for('explore') %}active-nav{% endif %}">
                 <a class="nav-link" href="{{ url_for('explore') }}">
                     Explore
                 </a>
             </div>
 
-            <div class="navbar-item primary recipe_list">
+            <div class="navbar-item primary-nav {% if request.path == url_for('recipe_list') %}active-nav{% endif %}">
                 <a class="nav-link" href="{{ url_for('recipe_list') }}">
                     My List
                 </a>
             </div>
 
-            <div class="navbar-item secondary-nav right" id="navbarNav">
+            <div class="navbar-item secondary-nav" id="navbarNav">
                 {% if current_user.is_anonymous %}
                     <a class="nav-link" href="{{ url_for('login') }}">Login</a>
                 {% else %}

@@ -227,8 +227,7 @@ def toggle_recipe_in_list(recipe_id):
 def recipe_list():
     recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
     recipes = [recipe_list_item.recipe for recipe_list_item in recipe_list]
-    print(recipes)
-    return render_template('recipe_list.html', recipe_list=recipes)
+    return render_template('recipe_list.html', recipes=recipes)
 
 @app.route('/load_meal_plan')
 @login_required
@@ -279,4 +278,4 @@ def favicon():
 def admin():
     if current_user.role != 'admin':
         return redirect(url_for('index'))
-    return redirect(url_for('explore.html'))
+    return admin.index()

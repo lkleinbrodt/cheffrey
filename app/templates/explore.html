@@ -4,30 +4,13 @@
 <head>
     <style>
 
-        .card {
-            height: 100%; /* Set a fixed height for the card */
-        }
+        
 
-        .card-body {
-            height: 100%; 
+        .refresh-link {
             display: flex;
-            flex-direction: column;
-        }
-
-        .card-img-top {
-            object-fit: cover; /* Ensure the image covers the entire card */
-            height: 35%; /* Set the image height (adjust as needed) */
-        }
-
-        .refresh-button {
-            display: block;
-            margin: 0 auto; /* Center the button */
-            font-size: 2em; /* Adjust the font size for larger text */
-            padding: 15px 25px; /* Adjust the padding for a larger and more rounded button */
-            border-radius: 25px; /* Add rounded edges */
-            border: none; /* Remove the default button border */
-            /* Optional: Add box shadow for a subtle lift */
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            justify-content: flex-end; /* Align to the right side of the container */
+            color: var(--primary-color);
+            cursor: pointer;
         }
 
         .top {
@@ -44,11 +27,11 @@
 <body>
 <div class="container-fluid mt-4">
 
-    <button type='button' class="btn btn-primary refresh-button top" id = 'refresh-btn'>Get new recipes</button>
+    <a class = 'refresh-link top' id = 'refresh-btn'>Get new recipes</a>
 
     <div class="row" id="recipe-container"></div>
 
-    <button type='button' class="btn btn-primary refresh-button bottom" id = 'refresh-btn'>Get new recipes</button>
+    <a class="refresh-link bottom" id = 'refresh-btn'>Get new recipes</button>
 
 
 </div>
@@ -120,8 +103,9 @@
 
     function updateButtonState(recipeId, inList) {
         var button = $('.save-btn[data-recipe-id="' + recipeId + '"]');
-        button.toggleClass('btn-success btn-danger').text(function(i, text) {
-            return text === 'Save to List' ? 'Remove from List' : 'Save to List';
+        button.toggleClass('btn-secondary btn-danger').text(function(i, text) {
+            console.log(text)
+            return text.trim() === 'Save to List' ? 'Remove from List' : 'Save to List';
         });
     }
 
