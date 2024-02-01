@@ -77,6 +77,32 @@ class Recipe(db.Model):
             d = str(d)
         return d
     
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Create a Recipe object from a dictionary.
+
+        Parameters:
+        - data (dict): Dictionary containing recipe data.
+
+        Returns:
+        - Recipe: A Recipe object.
+        """
+        return cls(
+            id = data['id'],
+            title=data['title'],
+            author=data['author'],
+            canonical_url=data['canonical_url'],
+            category=data['category'],
+            image_url=data['image_url'],
+            ingredients=data['ingredients'],
+            description=data['description'],
+            instructions=data['instructions'],
+            instructions_list=data['instructions_list'],
+            total_time=data['total_time'],
+            yields=data['yields']
+        )
+        
 class Favorite(db.Model):
     __tablename__ = 'favorites'
     id = sa.Column(sa.Integer, primary_key=True)

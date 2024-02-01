@@ -27,7 +27,7 @@ def char_to_price(n_chars):
     """estimates the price to embed this many chars using openai"""
     chars_per_token = 3.7
     n_tokens = n_chars / chars_per_token
-    price_per_token = 0.0001 / 1000
+    price_per_token = 0.001 / 1000
     price = price_per_token * n_tokens
     return price
 
@@ -35,8 +35,7 @@ def char_to_price(n_chars):
 def add_recipes_to_db():
     logger.info('Adding recipes to database')
     with app.app_context():
-        import json
-        # Assuming the path to the JSON file is 'data/recipes.json'
+        
         with open(Config.ROOT_DIR+'/data/recipes.json') as file:
             recipes_data = json.load(file)
             
@@ -106,7 +105,7 @@ def add_recipe_descriptions():
             ]
         
         messages += [
-            {"role": "user", "content": "Write a brief description of the following dish:" + recipe_to_str(recipe)},
+            {"role": "user", "content": "Write a brief description (to be used as a blurb/caption on a recipe website) of the following dish:" + recipe_to_str(recipe)},
         ]
         
         completion = client.chat.completions.create(
@@ -128,6 +127,7 @@ def add_recipe_descriptions():
     ]
     for i, recipe in enumerate(recipes_without_descriptions):
         examples = random.sample(good_examples, 2)
+        examples = []
         description = get_recipe_description(recipe, examples)
         recipes_data[recipe['title']]['description'] = description
         recipe['description'] = description
@@ -144,9 +144,16 @@ def add_recipe_descriptions():
 
 #%%
 
+def clear_recipes():
+    confirmation = input("Are you sure you want to clear all recipes? (y/n): ")
+    if confirmation.lower() == "y":
+        with app.app_context():
+            Recipe.query.delete()
+            db.session.commit()
 
 
 if __name__ == '__main__':
     # logger.info('Start')
-    # add_recipe_descriptions()
+    clear_recipes()
+    add_recipe_descriptions()
     add_recipes_to_db()
