@@ -269,3 +269,7 @@ def generate_meal_plan():
 @app.route('/test')
 def test():
     return render_template('test.html')
+
+@app.route("/favicon.ico")
+def favicon():
+    return url_for('static', filename='data:,')
