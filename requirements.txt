@@ -1,4 +1,4 @@
-flask[async]==3.0.0
+flask==3.0.0
 Flask-Admin==1.6.1
 Flask-Limiter==3.5.0
 Flask-Login==0.6.3
