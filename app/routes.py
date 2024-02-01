@@ -72,7 +72,7 @@ def load_more_recipes(page):
 @limiter.limit("5 per 5 seconds")  # Adjust the limit as needed
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('home'))
+        return redirect(url_for('explore'))
     
     form = LoginForm(request.form)
     if form.validate_on_submit():
@@ -116,7 +116,7 @@ def register():
         db.session.commit()
         login_user(user, remember = True)
         flash("Congratulations, you are now a registered user!")
-        return redirect(url_for('home'))
+        return redirect(url_for('explore'))
     return render_template('register.html', title='Register', form=form)
 
 @app.route('/settings', methods=['GET', 'POST'])
