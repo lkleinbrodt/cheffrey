@@ -1,5 +1,6 @@
 *.html
 *.DS_Store
+flask_session/
 .DS_Store
 app.db
 .flaskenv
