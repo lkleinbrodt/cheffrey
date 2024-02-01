@@ -1,7 +1,7 @@
-from flask import Flask
+from flask import Flask, redirect, url_for, request
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_migrate import Migrate
 from flask_bootstrap import Bootstrap5
 from flask_admin import Admin
@@ -26,8 +26,17 @@ admin = Admin(app, name = 'Admin Panel', template_mode='bootstrap3')
 
 from app import routes, errors, models
 
-admin.add_view(ModelView(models.User, db.session))
-admin.add_view(ModelView(models.Recipe, db.session))
+class myModelView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.role == 'admin'
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login', next=request.url))
+
+admin.add_view(myModelView(models.User, db.session))
+admin.add_view(myModelView(models.Recipe, db.session))
+admin.add_view(myModelView(models.Favorite, db.session))
+admin.add_view(myModelView(models.RecipeList, db.session))
 # admin.add_view(ModelView(models.RecurringDate, db.session))
 
 with app.app_context():

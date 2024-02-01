@@ -1,0 +1,14 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+    {% if not user.is_authenticated %}
+        <p>You should go log in first</p>
+    {% else %}
+        {% if not user.role == 'admin' %}
+        <p>You aren't an admin...<p>
+        {% else %}
+            <h1>Admin Dashboard</h1>
+            <p>Here you can manage the site</p>
+        {% endif %}
+    {% endif %}
+{% endblock %}

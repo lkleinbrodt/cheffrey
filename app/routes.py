@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from config import Config
 from sqlalchemy.exc import IntegrityError
 from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRecipe
-from app import app, db
+from app import app, db, admin
 
 from urllib.parse import urlsplit
 
@@ -273,3 +273,10 @@ def test():
 @app.route("/favicon.ico")
 def favicon():
     return url_for('static', filename='data:,')
+
+@app.route('/admin')
+@login_required
+def admin():
+    if current_user.role != 'admin':
+        return redirect(url_for('index'))
+    return redirect(url_for('explore.html'))
