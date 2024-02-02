@@ -16,77 +16,9 @@
 
     
     <style>
-        body {
-            padding-top: 10vh; /* Adjust according to your navbar height */
-            background-color: var(--background-color);
-        }
-        
-        .flash-message {
-            text-align: center;
-            font-weight: bold;
-            color: blue;
-            margin-top: 20px;
-        }
-
-        .error-message {
-            color: red;
-        }
-
-        .custom-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-        }
 
         .main-container {
             max-width: 90%;
-        }
-
-        .navbar {
-            background-color: rgba(var(--background-color-rgb), .9); /* have to keep this in sync with primary color var*/
-            position: fixed;
-            width: 100%;
-            z-index: 1000;
-            top: 0;
-            height: 10vh;
-        }
-
-        .navbar-item {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-        }
-
-        .navbar-item a {
-            text-align: center;
-            font-size: 2.5em;
-            font-weight: bold;
-            transition: transform 0.3s ease;
-            color: rgba(var(--primary-color-rgb), .5); 
-        }
-
-        .navbar-item a:hover {
-            transform: scale(1.15);
-            color: rgba(var(--primary-color-rgb), 1); 
-        }
-
-        .secondary-nav a {
-            font-size: 1.5em;
-            font-weight: normal;
-        }
-
-        .active-nav a {
-            color: var(--primary-color);
-            text-decoration: underline;
-        }
-
-        .navbar-item.secondary-nav:first-child {
-            justify-content: flex-start; /* Align the first secondary-nav to the left */
-        }
-    
-        .navbar-item.secondary-nav:last-child {
-            justify-content: flex-end; /* Align the last secondary-nav to the right */
         }
 
         .btn-primary {
@@ -119,32 +51,58 @@
             border: none;
         }
 
-        @media (max-width: 768px) {
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Adjust the opacity here */
+            z-index: 999;
+          }
 
-            .navbar {
-                height: 10vh;
-            }
+        
+        body {
+            background-color: var(--background-color);
+            padding-top: 7vh;
+        }
+        
+        .flash-message {
+            text-align: center;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-top: 20px;
+        }
+
+        .error-message {
+            text-align: center;
+            font-weight: bold;
+            color: red;
+            margin-top: 20px;
+        }
+        
+
+        @media (max-width: 768px) {
 
             .main-container {
                 max-width: 100%
             }
-
-            body {
-                padding-top: 7.5vh;
-            }
-            .navbar-item a {
-                font-size: 1.25em;
-                margin: 0;
-                padding: 5px;
-            }
-
-            .secondary-nav a {
-                font-size: 0.75em;
-                margin: 0;
-                padding: 5px;
-
-            }
         }
+
+        .notify-badge{
+            position: absolute;
+            right:-20px;
+            top:10px;
+            background:red;
+            text-align: center;
+            border-radius: 30px 30px 30px 30px;
+            color:white;
+            padding:5px 10px;
+            font-size:20px;
+        }
+
+        
         
     </style>
 
@@ -152,36 +110,8 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-dark">
-        <div class="container custom-container">
-
-            <div class="navbar-item secondary-nav">
-                <a class="nav-link" href="{{ url_for('index') }}">
-                    <i class="fas fa-home"></i>
-                </a>
-            </div>
-
-            <div class="navbar-item primary-nav {% if request.path == url_for('explore') %}active-nav{% endif %}">
-                <a class="nav-link" href="{{ url_for('explore') }}">
-                    Explore
-                </a>
-            </div>
-
-            <div class="navbar-item primary-nav {% if request.path == url_for('recipe_list') %}active-nav{% endif %}">
-                <a class="nav-link" href="{{ url_for('recipe_list') }}">
-                    My List
-                </a>
-            </div>
-
-            <div class="navbar-item secondary-nav" id="navbarNav">
-                {% if current_user.is_anonymous %}
-                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                {% else %}
-                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
+    {% block navbar%}{% endblock %}
+    
     <div class="container main-container">
         <div class="flash-message">
             {% with messages = get_flashed_messages() %}
@@ -205,9 +135,9 @@
     {{ bootstrap.load_js() }}
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script>
-        // You can add any additional scripts here
     </script>
 </body>
 
 {% block tail%}{% endblock %}
+<!--<div> Icons made by <a href="https://www.flaticon.com/authors/berkahicon" title="berkahicon"> berkahicon </a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com'</a></div>-->
 </html>

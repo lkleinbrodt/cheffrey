@@ -1,8 +1,33 @@
 {% extends "base.html" %}
 
-{% block title %}Search - Your App{% endblock %}
+{% block navbar %}
+{% include 'navbar.html' %}
+{% endblock%}
 
-{% block search %}
-    <h2>Search Page Content Goes Here</h2>
-    <!-- Add your search page content here -->
+
+{% block content %}
+
+<head>
+    <style>
+        body {
+            margin-top: 5vh;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container-fluid mt-4">
+    <div class="row" id="recipe-container">
+        {% if not recipes %}
+            <div class="col-md-12">
+                <h2>Sorry, no results for that search.</h2>
+            </div>
+        {% endif %}
+    {% include 'recipe_partial.html'%}
+    </div>
+</div>
+</body>
+
+{% include 'recipe_functions.html' %}
+    
 {% endblock %}

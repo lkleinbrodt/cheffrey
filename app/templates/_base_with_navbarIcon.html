@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script 
+        src="https://code.jquery.com/jquery-3.7.1.min.js" 
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" 
+        crossorigin="anonymous">
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/colors.css') }}">
+    {{ bootstrap.load_css() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    
+    {% include 'fav_icon.html' %}
+
+    
+    <style>
+        body {
+            background-color: var(--background-color);
+            padding-top: 3vh;
+        }
+
+        .navbar-toggler-icon {
+            width: 75px;
+            height: 75px;
+        }
+
+        .navbar-toggler:focus,
+        .navbar-toggler:active,
+        .navbar-toggler-icon:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        .navbar {
+            position: fixed;
+            border-bottom: none;
+            height: auto;
+            width: 100%;
+            z-index: 1000;
+            background-color: rgba(0,0,0,0)
+        }
+
+        .navbar-nav {
+            flex-direction: column;
+            background-color: rgba(var(--background-color-rgb), .9);
+            width: 250px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            margin-left: 15px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 15px;
+            border-radius: 5px;
+        }
+
+        .navbar-toggler {
+            border: none;
+        }
+      
+        .navbar-nav .nav-item {
+            padding-right: 10px;
+        }
+
+        .nav-item a {
+            font-style: italic;
+            color: var(--primary-color);
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            transition: color 0.25s ease, font-weight 0.25s ease, text-decoration 0.25s ease;
+        }
+
+        .nav-item a:hover {
+            text-decoration: underline;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .nav-item:last-child {
+            justify-content: flex-end; /* Align the last secondary-nav to the right */
+        }
+
+        .active-nav a {
+            text-decoration: underline;
+            text-weight: bold;
+        }
+        
+        .flash-message {
+            text-align: center;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-top: 20px;
+        }
+
+        .error-message {
+            text-align: center;
+            font-weight: bold;
+            color: red;
+            margin-top: 20px;
+        }
+
+        .main-container {
+            max-width: 90%;
+        }
+
+        .btn-primary {
+            color: var(--primary-color);
+            font-size: 2em;
+            padding: 8px 30px; /* Initial padding for the button */
+            border-radius: .5em;
+            transition: background-color 0.3s ease;
+            background-color: var(--secondary-color);
+            border: 2.5px solid;
+            border-color: var(--primary-color);
+            transition: background-color 0.5s ease, border 0.5s ease, color 0.5s ease, text-shadow 0.5s ease;
+        }
+
+        .btn-secondary {
+            background-color: var(--tertiary-color);
+            border: none;
+            color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: rgba(var(--secondary-color-rgb), .66);
+            color: var(--primary-color);
+            text-shadow: 0px 0px .5px black;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(var(--tertiary-color-rgb), .66);
+            color: var(--primary-color);
+            border: none;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Adjust the opacity here */
+            z-index: 999;
+          }
+
+        
+        
+
+        @media (max-width: 768px) {
+
+            .navbar-toggler-icon {
+                width: 50px;
+                height: 50px;
+            }
+
+            .navbar-nav {
+                width: 135px;
+            }
+
+            .nav-item a {
+                font-size: 1.25em;
+            }
+
+            .main-container {
+                max-width: 100%
+            }
+        }
+        
+    </style>
+
+    <title>{% if title %}{{ title }}{% else %}Cheffrey{% endif %}</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    <nav class="navbar navbar-light">
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="toggleOverlay()">
+          <img class="navbar-toggler-icon" src="{{ url_for('static', filename='/favicon_io/android-chrome-512x512.png')}}" alt="Cheffrey Logo" >
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+          <ul class="navbar-nav">
+            <li class="nav-item {% if request.path == url_for('explore') %}active-nav{% endif %}">
+                <a class="nav-link" href="{{ url_for('explore') }}">
+                    Explore
+                </a>
+            </li>
+            <li class="nav-item {% if request.path == url_for('recipe_list') %}active-nav{% endif %}">
+                <a class="nav-link" href="{{ url_for('recipe_list') }}">
+                    Recipe List
+                </a>
+            </li>
+            <li class="nav-item {% if request.path == url_for('favorites') %}active-nav{% endif %}">
+                <a class="nav-link" href="{{ url_for('favorites') }}">
+                    Favorites
+                </a>
+            </li>
+            <li class="nav-item">
+                {% if current_user.is_anonymous %}
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                {% else %}
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                {% endif %}
+            </li>
+          </ul>
+        </div>
+      </nav>
+    <div class="container main-container">
+        <div class="flash-message">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if message.type == 'error' %}
+                            <h3 class="error-message">{{ message }}</h3>
+                        {% elif message.type == 'message' %}
+                            <h3 class="message-message">{{ message }}</h3>
+                        {% else %}
+                            <h3>{{ message }}</h3>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </div>
+    
+    {{ bootstrap.load_js() }}
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script>
+        function toggleOverlay() {
+            var overlay = document.getElementById('overlay');
+            overlay.style.display = (overlay.style.display === 'block') ? 'none' : 'block';
+        }
+    </script>
+</body>
+
+{% block tail%}{% endblock %}
+</html>

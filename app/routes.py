@@ -52,7 +52,6 @@ def load_more_recipes(page):
     
     recipes = session['explore_recipes'][per_page * (page - 1):per_page * page]
     recipes = [Recipe.from_dict(recipe) for recipe in recipes]
-    print(recipes)
 
     ##TODO: improve
     for recipe in recipes:
@@ -212,6 +211,7 @@ def remove_from_recipe_list(recipe_id):
 @login_required
 def toggle_recipe_in_list(recipe_id):
     recipe_list_item = RecipeList.query.filter_by(user_id=current_user.id, recipe_id=recipe_id).first()
+    app.logger.debug('Toggling recipe in list {}'.format(recipe_list_item))
     if recipe_list_item:
         db.session.delete(recipe_list_item)
         # flash('Removed from recipe list.', 'success')
@@ -226,7 +226,11 @@ def toggle_recipe_in_list(recipe_id):
 @login_required
 def recipe_list():
     recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
-    recipes = [recipe_list_item.recipe for recipe_list_item in recipe_list]
+    recipes = []
+    for recipe_list_item in recipe_list:
+        recipe = recipe_list_item.recipe
+        recipe.in_list = True
+        recipes.append(recipe)
     return render_template('recipe_list.html', recipes=recipes)
 
 @app.route('/load_meal_plan')
@@ -273,9 +277,35 @@ def test():
 def favicon():
     return url_for('static', filename='data:,')
 
-@app.route('/admin')
+
+@app.route('/favorites')
 @login_required
-def admin():
-    if current_user.role != 'admin':
-        return redirect(url_for('index'))
-    return admin.index()
+def favorites():
+    return redirect(url_for('explore'))
+
+@app.route('/get-recipe-list-count', methods=['GET'])
+@login_required
+def get_recipe_list_count():
+    #TODO: which ones better?
+    # count = len(current_user.recipe_list)
+    count = len(RecipeList.query.filter_by(user_id=current_user.id).all())
+    return jsonify({'count': count})
+
+@app.route('/get-recipe-list', methods=['GET'])
+@login_required
+def get_recipe_list():
+    recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
+    recipes = []
+    for recipe_list_item in recipe_list:
+        recipe = recipe_list_item.recipe
+        recipe.in_list = True
+        recipes.append(recipe)
+    return jsonify({'recipes': recipes})
+
+@app.route('/search', methods=['GET'])
+def search():
+    query = request.args.get('q')
+    print("query:", query)
+    recipes = Recipe.query.filter(Recipe.title.ilike(f'%{query}%')).all()
+    print(recipes)
+    return render_template('search.html', recipes=recipes, search_term=query)

@@ -1,21 +1,24 @@
 {% extends "base.html" %}
 
+{% block navbar %}
+{% include 'navbar.html' %}
+{% endblock%}
+
+
 {% block content %}
+
 <head>
     <style>
 
-        
-
         .refresh-link {
-            display: flex;
-            justify-content: flex-end; /* Align to the right side of the container */
+            display: inline-block;
             color: var(--primary-color);
             cursor: pointer;
         }
 
         .top {
             margin-top: 5vh;
-            margin-bottom: 5vh;
+            margin-bottom: 3vh;
         }
 
         .bottom {
@@ -25,6 +28,7 @@
 </style>
 </head>
 <body>
+
 <div class="container-fluid mt-4">
 
     <a class = 'refresh-link top' id = 'refresh-btn'>Get new recipes</a>
@@ -36,6 +40,8 @@
 
 </div>
 </body>
+
+{% include 'recipe_functions.html' %}
 <script>
     var page = 1; // Initial page number
     const max_page = 10; //keep up to date with routes
@@ -63,10 +69,10 @@
         }
     }
 
-    $(document).on('click', '.save-btn', function() {
-        var recipeId = $(this).data('recipe-id');
-        toggleRecipeInList(recipeId);
-    });
+    //todo yeah you really only need to do this once and then can increment
+    //but i'm doing it this way sue me.
+
+    
 
     $(document).on('click', '#refresh-btn', function() {
         $.ajax({
@@ -82,32 +88,7 @@
         });
     });
 
-    function toggleRecipeInList(recipeId) {
-
-        // Send the recipe ID to the server to toggle its state
-        $.ajax({
-            url: '/toggle-recipe-in-list/' + recipeId,
-            type: "GET",
-            success: function (data) {
-                
-                updateButtonState(recipeId);
-                
-                // You may want to provide feedback to the user if needed
-            },
-            error: function () {
-                console.error('Failed to toggle recipe in list');
-                // Handle error if needed
-            }
-        });
-    }
-
-    function updateButtonState(recipeId, inList) {
-        var button = $('.save-btn[data-recipe-id="' + recipeId + '"]');
-        button.toggleClass('btn-secondary btn-danger').text(function(i, text) {
-            console.log(text)
-            return text.trim() === 'Save to List' ? 'Remove from List' : 'Save to List';
-        });
-    }
+    
 
     
 
@@ -123,5 +104,27 @@
         })
         ;
     });
+
+    //commenting for now because i'm just going to do a separate page for recipe list, but in future modal would be cool
+    //var recipeListModal;
+//
+    //document.addEventListener('DOMContentLoaded', function () {
+    //    // Initialize the modal when the document is ready
+    //    recipeListModal = new bootstrap.Modal(document.getElementById('recipeListModal'));
+//
+    //    // Attach the click event to the modal link
+    //    document.getElementById('recipe-list-link').addEventListener('click', function () {
+    //        // Show the modal
+    //        recipeListModal.show();
+    //    });
+//
+    //    // Attach the click event to the close button
+    //    document.getElementById('closeRecipeListModal').addEventListener('click', function () {
+    //        console.log('clicked close');
+    //        // Hide the modal
+    //        recipeListModal.hide();
+    //    });
+    //});
+
 </script>
 {% endblock %}

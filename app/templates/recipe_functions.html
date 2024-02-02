@@ -1,0 +1,61 @@
+<script>
+function getRecipeListCount() {
+    var count;
+
+    $.ajax({
+        url: '/get-recipe-list-count',  // Replace with the actual endpoint
+        type: 'GET',
+        async: false,  // Set async to false to wait for the response synchronously
+        success: function (data) {
+            count = data.count;
+        },
+        error: function () {
+            console.error('Failed to fetch recipe list count');
+        }
+    });
+
+    return count;
+}
+
+function updateRecipeCount(count) {
+    $('#recipe-list-link').attr('data-count', count);
+    $('#brandLogo').attr('data-count', count);
+    $('#recipe-list-menu-link').attr('data-count', count);
+
+}
+
+updateRecipeCount(getRecipeListCount());
+
+$(document).on('click', '.save-btn', function() {
+    var recipeId = $(this).data('recipe-id');
+    toggleRecipeInList(recipeId);
+});
+
+function toggleRecipeInList(recipeId) {
+
+    // Send the recipe ID to the server to toggle its state
+    $.ajax({
+        url: '/toggle-recipe-in-list/' + recipeId,
+        type: "GET",
+        success: function (data) {
+            
+            updateButtonState(recipeId);
+            updateRecipeCount(getRecipeListCount());
+            
+            // You may want to provide feedback to the user if needed
+        },
+        error: function () {
+            console.error('Failed to toggle recipe in list');
+            // Handle error if needed
+        }
+    });
+}
+
+function updateButtonState(recipeId, inList) {
+    var button = $('.save-btn[data-recipe-id="' + recipeId + '"]');
+    button.toggleClass('btn-secondary btn-danger').text(function(i, text) {
+        console.log(text)
+        return text.trim() === 'Save to List' ? 'Remove from List' : 'Save to List';
+    });
+}
+</script>
