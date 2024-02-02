@@ -22,7 +22,7 @@
             margin: 0;
         }
 
-        .brand-logo {
+        .brand-title {
             font-family: 'Roboto', serif;
             font-weight: bold;
             font-size: 10em;
@@ -58,11 +58,25 @@
         .shadow-line {
             box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1); /* Added shadow for a better look */
         }
+
+        @media (max-width: 768px) {
+            .brand-title {
+                font-size: 5em;
+            }
+
+            .tagline {
+                font-size: 1.4em;
+            }
+
+            .login-button {
+                font-size: 1.3em;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h1 class="brand-logo">Cheffrey</h1>
+        <h1 class="brand-title">Cheffrey</h1>
         <h4 class="tagline">Your AI sous-chef</h4>
         <a class="btn btn-primary login-button" href="{{ url_for('login') }}" role="button">Log In</a>
     </div>
