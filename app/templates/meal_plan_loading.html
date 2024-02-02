@@ -188,12 +188,14 @@
                 return response.blob();
             })
             .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'meal_plan.html';
-                link.click();
-                window.URL.revokeObjectURL(url);
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                var today = new Date();
+                var filename = `Cheffrey_Meal_Plan_${today.toLocaleString('default', { month: 'short' })}_${today.getDate()}.html`
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
                 window.location.href = 'recipe_list';
             })
             .catch(error => {

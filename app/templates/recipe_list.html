@@ -47,9 +47,9 @@
 </head>
 <body>
 <div class="container-fluid mt-4 ">
-    <form action="{{ url_for('load_meal_plan') }}" method="GET" class = "mt-4 d-flex justify-content-center align-items-center">
+    <form method="GET" class="mt-4 d-flex justify-content-center align-items-center">
         {% if recipes %}
-            <a href="{{ url_for('static', filename='/icons/download_file.png') }}" download class="download-button">
+            <a href="{{ url_for('load_meal_plan') }}" class="download-button">
                 <img src="{{ url_for('static', filename='/icons/download_file.png') }}" alt="Download Icon">
                 Download Meal Plan
             </a>
