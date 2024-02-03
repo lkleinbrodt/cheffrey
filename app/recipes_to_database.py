@@ -6,6 +6,7 @@ from config import Config
 import json
 import random
 from openai import OpenAI
+import datetime
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -31,6 +32,14 @@ def char_to_price(n_chars):
     price = price_per_token * n_tokens
     return price
 
+def backup_recipe_json():
+    today = datetime.date.today()
+    with open(Config.ROOT_DIR+'/data/recipes.json') as file:
+        recipes_data = json.load(file)
+    with open(Config.ROOT_DIR+'/data/recipes_backup_{}.json'.format(today), 'w') as file:
+        json.dump(recipes_data, file)
+        
+    return True
 
 def add_recipes_to_db():
     logger.info('Adding recipes to database')
@@ -72,6 +81,49 @@ def add_recipes_to_db():
 
         db.session.commit()
 
+def refine_recipe_descriptions():
+    logger.info('Refining recipe descriptions')
+    with open(Config.ROOT_DIR+'/data/recipes.json') as file:
+        recipes_data = json.load(file)
+    
+    recipes_with_descriptions = [recipe for recipe in recipes_data.values() if recipe.get('description') is not None]
+    logger.info(f"{len(recipes_with_descriptions)} recipes with descriptions.")
+    long_descriptions = [recipe for recipe in recipes_with_descriptions if len(recipe.get('description')) > 300]
+    
+    logger.info(f"{len(long_descriptions)} recipes with long descriptions.")
+    
+    client = OpenAI()
+    
+    def edit_recipe_description(recipe):
+        
+        messages = [
+            {'role': 'user', 'content': f"Summarize the description of the following dish into a description of less than 250 characters. Only output the new description, nothing else. Original Description: {recipe.get('description')}"},
+        ]
+        
+        completion = client.chat.completions.create(
+            model = 'gpt-3.5-turbo',
+            messages=messages
+        )
+        
+        return completion.choices[0].message.content
+    
+    for i, recipe in enumerate(long_descriptions):
+        old_description = recipe.get('description')
+        new_description = edit_recipe_description(recipe)
+        recipes_data[recipe['title']]['description'] = new_description
+        if i % 5 == 0:
+            logger.info(f"{i} recipes completed.")
+            with open(Config.ROOT_DIR+'/data/recipes.json', 'w') as file:
+                json.dump(recipes_data, file)
+                
+        if i % 40 == 0:
+            print("Old Description: ", old_description)
+            print("New Description: ", new_description)
+    
+    with open(Config.ROOT_DIR+'/data/recipes.json', 'w') as file:
+        json.dump(recipes_data, file)
+                 
+    return True
 #%%
 def add_recipe_descriptions():
     logger.info('Adding recipe descriptions')
@@ -154,6 +206,7 @@ def clear_recipes():
 
 if __name__ == '__main__':
     # logger.info('Start')
-    clear_recipes()
-    add_recipe_descriptions()
-    add_recipes_to_db()
+    # clear_recipes()
+    # add_recipe_descriptions()
+    refine_recipe_descriptions()
+    # add_recipes_to_db()
