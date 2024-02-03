@@ -205,8 +205,8 @@ def clear_recipes():
 
 
 if __name__ == '__main__':
-    # logger.info('Start')
+    logger.info('Start')
     # clear_recipes()
     # add_recipe_descriptions()
-    refine_recipe_descriptions()
-    # add_recipes_to_db()
+    # refine_recipe_descriptions()
+    add_recipes_to_db()
