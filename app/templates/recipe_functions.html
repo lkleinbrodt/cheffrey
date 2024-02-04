@@ -1,3 +1,8 @@
+<style>
+    .force-redraw {
+        display: none;
+    }
+</style>
 <script>
 function getRecipeListCount() {
     var count;
@@ -17,14 +22,45 @@ function getRecipeListCount() {
     return count;
 }
 
-function updateRecipeCount(count) {
+function updateRecipeCounters(count) {
+    console.log('updating recipe count to ' + count);
+    var originalRecipeListLinkCount = $('#recipe-list-link').attr('data-count');
+    var originalBrandLogoCount = $('#brandLogo').attr('data-count');
+    var originalRecipeListMenuLinkCount = $('#recipe-list-menu-link').attr('data-count');
+    console.log('Original count of recipe-list-link: ' + originalRecipeListLinkCount);
+    console.log('Original count of brandLogo: ' + originalBrandLogoCount);
+    console.log('Original count of recipe-list-menu-link: ' + originalRecipeListMenuLinkCount);
+    
     $('#recipe-list-link').attr('data-count', count);
     $('#brandLogo').attr('data-count', count);
     $('#recipe-list-menu-link').attr('data-count', count);
 
+    var NewRecipeListLinkCount = $('#recipe-list-link').attr('data-count');
+    var NewBrandLogoCount = $('#brandLogo').attr('data-count');
+    var NewRecipeListMenuLinkCount = $('#recipe-list-menu-link').attr('data-count');
+    console.log('New count of recipe-list-link: ' + NewRecipeListLinkCount);
+    console.log('New count of brandLogo: ' + NewBrandLogoCount);
+    console.log('New count of recipe-list-menu-link: ' + NewRecipeListMenuLinkCount);
+
+    // Force a redraw
+    // This is ugly and should be unnecessary
+    // however i was seeing a problem where the UI display wasn't updating on mobile
+    // I confirmed that the data attributes were being updated correctly
+    // but it was a display thing. this forced redraw seems to work well.
+    // Force a reflow using offsetWidth
+    // use offset width because it triggers a reflow without causing layout changes
+    //(you can also accomplish this by setting a class with display none and then toggling that class twice)
+    $('#recipe-list-link')[0].offsetWidth;
+    $('#brandLogo')[0].offsetWidth;
+    $('#recipe-list-menu-link')[0].offsetWidth;
+
+    
+
 }
 
-updateRecipeCount(getRecipeListCount());
+var recipeCount = getRecipeListCount();
+
+updateRecipeCounters(recipeCount);
 
 $(document).on('click', '.save-btn', function() {
     var recipeId = $(this).data('recipe-id');
@@ -32,6 +68,7 @@ $(document).on('click', '.save-btn', function() {
 });
 
 function toggleRecipeInList(recipeId) {
+    console.log('toggle');
 
     // Send the recipe ID to the server to toggle its state
     $.ajax({
@@ -40,7 +77,7 @@ function toggleRecipeInList(recipeId) {
         success: function (data) {
             
             updateButtonState(recipeId);
-            updateRecipeCount(getRecipeListCount());
+            updateRecipeCounters(getRecipeListCount());
             
             // You may want to provide feedback to the user if needed
         },
@@ -54,7 +91,6 @@ function toggleRecipeInList(recipeId) {
 function updateButtonState(recipeId, inList) {
     var button = $('.save-btn[data-recipe-id="' + recipeId + '"]');
     button.toggleClass('btn-secondary btn-danger').text(function(i, text) {
-        console.log(text)
         return text.trim() === 'Save to List' ? 'Remove from List' : 'Save to List';
     });
 }

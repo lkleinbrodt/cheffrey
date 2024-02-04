@@ -211,7 +211,6 @@ def remove_from_recipe_list(recipe_id):
 @login_required
 def toggle_recipe_in_list(recipe_id):
     recipe_list_item = RecipeList.query.filter_by(user_id=current_user.id, recipe_id=recipe_id).first()
-    app.logger.debug('Toggling recipe in list {}'.format(recipe_list_item))
     if recipe_list_item:
         db.session.delete(recipe_list_item)
         # flash('Removed from recipe list.', 'success')
@@ -305,7 +304,5 @@ def get_recipe_list():
 @app.route('/search', methods=['GET'])
 def search():
     query = request.args.get('q')
-    print("query:", query)
     recipes = Recipe.query.filter(Recipe.title.ilike(f'%{query}%')).all()
-    print(recipes)
     return render_template('search.html', recipes=recipes, search_term=query)
