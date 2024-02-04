@@ -94,7 +94,9 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS and Popper.js Links (for Bootstrap features) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js"></script>
+
+
     
 </body>
 
@@ -188,15 +190,12 @@
                 return response.blob();
             })
             .then(blob => {
-                var a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
                 var today = new Date();
-                var filename = `Cheffrey_Meal_Plan_${today.toLocaleString('default', { month: 'short' })}_${today.getDate()}.html`
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                var filename = `Cheffrey_Meal_Plan_${today.toLocaleString('default', { month: 'short' })}_${today.getDate()}.html`;
+                console.log(filename);
+                download(blob, filename, 'text/html');
                 window.location.href = 'recipe_list';
+                
             })
             .catch(error => {
                 console.error('Fetch error:', error);
