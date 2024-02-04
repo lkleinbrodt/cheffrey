@@ -12,7 +12,7 @@ start_services() {
     # Start Flask app in the background
     flask run --debug --port 5002 &
     sleep 2
-    ngrok http 5002 & sleep 2
+    ngrok http 5002 --log=stdout > ngrok.log & sleep 2 
 
     ngrok_url=$(curl -s localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
 
