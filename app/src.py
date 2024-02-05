@@ -44,7 +44,7 @@ class HashableRecipe:
 def recipes_to_shopping_list(recipes: tuple[HashableRecipe]):
     shopping_list = []
     for recipe in recipes:
-        shopping_list += recipe.ingredients_list
+        shopping_list += recipe.ingredient_list
         
     return shopping_list
     
@@ -162,7 +162,7 @@ def create_recipe_html(recipe, standalone=False):
     ingredient_html = "<h2 style='text-align:center'> Ingredients: </h2>"
     ingredient_html += f"<p> Yields: {recipe.yields}</p>"
     ingredient_html += "<ul>"
-    for ingredient in recipe.ingredients_list:
+    for ingredient in recipe.ingredient_list:
         ingredient_html += "<li>" + ingredient + "</li>"
     ingredient_html += "</ul>"
 

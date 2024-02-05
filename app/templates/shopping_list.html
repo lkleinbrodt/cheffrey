@@ -1,8 +1,136 @@
 {% extends "base.html" %}
 
-{% block title %}Shopping List - Your App{% endblock %}
+{% block navbar%}
+{% include 'navbar.html'%}
+{% endblock%}
 
-{% block shopping_list %}
-    <h2>Shopping List Page Content Goes Here</h2>
-    <!-- Add your shopping list page content here -->
+
+{% block content %}
+</head>
+    <title>Shopping List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .column {
+            float: left;
+            width: 33.33%;
+            padding: 10px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-decoration: underline;
+            font-size: 2.0rem;
+        }
+
+        .group {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .ingredient {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 5px;
+            transform: scale(1.25);
+        }
+
+        label {
+            font-size: 1.25rem;
+            margin-left: 10px;
+        }
+
+        .main-container {
+            max-width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2vh;
+        }
+
+        @media (max-width: 768px) {
+            .column {
+                width: 100%;
+            }
+
+            .main-container {
+                flex-direction: column;
+                margin-top: 2vh;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class='main-container'>
+    <div class="column">
+        <!-- Display ingredients from ingredient_dict1 -->
+        {% for group, ingredients in ingredient_dict1.items() %}
+        <h1 class="group">{{ group }}</h1>
+        {% for ingredient in ingredients %}
+        <div class="ingredient">
+            <input type="checkbox" id="{{ ingredient }}" name="{{ ingredient }}" class="persistent-checkbox">
+
+            <label for="{{ ingredient }}">{{ ingredient }}</label>
+        </div>
+        {% endfor %}
+        {% endfor %}
+    </div>
+
+    <div class="column">
+        <!-- Display ingredients from ingredient_dict2 -->
+        {% for group, ingredients in ingredient_dict2.items() %}
+        <h1 class="group">{{ group }}</h1>
+        {% for ingredient in ingredients %}
+        <div class="ingredient">
+            <input type="checkbox" id="{{ ingredient }}" name="{{ ingredient }}" class="persistent-checkbox">
+            <label for="{{ ingredient }}">{{ ingredient }}</label>
+        </div>
+        {% endfor %}
+        {% endfor %}
+    </div>
+
+    <div class="column">
+        <!-- Display ingredients from ingredient_dict3 -->
+        {% for group, ingredients in ingredient_dict3.items() %}
+        <h1 class="group">{{ group }}</h1>
+        {% for ingredient in ingredients %}
+        <div class="ingredient">
+            <input type="checkbox" id="{{ ingredient }}" name="{{ ingredient }}" class="persistent-checkbox">
+            <label for="{{ ingredient }}">{{ ingredient }}</label>
+        </div>
+        {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+</body>
+
+{% include 'recipe_functions.html' %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Select all checkboxes with the class 'persistent-checkbox'
+    var checkboxes = document.querySelectorAll('.persistent-checkbox');
+
+    // Add an event listener to each checkbox to save its state when changed
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            localStorage.setItem(checkbox.id, checkbox.checked);
+        });
+
+        // Retrieve the state from localStorage and set the checkbox accordingly
+        var savedState = localStorage.getItem(checkbox.id);
+        if (savedState !== null) {
+            checkbox.checked = JSON.parse(savedState);
+        }
+    });
+});
+</script>
 {% endblock %}

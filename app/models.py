@@ -36,7 +36,7 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    
+
 class Recipe(db.Model):
     __tablename__ = 'recipes'
     id = sa.Column(sa.Integer, primary_key=True)
@@ -103,6 +103,45 @@ class Recipe(db.Model):
             yields=data['yields']
         )
         
+class Ingredient(db.Model):
+    __tablename__ = 'ingredients'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String(255), index=True, unique=True)
+    category = sa.Column(sa.String(255))
+    
+    def __repr__(self):
+        return f'<Ingredient {self.name}>'
+    
+    def to_dict(self, as_str = False):
+        d = {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description
+        }
+        if as_str:
+            d = str(d)
+        return d
+    
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Create a Ingredient object from a dictionary.
+
+        Parameters:
+        - data (dict): Dictionary containing ingredient data.
+
+        Returns:
+        - Ingredient: A Ingredient object.
+        """
+        return cls(
+            id = data['id'],
+            name=data['name'],
+            description=data['description']
+        )
+    
+    def __repr__(self):
+        return f'<Ingredient {self.name}>'
+        
 class Favorite(db.Model):
     __tablename__ = 'favorites'
     id = sa.Column(sa.Integer, primary_key=True)
@@ -114,6 +153,13 @@ class Favorite(db.Model):
     
     def __repr__(self):
         return f'<Favorite {self.id}>'
+    
+# Note: I'm NOT doing a shopping list as a class, 
+# because it doesnt really need to be tracked behind the scenes
+# you just need to display it once.
+# and so i'll just implement some basic caching using the ingredients table
+# because the only "hard" thing to do is classify an ingredient, this way we only need to do that once.
+
     
 class RecipeList(db.Model):
     __tablename__ = 'recipe_lists'

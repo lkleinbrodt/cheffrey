@@ -7,6 +7,7 @@ from config import Config
 from sqlalchemy.exc import IntegrityError
 from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRecipe
 from app import app, db, admin
+import json
 
 from urllib.parse import urlsplit
 
@@ -63,6 +64,12 @@ def load_more_recipes(page):
             recipe.in_list = True
         else:
             recipe.in_list = False
+        favorite_item = Favorite.query.filter_by(user_id=current_user.id, recipe_id=recipe.id).first()
+        if favorite_item:
+            recipe.in_favorites = True
+        else:
+            recipe.in_favorites = False
+        
     #TODO: improve
     
     return render_template('recipe_partial.html', recipes=recipes)
@@ -221,18 +228,56 @@ def toggle_recipe_in_list(recipe_id):
     db.session.commit()
     return jsonify({'status': 'success'})
 
-@app.route('/recipe_list')
+@app.route('/toggle-favorite/<int:recipe_id>')
+@login_required
+def toggle_favorite(recipe_id):
+    favorite = Favorite.query.filter_by(user_id=current_user.id, recipe_id=recipe_id).first()
+    if favorite:
+        db.session.delete(favorite)
+        # flash('Removed from favorites.', 'success')
+    else:
+        favorite = Favorite(user_id=current_user.id, recipe_id=recipe_id)
+        db.session.add(favorite)
+        # flash('Added to favorites!', 'success')
+    db.session.commit()
+    return jsonify({'status': 'success'})
+
+@app.route('/favorites')
+@login_required
+def favorites():
+    favorites = Favorite.query.filter_by(user_id=current_user.id).all()
+    recipes = [favorite.recipe for favorite in favorites]
+    for recipe in recipes:
+        recipe.ingredient_list = eval(recipe.ingredients)
+        recipe.instruction_list = eval(recipe.instructions_list)
+        recipe_list_item = RecipeList.query.filter_by(user_id=current_user.id, recipe_id=recipe.id).first()
+        if recipe_list_item:
+            recipe.in_list = True
+        else:
+            recipe.in_list = False
+        recipe.in_favorites = True
+    return render_template('favorites.html', recipes=recipes)
+
+@app.route('/recipe-list')
 @login_required
 def recipe_list():
     recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
     recipes = []
     for recipe_list_item in recipe_list:
+        
         recipe = recipe_list_item.recipe
+        recipe.ingredient_list = eval(recipe.ingredients)
+        recipe.instruction_list = eval(recipe.instructions_list)
         recipe.in_list = True
+        favorite_item = Favorite.query.filter_by(user_id=current_user.id, recipe_id=recipe.id).first()
+        if favorite_item:
+            recipe.in_favorites = True
+        else:
+            recipe.in_favorites = False
         recipes.append(recipe)
     return render_template('recipe_list.html', recipes=recipes)
 
-@app.route('/load_meal_plan')
+@app.route('/load-meal-plan')
 @login_required
 def load_meal_plan():
     return render_template('meal_plan_loading.html')
@@ -248,10 +293,9 @@ def generate_meal_plan():
     recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
     
     recipe_list = [HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items]
-
     
     for recipe in recipe_list:
-        recipe.ingredients_list = eval(recipe.ingredients)
+        recipe.ingredient_list = eval(recipe.ingredients)
         recipe.instruction_list = eval(recipe.instructions_list)
 
     recipe_list = tuple(recipe_list)
@@ -265,8 +309,48 @@ def generate_meal_plan():
     response.headers["Content-Disposition"] = f"attachment; filename={filename}.html"
     app.logger.info('Done generating meal plan')
     return response
+
+@app.route('/shopping-list')
+@login_required
+def shopping_list():
+    #TODO: ugly
+    with open('data/ingredient2category.json', 'r') as f:
+        ingredient2category = json.load(f)
+        
+    recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
     
+    recipe_list = [HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items]
     
+    ingredient_dict = {}
+    
+    n_ingredients = 0
+    for recipe in recipe_list:
+        for ingredient in eval(recipe.ingredients):
+            category = ingredient2category.get(ingredient, 'Other')
+            ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
+            n_ingredients += 1
+    
+    # Sort ingredient_dict by category, with "Other" category last
+    ingredient_dict = dict(sorted(ingredient_dict.items(), key=lambda x: (x[0] == 'Other', x[0])))
+    
+            
+    
+            
+    dict_list = [{}, {}, {}]
+    running_dict = {}
+    limit = (n_ingredients / 3)
+    ingredient_counter = 0
+    dict_counter = 0
+    for category, ingredients in ingredient_dict.items():
+        running_dict[category] = ingredients
+        ingredient_counter += len(ingredients)
+        dict_list[dict_counter] = running_dict
+        if (ingredient_counter > limit) & (dict_counter < 2):
+            running_dict = {}
+            ingredient_counter = 0
+            dict_counter += 1
+    print(ingredient_dict)
+    return render_template('shopping_list.html', ingredient_dict1=dict_list[0], ingredient_dict2=dict_list[1], ingredient_dict3=dict_list[2])
     
 @app.route('/test')
 def test():
@@ -275,12 +359,6 @@ def test():
 @app.route("/favicon.ico")
 def favicon():
     return url_for('static', filename='data:,')
-
-
-@app.route('/favorites')
-@login_required
-def favorites():
-    return redirect(url_for('explore'))
 
 @app.route('/get-recipe-list-count', methods=['GET'])
 @login_required
@@ -297,6 +375,11 @@ def get_recipe_list():
     recipes = []
     for recipe_list_item in recipe_list:
         recipe = recipe_list_item.recipe
+        favorite_item = Favorite.query.filter_by(user_id=current_user.id, recipe_id=recipe.id).first()
+        if favorite_item:
+            recipe.in_favorites = True
+        else:
+            recipe.in_favorites = False
         recipe.in_list = True
         recipes.append(recipe)
     return jsonify({'recipes': recipes})
@@ -305,4 +388,20 @@ def get_recipe_list():
 def search():
     query = request.args.get('q')
     recipes = Recipe.query.filter(Recipe.title.ilike(f'%{query}%')).all()
+    
+    for recipe in recipes:
+        recipe.ingredient_list = eval(recipe.ingredients)
+        recipe.instruction_list = eval(recipe.instructions_list)
+        recipe_list_item = RecipeList.query.filter_by(user_id=current_user.id, recipe_id=recipe.id).first()
+        if recipe_list_item:
+            recipe.in_list = True
+        else:
+            recipe.in_list = False
+        favorite_item = Favorite.query.filter_by(user_id=current_user.id, recipe_id=recipe.id).first()
+        if favorite_item:
+            recipe.in_favorites = True
+        else:
+            recipe.in_favorites = False
+        
+        
     return render_template('search.html', recipes=recipes, search_term=query)
