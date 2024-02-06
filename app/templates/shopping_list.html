@@ -65,11 +65,22 @@
             }
         }
 
+        #empty-warning {
+            text-align: center;
+            margin: 0px;
+            margin-top: 10vh;
+        }
     </style>
 </head>
 
 <body>
+    {% if not ingredient_dict1.items() %}
+    <div id='empty-warning' class="col-md-12">
+        <h2>Once you add recipes to your list, you'll see your shopping list here.</h2>
+    </div>
+{% endif %}
     <div class='main-container'>
+   
     <div class="column">
         <!-- Display ingredients from ingredient_dict1 -->
         {% for group, ingredients in ingredient_dict1.items() %}

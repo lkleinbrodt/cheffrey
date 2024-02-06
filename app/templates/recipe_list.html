@@ -43,9 +43,19 @@
             text-decoration: none !important;
         }
 
+        #clear-list-container {
+            text-align: right;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
     </style>
 </head>
 <body>
+
+<div id='clear-list-container'>
+    <a href="{{ url_for('clear_recipe_list')}}">Clear Recipes</a>
+</div>
 <div class="container-fluid mt-4 ">
     <!--<form method="GET" class="mt-4 d-flex justify-content-center align-items-center">
         {% if recipes %}
@@ -57,6 +67,7 @@
     </form>
     -->
 
+    
 
     <div class="row" id="recipe-container">
         {% if not recipes %}

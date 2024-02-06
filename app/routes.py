@@ -214,6 +214,15 @@ def remove_from_recipe_list(recipe_id):
         # flash('Error removing from recipe list. Please try again.', 'error')
     return jsonify({'status': 'success'})
 
+@app.route('/clear-recipe-list')
+@login_required
+def clear_recipe_list():
+    recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
+    for recipe_list_item in recipe_list:
+        db.session.delete(recipe_list_item)
+    db.session.commit()
+    return redirect(url_for('recipe_list'))
+
 @app.route('/toggle-recipe-in-list/<int:recipe_id>')
 @login_required
 def toggle_recipe_in_list(recipe_id):
