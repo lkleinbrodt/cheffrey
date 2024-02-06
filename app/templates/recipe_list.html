@@ -43,11 +43,21 @@
             text-decoration: none !important;
         }
 
+        #clear-list-container {
+            text-align: right;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
     </style>
 </head>
 <body>
+
+<div id='clear-list-container'>
+    <a href="{{ url_for('clear_recipe_list')}}">Clear Recipes</a>
+</div>
 <div class="container-fluid mt-4 ">
-    <form method="GET" class="mt-4 d-flex justify-content-center align-items-center">
+    <!--<form method="GET" class="mt-4 d-flex justify-content-center align-items-center">
         {% if recipes %}
             <a href="{{ url_for('load_meal_plan') }}" class="download-button">
                 <img src="{{ url_for('static', filename='/icons/download_file.png') }}" alt="Download Icon">
@@ -55,7 +65,9 @@
             </a>
         {% endif %}
     </form>
+    -->
 
+    
 
     <div class="row" id="recipe-container">
         {% if not recipes %}
@@ -75,18 +87,20 @@
     function toggleRecipeInList(recipeId) {
 
         // Send the recipe ID to the server to toggle its state
-        $.ajax({
-            url: '/toggle-recipe-in-list/' + recipeId,
-            type: "GET",
-            success: function (data) {
-                window.location.href = '/recipe_list';
-            },
-            error: function () {
-                console.error('Failed to toggle recipe in list');
-                // Handle error if needed
-            }
-        });
-    }
+            $.ajax({
+                url: '/toggle-recipe-in-list/' + recipeId,
+                type: "GET",
+                success: function (data) {
+                    $('#' + recipeId).hide(); // Hide the element with ID recipe.id
+                    var recipeCount = getRecipeListCount();
+                    updateRecipeCounters(recipeCount);
+                },
+                error: function () {
+                    console.error('Failed to toggle recipe in list');
+                    // Handle error if needed
+                }
+            });
+        }
 
 </script>
 {% endblock %}

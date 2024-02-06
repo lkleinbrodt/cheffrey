@@ -24,23 +24,10 @@ function getRecipeListCount() {
 
 function updateRecipeCounters(count) {
     console.log('updating recipe count to ' + count);
-    var originalRecipeListLinkCount = $('#recipe-list-link').attr('data-count');
-    var originalBrandLogoCount = $('#brandLogo').attr('data-count');
-    var originalRecipeListMenuLinkCount = $('#recipe-list-menu-link').attr('data-count');
-    console.log('Original count of recipe-list-link: ' + originalRecipeListLinkCount);
-    console.log('Original count of brandLogo: ' + originalBrandLogoCount);
-    console.log('Original count of recipe-list-menu-link: ' + originalRecipeListMenuLinkCount);
     
     $('#recipe-list-link').attr('data-count', count);
     $('#brandLogo').attr('data-count', count);
     $('#recipe-list-menu-link').attr('data-count', count);
-
-    var NewRecipeListLinkCount = $('#recipe-list-link').attr('data-count');
-    var NewBrandLogoCount = $('#brandLogo').attr('data-count');
-    var NewRecipeListMenuLinkCount = $('#recipe-list-menu-link').attr('data-count');
-    console.log('New count of recipe-list-link: ' + NewRecipeListLinkCount);
-    console.log('New count of brandLogo: ' + NewBrandLogoCount);
-    console.log('New count of recipe-list-menu-link: ' + NewRecipeListMenuLinkCount);
 
     // Force a redraw
     // This is ugly and should be unnecessary
@@ -76,7 +63,7 @@ function toggleRecipeInList(recipeId) {
         type: "GET",
         success: function (data) {
             
-            updateButtonState(recipeId);
+            updateListButtonState(recipeId);
             updateRecipeCounters(getRecipeListCount());
             
             // You may want to provide feedback to the user if needed
@@ -88,7 +75,34 @@ function toggleRecipeInList(recipeId) {
     });
 }
 
-function updateButtonState(recipeId, inList) {
+$(document).on('click', '.favorite-btn', function() {
+    var recipeId = $(this).data('recipe-id');
+    toggleFavorite(recipeId);
+});
+
+function toggleFavorite(recipeId) {
+
+// Send the recipe ID to the server to toggle its state
+    $.ajax({
+        url: '/toggle-favorite/' + recipeId,
+        type: "GET",
+        success: function (data) {
+            updateFavoriteButtonState(recipeId);
+        },
+        error: function () {
+            console.error('Failed to toggle recipe favorite');
+            // Handle error if needed
+        }
+    });
+}
+
+function updateFavoriteButtonState(recipeId, inFavorite) {
+    var button = $('.favorite-btn[data-recipe-id="' + recipeId + '"]');
+    button.toggleClass('far fas')
+}
+
+
+function updateListButtonState(recipeId, inList) {
     var button = $('.save-btn[data-recipe-id="' + recipeId + '"]');
     button.toggleClass('btn-secondary btn-danger').text(function(i, text) {
         return text.trim() === 'Save to List' ? 'Remove from List' : 'Save to List';
