@@ -52,12 +52,22 @@
     .button-container {
         margin-top: auto;
         display: flex;
-        justify-content: space-between;
+        justify-content: space-around;
         padding: 0px;
+        margin-left: 0px;
+        margin-right: 0px;
+        align-items: center;
     }
 
     .modal-dialog {
         max-width: 80%;
+        margin-top: 10vh;
+    }
+
+    .favorite-btn {
+        cursor: pointer;
+        color: var(--primary-color);
+        font-size: 2rem;
     }
 
     @media (max-width: 768px) {
@@ -94,7 +104,7 @@
 </style>
 
 {% for recipe in recipes %}
-<div class="col-md-4 mb-4 recipe-col">
+<div class="col-md-4 mb-4 recipe-col" id="{{recipe.id}}">
     <div class="card">
         {% if recipe.image_url %}
             <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.title }}">
@@ -107,11 +117,13 @@
             </div>
             <div class="button-container">
                 <a class="view-full-recipe-button" data-bs-toggle="modal" data-bs-target="#recipeModal{{ recipe.id }}">
-                    View Full Recipe
+                    Full Recipe
                 </a>
                 <button type="button" class="btn {% if recipe.in_list %}btn-danger{% else %}btn-secondary{% endif %} save-btn" data-recipe-id="{{ recipe.id }}">
                     {% if recipe.in_list %}Remove from List{% else %}Save to List{% endif %}
                 </button>
+                <i type="button" class="fa-heart {% if recipe.in_favorites %}fas{% else %}far{% endif %} favorite-btn" data-recipe-id="{{ recipe.id }}">
+                </i>
             </div>
             <!--<a href="{{ url_for('recipe', recipe_id=recipe.id) }}" class="btn btn-primary">-->
         </div>

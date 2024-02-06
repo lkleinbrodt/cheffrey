@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block navbar%}
+{% include 'navbar.html'%}
+{% endblock%}
+
+
+{% block content %}
+
+<head>
+    <style>
+
+        body {
+            margin-top: 5vh;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container-fluid mt-4 ">
+
+    <div class="row" id="recipe-container">
+        {% if not recipes %}
+            <div class="col-md-12">
+                <h2>Nothing here yet, get to browsing!</h2>
+            </div>
+        {% endif %}
+    {% include 'recipe_partial.html'%}
+    </div>
+</div>
+
+</body>
+
+{% include 'recipe_functions.html' %}
+
+<script>
+    function toggleFavorite(recipeId) {
+
+        // Send the recipe ID to the server to toggle its state
+            $.ajax({
+                url: '/toggle-favorite/' + recipeId,
+                type: "GET",
+                success: function (data) {
+                    $('#' + recipeId).hide(); // Hide the element with ID recipe.id
+                },
+                error: function () {
+                    console.error('Failed to toggle recipe favorite');
+                    // Handle error if needed
+                }
+            });
+        }
+
+</script>
+{% endblock %}

@@ -265,8 +265,14 @@
                 <li class="nav-item {% if request.path == url_for('explore') %}active-collapse-nav{% endif %}">
                     <a class="nav-link" href="{{ url_for('explore') }}">Explore</a>
                 </li>
+                <li class="nav-item {% if request.path == url_for('favorites') %}active-collapse-nav{% endif %}" id="favorites-menu-link" data-count=0>
+                    <a class="nav-link" href="{{ url_for('favorites') }}">Favorites</a>
+                </li>
                 <li class="nav-item {% if request.path == url_for('recipe_list') %}active-collapse-nav{% endif %}" id="recipe-list-menu-link" data-count=0>
                         <a class="nav-link" href="{{ url_for('recipe_list') }}">Recipe List</a>
+                </li>
+                <li class="nav-item {% if request.path == url_for('shopping_list') %}active-collapse-nav{% endif %}" id="shopping-list-menu-link" data-count=0>
+                    <a class="nav-link" href="{{ url_for('shopping_list') }}">Shopping List</a>
                 </li>
                <!--<li class="nav-item {% if request.path == url_for('favorites') %}active-collapse-nav{% endif %}">
                     <a class="nav-link" href="{{ url_for('favorites') }}">Favorites</a>
@@ -291,13 +297,14 @@
             Explore
         </a>
     </li>
+
     
-    <!--<li class="nav-item {% if request.path == url_for('favorites') %}active-nav{% endif %}">
+    <li class="nav-item {% if request.path == url_for('favorites') %}active-nav{% endif %}">
         <a class="nav-link" href="{{ url_for('favorites') }}">
             Favorites
         </a>
     </li>
-    -->
+
 </ul>
 
 <!-- Search Bar -->
@@ -313,6 +320,9 @@
         <a  id="recipe-list-link" data-count=0  class="nav-link" href = "{{url_for('recipe_list')}}" >
             Recipe List
         </a>
+    </li>
+    <li class="nav-item {% if request.path == url_for('shopping_list') %}active-nav{% endif %}" id="shopping-list-menu-link" data-count=0>
+        <a class="nav-link" href="{{ url_for('shopping_list') }}">Shopping List</a>
     </li>
     <li class="nav-item" id='logoutItem'>
         {% if current_user.is_anonymous %}
