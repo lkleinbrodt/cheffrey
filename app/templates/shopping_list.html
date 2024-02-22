@@ -54,6 +54,17 @@
             margin-top: 2vh;
         }
 
+        #copyToClipboard {
+            background-color: var(--secondary-color);
+            width: 100px;
+            height: 75px;
+        }
+
+        #copyToClipboard.clicked {
+            background-color: var(--secondary-color);
+        }
+        
+
         @media (max-width: 768px) {
             .column {
                 width: 100%;
@@ -79,7 +90,9 @@
         <h2>Once you add recipes to your list, you'll see your shopping list here.</h2>
     </div>
 {% endif %}
+    
     <div class='main-container'>
+
    
     <div class="column">
         <!-- Display ingredients from ingredient_dict1 -->
@@ -120,6 +133,11 @@
         {% endfor %}
         {% endfor %}
     </div>
+    <div >
+        <button class="btn" id="copyToClipboard">
+            Copy to clipboard
+        </button>
+    </div>
 </div>
 </body>
 
@@ -142,6 +160,26 @@ document.addEventListener('DOMContentLoaded', function () {
             checkbox.checked = JSON.parse(savedState);
         }
     });
+
+    document.getElementById("copyToClipboard").addEventListener("click", function() {
+        // Your existing code to copy to the clipboard
+        var ingredientElements = document.querySelectorAll('.ingredient label');
+        var ingredientString = '';
+        ingredientElements.forEach(function (ingredientElement) {
+            ingredientString += ingredientElement.textContent + '\n';
+        });
+        navigator.clipboard.writeText(ingredientString).then(function() {
+            var button = document.getElementById("copyToClipboard");
+            button.innerHTML = "Copied";
+            button.classList.add("clicked"); // Add the "show" class to make the button visible
+            setTimeout(function() {
+                button.innerHTML = "Copy to clipboard";
+                button.classList.remove("clicked"); 
+            }, 250); // Reset the tooltip text after 2 seconds
+        }).catch(function(err) {
+            console.error('Unable to copy to clipboard', err);
+        });
+    });      
 });
 </script>
 {% endblock %}
