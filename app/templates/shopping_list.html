@@ -1,185 +1,224 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block navbar%} {% include 'navbar.html'%} {%
+endblock%} {% block content %}
+<head>
+  <title>Shopping List</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
 
-{% block navbar%}
-{% include 'navbar.html'%}
-{% endblock%}
+    .column {
+      float: left;
+      width: 33.33%;
+      padding: 10px;
+    }
 
+    h1 {
+      color: var(--primary-color);
+      text-decoration: underline;
+      font-size: 2rem;
+    }
 
-{% block content %}
-</head>
-    <title>Shopping List</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
+    .group {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
 
-        .column {
-            float: left;
-            width: 33.33%;
-            padding: 10px;
-        }
+    .ingredient {
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+    }
 
-        h1 {
-            color: var(--primary-color);
-            text-decoration: underline;
-            font-size: 2.0rem;
-        }
+    input[type="checkbox"] {
+      margin-right: 5px;
+      transform: scale(1.25);
+    }
 
-        .group {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+    label {
+      font-size: 1.25rem;
+      margin-left: 10px;
+    }
 
-        .ingredient {
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-        }
+    .button-bar {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 20px;
+      justify-content: flex-end; /* Align buttons to the right side */
+      align-items: center; /* Align buttons vertically centered */
+    }
 
-        input[type="checkbox"] {
-            margin-right: 5px;
-            transform: scale(1.25);
-        }
+    .shopping-container {
+      max-width: 100%;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2vh;
+    }
 
-        label {
-            font-size: 1.25rem;
-            margin-left: 10px;
-        }
+    .button-bar {
+      display: flex;
+      gap: 10px; /* Adjust the gap between buttons */
+    }
 
-        .main-container {
-            max-width: 100%;
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2vh;
-        }
+    .btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border: 1px solid (var(--primary-color));
+      border-radius: 5px;
+    }
 
-        #copyToClipboard {
-            background-color: var(--secondary-color);
-            width: 100px;
-            height: 75px;
-        }
+    #copyToClipboard {
+      background-color: var(
+        --tertiary-color
+      ); /* Blue color for the first button */
+      color: var(--primary-color);
+    }
 
-        #copyToClipboard.clicked {
-            background-color: var(--secondary-color);
-        }
-        
+    #clearRecipesBtn {
+      background-color: var(--bad-button-color);
+      color: var(--primary-color);
+      text-decoration: none;
+      padding: 10px 20px;
+      border: 1px solid (var(--primary-color));
+      border-radius: 5px;
+    }
 
-        @media (max-width: 768px) {
-            .column {
-                width: 100%;
-            }
+    @media (max-width: 768px) {
+      .column {
+        width: 100%;
+      }
 
-            .main-container {
-                flex-direction: column;
-                margin-top: 2vh;
-            }
-        }
+      .main-container {
+        flex-direction: column;
+        margin-top: 2vh;
+      }
+    }
 
-        #empty-warning {
-            text-align: center;
-            margin: 0px;
-            margin-top: 10vh;
-        }
-    </style>
+    #empty-warning {
+      text-align: center;
+      margin: 0px;
+      margin-top: 10vh;
+    }
+  </style>
 </head>
 
 <body>
-    {% if not ingredient_dict1.items() %}
-    <div id='empty-warning' class="col-md-12">
-        <h2>Once you add recipes to your list, you'll see your shopping list here.</h2>
-    </div>
-{% endif %}
-    
-    <div class='main-container'>
+  {% if not ingredient_dict.items() %}
+  <div id="empty-warning" class="col-md-12">
+    <h2>
+      Once you add recipes to your list, you'll see your shopping list here.
+    </h2>
+  </div>
+  {% endif %}
 
-   
-    <div class="column">
+  <div class="main-container">
+    <div class="button-bar">
+      <button class="bad-btn" id="copyToClipboard">Copy to clipboard</button>
+      <button class="bad-btn" id="clearRecipesBtn">Clear Recipes</button>
+    </div>
+
+    <div class="shopping-container">
+      <div class="column">
         <!-- Display ingredients from ingredient_dict1 -->
         {% for group, ingredients in ingredient_dict1.items() %}
         <h1 class="group">{{ group }}</h1>
         {% for ingredient in ingredients %}
         <div class="ingredient">
-            <input type="checkbox" id="{{ ingredient }}" name="{{ ingredient }}" class="persistent-checkbox">
+          <input
+            type="checkbox"
+            id="{{ ingredient }}"
+            name="{{ ingredient }}"
+            class="persistent-checkbox"
+          />
 
-            <label for="{{ ingredient }}">{{ ingredient }}</label>
+          <label for="{{ ingredient }}">{{ ingredient }}</label>
         </div>
-        {% endfor %}
-        {% endfor %}
-    </div>
+        {% endfor %} {% endfor %}
+      </div>
 
-    <div class="column">
+      <div class="column">
         <!-- Display ingredients from ingredient_dict2 -->
         {% for group, ingredients in ingredient_dict2.items() %}
         <h1 class="group">{{ group }}</h1>
         {% for ingredient in ingredients %}
         <div class="ingredient">
-            <input type="checkbox" id="{{ ingredient }}" name="{{ ingredient }}" class="persistent-checkbox">
-            <label for="{{ ingredient }}">{{ ingredient }}</label>
+          <input
+            type="checkbox"
+            id="{{ ingredient }}"
+            name="{{ ingredient }}"
+            class="persistent-checkbox"
+          />
+          <label for="{{ ingredient }}">{{ ingredient }}</label>
         </div>
-        {% endfor %}
-        {% endfor %}
-    </div>
+        {% endfor %} {% endfor %}
+      </div>
 
-    <div class="column">
+      <div class="column">
         <!-- Display ingredients from ingredient_dict3 -->
         {% for group, ingredients in ingredient_dict3.items() %}
         <h1 class="group">{{ group }}</h1>
         {% for ingredient in ingredients %}
         <div class="ingredient">
-            <input type="checkbox" id="{{ ingredient }}" name="{{ ingredient }}" class="persistent-checkbox">
-            <label for="{{ ingredient }}">{{ ingredient }}</label>
+          <input
+            type="checkbox"
+            id="{{ ingredient }}"
+            name="{{ ingredient }}"
+            class="persistent-checkbox"
+          />
+          <label for="{{ ingredient }}">{{ ingredient }}</label>
         </div>
-        {% endfor %}
-        {% endfor %}
+        {% endfor %} {% endfor %}
+      </div>
     </div>
-    <div >
-        <button class="btn" id="copyToClipboard">
-            Copy to clipboard
-        </button>
-    </div>
-</div>
+  </div>
 </body>
 
 {% include 'recipe_functions.html' %}
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener("DOMContentLoaded", function () {
     // Select all checkboxes with the class 'persistent-checkbox'
-    var checkboxes = document.querySelectorAll('.persistent-checkbox');
+    var checkboxes = document.querySelectorAll(".persistent-checkbox");
 
     // Add an event listener to each checkbox to save its state when changed
     checkboxes.forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
-            localStorage.setItem(checkbox.id, checkbox.checked);
-        });
+      checkbox.addEventListener("change", function () {
+        localStorage.setItem(checkbox.id, checkbox.checked);
+      });
 
-        // Retrieve the state from localStorage and set the checkbox accordingly
-        var savedState = localStorage.getItem(checkbox.id);
-        if (savedState !== null) {
-            checkbox.checked = JSON.parse(savedState);
-        }
+      // Retrieve the state from localStorage and set the checkbox accordingly
+      var savedState = localStorage.getItem(checkbox.id);
+      if (savedState !== null) {
+        checkbox.checked = JSON.parse(savedState);
+      }
     });
 
-    document.getElementById("copyToClipboard").addEventListener("click", function() {
+    document
+      .getElementById("clearRecipesBtn")
+      .addEventListener("click", function () {
+        window.location.href = "clear-recipe-list";
+      });
+
+    document
+      .getElementById("copyToClipboard")
+      .addEventListener("click", function () {
         // Your existing code to copy to the clipboard
-        var ingredientElements = document.querySelectorAll('.ingredient label');
-        var ingredientString = '';
+        var ingredientElements = document.querySelectorAll(".ingredient label");
+        var ingredientString = "";
         ingredientElements.forEach(function (ingredientElement) {
-            ingredientString += ingredientElement.textContent + '\n';
+          ingredientString += ingredientElement.textContent + "\n";
         });
-        navigator.clipboard.writeText(ingredientString).then(function() {
+        navigator.clipboard
+          .writeText(ingredientString)
+          .then(function () {
             var button = document.getElementById("copyToClipboard");
-            button.innerHTML = "Copied";
-            button.classList.add("clicked"); // Add the "show" class to make the button visible
-            setTimeout(function() {
-                button.innerHTML = "Copy to clipboard";
-                button.classList.remove("clicked"); 
-            }, 250); // Reset the tooltip text after 2 seconds
-        }).catch(function(err) {
-            console.error('Unable to copy to clipboard', err);
-        });
-    });      
-});
+          })
+          .catch(function (err) {
+            console.error("Unable to copy to clipboard", err);
+          });
+      });
+  });
 </script>
 {% endblock %}
