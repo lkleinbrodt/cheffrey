@@ -74,6 +74,7 @@ endblock%} {% block content %}
         --tertiary-color
       ); /* Blue color for the first button */
       color: var(--primary-color);
+      width: 180px;
     }
 
     #clearRecipesBtn {
@@ -111,12 +112,11 @@ endblock%} {% block content %}
       Once you add recipes to your list, you'll see your shopping list here.
     </h2>
   </div>
-  {% endif %}
-
+  {% else %}
   <div class="main-container">
     <div class="button-bar">
       <button class="bad-btn" id="copyToClipboard">Copy to clipboard</button>
-      <button class="bad-btn" id="clearRecipesBtn">Clear Recipes</button>
+      <span id="copyNotification"></span>
     </div>
 
     <div class="shopping-container">
@@ -173,6 +173,7 @@ endblock%} {% block content %}
       </div>
     </div>
   </div>
+  {% endif %}
 </body>
 
 {% include 'recipe_functions.html' %}
@@ -196,12 +197,6 @@ endblock%} {% block content %}
     });
 
     document
-      .getElementById("clearRecipesBtn")
-      .addEventListener("click", function () {
-        window.location.href = "clear-recipe-list";
-      });
-
-    document
       .getElementById("copyToClipboard")
       .addEventListener("click", function () {
         // Your existing code to copy to the clipboard
@@ -218,6 +213,13 @@ endblock%} {% block content %}
           .catch(function (err) {
             console.error("Unable to copy to clipboard", err);
           });
+
+        // Show a notification that the text has been copied
+        var copyNotification = document.getElementById("copyToClipboard");
+        copyNotification.textContent = "Copied!";
+        setTimeout(function () {
+          copyToClipboard.textContent = "Copy to clipboard";
+        }, 2000);
       });
   });
 </script>

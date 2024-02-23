@@ -254,6 +254,22 @@ def clear_recipe_list():
     return redirect(url_for("recipe_list"))
 
 
+@app.route("/submit-cooked-recipes", methods=["POST"])
+@login_required
+def submit_cooked_recipes():
+    recipe_ids = request.json["recipe_ids"]
+    user = User.query.get(current_user.id)
+    for id in recipe_ids:
+        try:
+            recipe = Recipe.query.get(id)
+            user.add_cooked_recipe(recipe)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            return jsonify({"status": "error"})
+    return jsonify({"status": "success"})
+
+
 @app.route("/toggle-recipe-in-list/<int:recipe_id>")
 @login_required
 def toggle_recipe_in_list(recipe_id):
@@ -288,12 +304,12 @@ def toggle_favorite(recipe_id):
     return jsonify({"status": "success"})
 
 
-@app.route("/favorites")
+@app.route("/saved")
 @login_required
-def favorites():
+def saved():
     favorites = Favorite.query.filter_by(user_id=current_user.id).all()
-    recipes = [favorite.recipe for favorite in favorites]
-    for recipe in recipes:
+    favorites = [favorite.recipe for favorite in favorites]
+    for recipe in favorites:
         recipe.ingredient_list = eval(recipe.ingredients)
         recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
@@ -304,7 +320,25 @@ def favorites():
         else:
             recipe.in_list = False
         recipe.in_favorites = True
-    return render_template("favorites.html", recipes=recipes)
+
+    cooked = current_user.cooked_recipes
+    for recipe in cooked:
+        recipe.ingredient_list = eval(recipe.ingredients)
+        recipe.instruction_list = eval(recipe.instructions_list)
+        recipe_list_item = RecipeList.query.filter_by(
+            user_id=current_user.id, recipe_id=recipe.id
+        ).first()
+
+        if recipe_list_item:
+            recipe.in_list = True
+        else:
+            recipe.in_list = False
+        if recipe in favorites:
+            recipe.in_favorites = True
+        else:
+            recipe.in_favorite = False
+
+    return render_template("saved.html", favorites=favorites, cooked=cooked)
 
 
 @app.route("/recipe-list")
@@ -327,6 +361,15 @@ def recipe_list():
             recipe.in_favorites = False
         recipes.append(recipe)
     return render_template("recipe_list.html", recipes=recipes)
+
+
+@app.route("/cooked-recipes")
+@login_required
+def cooked_recipes():
+    user = User.query.get(current_user.id)
+    recipes = user.cooked_recipes
+    # TODO: should have its own template but it will end up being the same so why bother?
+    return render_template("recipe_list.html", recipes=recipes, hideClear=True)
 
 
 @app.route("/load-meal-plan")

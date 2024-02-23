@@ -1,0 +1,104 @@
+{% extends "base.html" %} {% block navbar%} {% include 'navbar.html'%} {%
+endblock%} {% block content %}
+
+<head>
+  <style>
+    body {
+      margin-top: 5vh;
+    }
+    .tab-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .tab-button {
+      padding: 10px;
+      cursor: pointer;
+      border: none;
+      background-color: var(--background-color);
+      width: 250;
+      height: 50px;
+      font-size: 1.5em;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      color: var(--primary-color);
+    }
+
+    /* Style for the selected tab button */
+    .tab-button.selected {
+      background-color: var(--secondary-color);
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="tab-container">
+    <button
+      id="favorites-tab"
+      class="tab-button selected"
+      onclick="showTab('favorites')"
+    >
+      Favorites
+    </button>
+    <button id="cooked-tab" class="tab-button" onclick="showTab('cooked')">
+      Cooked
+    </button>
+  </div>
+  <div id="favorites-container" class="container-fluid mt-4">
+    <div class="row" id="recipe-container">
+      {% if not favorites %}
+      <div class="col-md-12">
+        <h2>Nothing here yet, get to browsing!</h2>
+      </div>
+      {% endif %} {% with recipes=favorites %}{% include 'recipe_partial.html'%}
+      {% endwith%}
+    </div>
+  </div>
+  <div id="cooked-container" class="container-fluid mt-4">
+    <div class="row" id="recipe-container">
+      {% if not cooked %}
+      <div class="col-md-12">
+        <h2>Nothing here yet, get to browsing!</h2>
+      </div>
+      {% endif %} {% with recipes=cooked %} {% include 'recipe_partial.html'%}
+      {% endwith%}
+    </div>
+  </div>
+</body>
+
+{% include 'recipe_functions.html' %}
+
+<script>
+  function toggleFavorite(recipeId) {
+    // Send the recipe ID to the server to toggle its state
+    $.ajax({
+      url: "/toggle-favorite/" + recipeId,
+      type: "GET",
+      success: function (data) {
+        $("#" + recipeId).hide(); // Hide the element with ID recipe.id
+      },
+      error: function () {
+        console.error("Failed to toggle recipe favorite");
+        // Handle error if needed
+      },
+    });
+  }
+
+  function showTab(tabName) {
+    if (tabName === "favorites") {
+      $("#favorites-container").show();
+      $("#cooked-container").hide();
+      $("#cooked-tab").removeClass("selected");
+      $("#favorites-tab").addClass("selected");
+    } else {
+      $("#favorites-container").hide();
+      $("#cooked-container").show();
+      $("#cooked-tab").addClass("selected");
+      $("#favorites-tab").removeClass("selected");
+    }
+  }
+</script>
+{% endblock %}

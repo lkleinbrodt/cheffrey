@@ -1,387 +1,423 @@
 <style>
+  .navbar {
+    background-color: var(--background-color);
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    height: 10vh;
+    z-index: 1100;
+  }
 
-    .navbar {
-        background-color: var(--background-color);
-        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-        height: 10vh;
-        z-index: 1100;
+  .navbar-brand img {
+    height: 10vh;
+  }
+  #collapsibleNavBarHolder {
+    display: none;
+  }
+
+  .navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    margin: 1em;
+  }
+
+  input {
+    height: 42.4px;
+  }
+
+  .nav-link {
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 1.1em;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .nav-link:hover {
+    color: var(--primary-color);
+  }
+
+  .active-nav {
+    background-color: var(--secondary-color);
+    border-radius: 3em;
+    padding: 0em 0.5em;
+  }
+
+  .active-collapse-nav {
+    text-decoration: underline;
+  }
+
+  .search-bar {
+    flex: 1; /* Take remaining space in the center */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .search-bar form {
+    width: 100%; /* Full width for the form */
+  }
+
+  #recipe-list-link {
+    position: relative; /* Ensure relative positioning */
+  }
+
+  #recipe-list-link:before {
+    content: attr(data-count);
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    display: block;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    color: #fff;
+    position: absolute;
+    top: -8.25px;
+    left: calc(101.5%); /* Adjusted left position */
+    transform: translateX(-100%); /* Positioning relative to the parent */
+    z-index: 1201; /* Increased z-index */
+  }
+
+  #recipe-list-menu-link {
+    position: relative; /* Ensure relative positioning */
+  }
+
+  #recipe-list-menu-link:before {
+    content: attr(data-count);
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    display: block;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    color: #fff;
+    position: absolute;
+    top: 5.5px;
+    left: calc(94%); /* Adjusted left position */
+    transform: translateX(-100%); /* Positioning relative to the parent */
+    z-index: 1201; /* Increased z-index */
+  }
+
+  #brandLogo {
+    position: relative; /* Ensure relative positioning */
+  }
+
+  #brandLogo:before {
+    display: none;
+    content: attr(data-count);
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    color: #fff;
+    position: absolute;
+    top: 60%;
+    left: calc(101.5%); /* Adjusted left position */
+    transform: translateX(-100%); /* Positioning relative to the parent */
+    z-index: 1500; /* Increased z-index */
+  }
+
+  #logoutItem {
+    margin-left: 5em;
+    margin-right: 0.5em;
+  }
+
+  .logout-button {
+    height: 35px;
+    opacity: 0.2;
+    transition: opacity 0.3s ease;
+  }
+
+  .logout-button:hover {
+    opacity: 1;
+  }
+
+  @media (max-width: 768px) {
+    #brandLogo:before {
+      display: block;
     }
 
-    .navbar-brand img {
-        height: 10vh;
-    }
-    #collapsibleNavBarHolder {
-        display: none;
-    }
-
-    .navbar-nav {
-        display: flex;
-        align-items: center;
-        gap: 1em;
-        margin: 1em;
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 10vh; /* to not have it overlay the navbar */
+      left: 0;
+      width: 100%;
+      height: 90vh;
+      background: rgba(0, 0, 0, 0.3); /* Adjust the opacity as needed */
+      z-index: 100;
     }
 
-    
-
-    input {
-        height: 42.4px;
-    }
-
-    .nav-link {
-        color: var(--primary-color);
-        font-weight: bold;
-        font-size: 1.1em;
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-    }
-
-
-    .nav-link:hover {
-        color: var(--primary-color);
-    }
-
-    .active-nav {
-        background-color: var(--secondary-color);
-        border-radius: 3em;
-        padding: 0em 0.5em;
-    }
-
-    .active-collapse-nav {
-        text-decoration: underline;
+    .navbar-brand {
+      text-align: center;
+      margin: 0;
+      padding: 0;
     }
 
     .search-bar {
-        flex: 1; /* Take remaining space in the center */
-        display: flex;
-        justify-content: center;
-        align-items: center;
+      margin-right: 10px;
+      margin-left: 0px;
     }
 
-    .search-bar form {
-        width: 100%; /* Full width for the form */
+    .navbar {
+      margin: 0; /* Reset margin */
+      padding: 0;
     }
 
-    #recipe-list-link {
-        position: relative; /* Ensure relative positioning */
+    .navbar-toggler {
+      margin-top: 8px;
     }
 
-    #recipe-list-link:before {
-        content: attr(data-count);
-        width: 20px;
-        height: 20px;
-        line-height: 20px;
-        text-align: center;
-        display: block;
-        border-radius: 50%;
-        background: var(--secondary-color);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-        color: #FFF;
-        position: absolute;
-        top: -8.25px;
-        left: calc(101.5%); /* Adjusted left position */
-        transform: translateX(-100%); /* Positioning relative to the parent */
-        z-index: 1201; /* Increased z-index */
+    .navbar-collapse {
+      text-align: center;
+      margin: 0px;
+      padding: 0px;
     }
 
-    #recipe-list-menu-link {
-        position: relative; /* Ensure relative positioning */
+    .deskTopButtons {
+      display: none;
     }
 
-    #recipe-list-menu-link:before {
-        content: attr(data-count);
-        width: 20px;
-        height: 20px;
-        line-height: 20px;
-        text-align: center;
-        display: block;
-        border-radius: 50%;
-        background: var(--secondary-color);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-        color: #FFF;
-        position: absolute;
-        top: 5.5px;
-        left: calc(94%); /* Adjusted left position */
-        transform: translateX(-100%); /* Positioning relative to the parent */
-        z-index: 1201; /* Increased z-index */
+    #collapsibleNavBarHolder {
+      display: block;
     }
 
-    #brandLogo {
-        position: relative; /* Ensure relative positioning */
+    #collapsibleNavBar {
+      display: none;
+      position: fixed;
+      top: 10vh;
+      left: 0;
+      width: 40%;
+      max-height: 0;
+      overflow: hidden;
+      z-index: 1000;
+      background-color: rgba(var(--background-color-rgb), 1);
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+      padding: 0em;
+      padding-left: 0;
+      transition: max-height 0.5s ease-out, transform 0.5s ease-out; /* Smooth transition for max-height and transform properties */
+      transform-origin: top; /* Set the transform origin to top for vertical expansion */
     }
 
-    #brandLogo:before {
-        display: none;
-        content: attr(data-count);
-        width: 20px;
-        height: 20px;
-        line-height: 20px;
-        text-align: center;
-        border-radius: 50%;
-        background: var(--secondary-color);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-        color: #FFF;
-        position: absolute;
-        top: 60%;
-        left: calc(101.5%); /* Adjusted left position */
-        transform: translateX(-100%); /* Positioning relative to the parent */
-        z-index: 1500; /* Increased z-index */
+    #collapsibleNavBar.show {
+      display: block; /* Display the collapsible menu when the button is clicked */
+      max-height: 100vh; /* Adjust the max-height based on your content */
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+      transform: scaleY(1); /* Scale vertically to show the element */
     }
 
-   
-
-    #logoutItem {
-        margin-left: 5em;
-        margin-right: .5em;
+    #collapsibleNavBar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
 
-    .logout-button {
-        height: 35px;
-        opacity: 0.2;
-        transition: opacity 0.3s ease;
-        
+    #collapsibleNavBar li {
+      border-bottom: 1.5px solid var(--primary-color); /* Add a border between each list item */
+      padding: 1em;
+      text-align: center;
     }
 
-    .logout-button:hover {
-        opacity: 1;
+    #collapsibleNavBar li:first-child {
+      border-top: 1.5px solid var(--primary-color); /* Add a border between each list item */
     }
 
-
-
-    @media (max-width: 768px) {
-
-        #brandLogo:before {
-            display: block;
-        }
-
-        #overlay {
-            display: none;
-            position: fixed;
-            top: 10vh; /* to not have it overlay the navbar */
-            left: 0;
-            width: 100%;
-            height: 90vh;
-            background: rgba(0, 0, 0, 0.3); /* Adjust the opacity as needed */
-            z-index: 100;
-        }
-
-        .navbar-brand {
-            text-align: center;
-            margin:0;
-            padding: 0;
-        }
-
-        .search-bar {
-            margin-right: 10px;
-            margin-left: 0px;
-        }
-
-        .navbar {
-            margin: 0; /* Reset margin */
-            padding: 0;
-        }
-
-        .navbar-toggler {
-            margin-top: 8px;
-        }
-
-        .navbar-collapse {
-            text-align: center;
-            margin: 0px;
-            padding: 0px;
-        }
-
-        .deskTopButtons {
-            display: none;
-        }
-
-        #collapsibleNavBarHolder {
-            display: block;
-        }
-
-        #collapsibleNavBar {
-            display: none;
-            position: fixed;
-            top: 10vh;
-            left: 0;
-            width: 40%;
-            max-height: 0;
-            overflow: hidden;
-            z-index: 1000;
-            background-color: rgba(var(--background-color-rgb), 1.0);
-            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-            padding: 0em;
-            padding-left: 0;
-            transition: max-height 0.5s ease-out, transform 0.5s ease-out; /* Smooth transition for max-height and transform properties */
-            transform-origin: top; /* Set the transform origin to top for vertical expansion */
-        }
-
-        #collapsibleNavBar.show {
-            display: block; /* Display the collapsible menu when the button is clicked */
-            max-height: 100vh; /* Adjust the max-height based on your content */
-            border-bottom-left-radius: 10px;
-            border-bottom-right-radius: 10px;
-            transform: scaleY(1); /* Scale vertically to show the element */
-
-
-        }
-
-        #collapsibleNavBar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        #collapsibleNavBar li {
-            border-bottom: 1.5px solid var(--primary-color); /* Add a border between each list item */
-            padding: 1em;
-            text-align: center;
-        }
-        
-        #collapsibleNavBar li:first-child {
-            border-top:1.5px solid var(--primary-color); /* Add a border between each list item */
-        }
-
-        #collapsibleNavBar li:last-child {
-            border-bottom: none; /* Remove the border on the last list item */
-        }
-
+    #collapsibleNavBar li:last-child {
+      border-bottom: none; /* Remove the border on the last list item */
     }
-    
+  }
 </style>
 
-
-
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+  <a
+    class="navbar-brand"
+    data-count="0"
+    href="#"
+    id="brandLogo"
+    data-bs-toggle="collapse"
+    data-bs-target="#navbarNav"
+  >
+    <img
+      class="brand-logo"
+      id="brandLogoImage"
+      src="{{ url_for('static', filename='/icons/chef.png')}}"
+      alt="Cheffrey Logo"
+    />
+  </a>
 
-    <a class="navbar-brand" data-count=0 href="#" id="brandLogo" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <img class="brand-logo" id="brandLogoImage" src="{{ url_for('static', filename='/icons/chef.png')}}" alt="Cheffrey Logo">
-    </a>
-
-    <!-- Collapsible Navbar Links -->
-    <div id="collapsibleNavBarHolder">
-        <div class="collapse navbar-collapse" id="collapsibleNavBar">
-            <ul>
-                <li class="nav-item {% if request.path == url_for('explore') %}active-collapse-nav{% endif %}">
-                    <a class="nav-link" href="{{ url_for('explore') }}">Explore</a>
-                </li>
-                <li class="nav-item {% if request.path == url_for('favorites') %}active-collapse-nav{% endif %}" id="favorites-menu-link" data-count=0>
-                    <a class="nav-link" href="{{ url_for('favorites') }}">Favorites</a>
-                </li>
-                <li class="nav-item {% if request.path == url_for('recipe_list') %}active-collapse-nav{% endif %}" id="recipe-list-menu-link" data-count=0>
-                        <a class="nav-link" href="{{ url_for('recipe_list') }}">Recipe List</a>
-                </li>
-                <li class="nav-item {% if request.path == url_for('shopping_list') %}active-collapse-nav{% endif %}" id="shopping-list-menu-link" data-count=0>
-                    <a class="nav-link" href="{{ url_for('shopping_list') }}">Shopping List</a>
-                </li>
-               <!--<li class="nav-item {% if request.path == url_for('favorites') %}active-collapse-nav{% endif %}">
-                    <a class="nav-link" href="{{ url_for('favorites') }}">Favorites</a>
-                </li>
-                -->
-                <li class="nav-item">
-                    {% if current_user.is_anonymous %}
-                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                    {% else %}
-                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-                    {% endif %}
-                </li>
-            </ul>
-        </div>
+  <!-- Collapsible Navbar Links -->
+  <div id="collapsibleNavBarHolder">
+    <div class="collapse navbar-collapse" id="collapsibleNavBar">
+      <ul>
+        <li
+          class="nav-item {% if request.path == url_for('explore') %}active-collapse-nav{% endif %}"
+        >
+          <a class="nav-link" href="{{ url_for('explore') }}">Explore</a>
+        </li>
+        <li
+          class="nav-item {% if request.path == url_for('saved') %}active-collapse-nav{% endif %}"
+          id="saved-menu-link"
+          data-count="0"
+        >
+          <a class="nav-link" href="{{ url_for('saved') }}">Saved</a>
+        </li>
+        <li
+          class="nav-item {% if request.path == url_for('recipe_list') %}active-collapse-nav{% endif %}"
+          id="recipe-list-menu-link"
+          data-count="0"
+        >
+          <a class="nav-link" href="{{ url_for('recipe_list') }}"
+            >Recipe List</a
+          >
+        </li>
+        <li
+          class="nav-item {% if request.path == url_for('shopping_list') %}active-collapse-nav{% endif %}"
+          id="shopping-list-menu-link"
+          data-count="0"
+        >
+          <a class="nav-link" href="{{ url_for('shopping_list') }}"
+            >Shopping List</a
+          >
+        </li>
+        <li class="nav-item">
+          {% if current_user.is_anonymous %}
+          <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+          {% else %}
+          <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+          {% endif %}
+        </li>
+      </ul>
     </div>
+  </div>
 
-<!-- Left-side buttons/tabs -->
-<ul class="navbar-nav deskTopButtons">
-    
-    <li class="nav-item {% if request.path == url_for('explore') %}active-nav{% endif %}">
-        <a class="nav-link" href="{{ url_for('explore') }}">
-            Explore
-        </a>
+  <!-- Left-side buttons/tabs -->
+  <ul class="navbar-nav deskTopButtons">
+    <li
+      class="nav-item {% if request.path == url_for('explore') %}active-nav{% endif %}"
+    >
+      <a class="nav-link" href="{{ url_for('explore') }}"> Explore </a>
     </li>
 
-    
-    <li class="nav-item {% if request.path == url_for('favorites') %}active-nav{% endif %}">
-        <a class="nav-link" href="{{ url_for('favorites') }}">
-            Favorites
-        </a>
+    <li
+      class="nav-item {% if request.path == url_for('saved') %}active-nav{% endif %}"
+    >
+      <a class="nav-link" href="{{ url_for('saved') }}"> Saved </a>
     </li>
+  </ul>
 
-</ul>
-
-<!-- Search Bar -->
-<div class="search-bar">
-    <form id='searchForm' class="form-inline" method="GET" action='/search'>
-        <input class="form-control rounded-pill" id='searchQuery' type="search" placeholder="Search" aria-label="Search" name="q" value="{{ search_term }}">
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <form id="searchForm" class="form-inline" method="GET" action="/search">
+      <input
+        class="form-control rounded-pill"
+        id="searchQuery"
+        type="search"
+        placeholder="Search"
+        aria-label="Search"
+        name="q"
+        value="{{ search_term }}"
+      />
     </form>
-</div>
+  </div>
 
-<!-- Right-side buttons/tabs -->
-<ul class="navbar-nav deskTopButtons">
-    <li class="nav-item {% if request.path == url_for('recipe_list') %}active-nav{% endif %}">
-        <a  id="recipe-list-link" data-count=0  class="nav-link" href = "{{url_for('recipe_list')}}" >
-            Recipe List
-        </a>
+  <!-- Right-side buttons/tabs -->
+  <ul class="navbar-nav deskTopButtons">
+    <li
+      class="nav-item {% if request.path == url_for('recipe_list') %}active-nav{% endif %}"
+    >
+      <a
+        id="recipe-list-link"
+        data-count="0"
+        class="nav-link"
+        href="{{url_for('recipe_list')}}"
+      >
+        Recipe List
+      </a>
     </li>
-    <li class="nav-item {% if request.path == url_for('shopping_list') %}active-nav{% endif %}" id="shopping-list-menu-link" data-count=0>
-        <a class="nav-link" href="{{ url_for('shopping_list') }}">Shopping List</a>
+    <li
+      class="nav-item {% if request.path == url_for('shopping_list') %}active-nav{% endif %}"
+      id="shopping-list-menu-link"
+      data-count="0"
+    >
+      <a class="nav-link" href="{{ url_for('shopping_list') }}"
+        >Shopping List</a
+      >
     </li>
-    <li class="nav-item" id='logoutItem'>
-        {% if current_user.is_anonymous %}
-            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-        {% else %}
-            <a class="nav-link" href="{{ url_for('logout') }}">
-                <img class="logout-button" src="{{ url_for('static', filename='/icons/logout.png')}}" alt="Logout" title="Logout" >
-            </a>
-        {% endif %}
+    <li class="nav-item" id="logoutItem">
+      {% if current_user.is_anonymous %}
+      <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+      {% else %}
+      <a class="nav-link" href="{{ url_for('logout') }}">
+        <img
+          class="logout-button"
+          src="{{ url_for('static', filename='/icons/logout.png')}}"
+          alt="Logout"
+          title="Logout"
+        />
+      </a>
+      {% endif %}
     </li>
-</ul>
-<div id="overlay"></div>
+  </ul>
+  <div id="overlay"></div>
 </nav>
 
 <script>
+  var brandLogo = document.getElementById("brandLogo");
+  var collapsibleNavBar = document.getElementById("collapsibleNavBar");
+  var overlay = document.getElementById("overlay");
 
-    var brandLogo = document.getElementById('brandLogo');
-    var collapsibleNavBar = document.getElementById('collapsibleNavBar');
-    var overlay = document.getElementById('overlay');
+  brandLogo.addEventListener("click", function () {
+    if (window.innerWidth > 768) {
+      window.location.href = "{{ url_for('explore') }}";
+    } else {
+      // Toggle the collapsible menu when the brand-logo button is clicked on mobile
+      collapsibleNavBar.classList.toggle("show");
+      // Toggle the overlay
+      overlay.style.display =
+        overlay.style.display === "block" ? "none" : "block";
+      event.stopPropagation();
+    }
+  });
 
-    brandLogo.addEventListener('click', function () {
-        if (window.innerWidth > 768) {
-            window.location.href = "{{ url_for('explore') }}";
-        } else {
-            // Toggle the collapsible menu when the brand-logo button is clicked on mobile
-            collapsibleNavBar.classList.toggle('show');
-            // Toggle the overlay
-            overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
-            event.stopPropagation();
+  document.addEventListener("click", function (event) {
+    if (
+      overlay.style.display === "block" &&
+      !event.target.matches("#brandLogo") &&
+      !event.target.closest("#collapsibleNavBar")
+    ) {
+      collapsibleNavBar.classList.remove("show");
+      overlay.style.display = "none";
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document
+      .getElementById("searchForm")
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+        submitForm();
+      });
+
+    document
+      .getElementById("searchQuery")
+      .addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          submitForm();
         }
-    });
+      });
 
-    document.addEventListener('click', function (event) {
-        
-        if (overlay.style.display === 'block' && !event.target.matches('#brandLogo') && !event.target.closest('#collapsibleNavBar')) {
-            collapsibleNavBar.classList.remove('show');
-            overlay.style.display = 'none';
-        }
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('searchForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            submitForm();
-        });
-
-        document.getElementById('searchQuery').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                submitForm();
-            }
-        });
-
-        function submitForm() {
-            var searchQuery = document.getElementById('searchQuery').value;
-            window.location.href = '/search?q=' + encodeURIComponent(searchQuery);
-        }
-    });
-
-    
-
+    function submitForm() {
+      var searchQuery = document.getElementById("searchQuery").value;
+      window.location.href = "/search?q=" + encodeURIComponent(searchQuery);
+    }
+  });
 </script>

@@ -44,46 +44,13 @@ endblock%} {% block content %}
 
     .button-bar {
       display: flex;
-      justify-content: space-between;
       padding-top: 20px;
       justify-content: flex-end; /* Align buttons to the right side */
       align-items: center; /* Align buttons vertically centered */
     }
 
-    #clearRecipesBtn {
-      background-color: var(--bad-button-color);
-      color: var(--primary-color);
-      text-decoration: none;
-      padding: 10px 20px;
-      border: 1px solid (var(--primary-color));
-      border-radius: 5px;
-    }
-
-    .button-bar {
-      display: flex;
-      gap: 10px; /* Adjust the gap between buttons */
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 10000000;
-    }
-
-    .modal-content {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 50%;
-      transform: translate(-50%, -50%);
-      background-color: white;
-      padding: 20px;
-      text-align: center;
+    .modal-dialog.confirm {
+      width: 40%;
     }
 
     .close {
@@ -95,54 +62,113 @@ endblock%} {% block content %}
     }
 
     input[type="checkbox"] {
-      width: 30px;
-      height: 30px;
+      width: 15px;
+      height: 15px;
     }
 
     label {
+      display: flex;
       font-weight: bold;
       font-size: 18px;
       margin-right: 20px;
-      padding-top: 5px;
+      padding-left: 10px;
+      justify-content: flex-start;
+      wordwrap: break-word;
     }
 
-    .form-group {
+    .confirm-content-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 20px;
       margin-bottom: 20px;
+      padding-left: 20px;
+      justify-content: flex-start;
+    }
+
+    #confirm-button-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      margin-top: 0px;
+    }
+
+    .content-line {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      text-align: left;
+    }
+
+    @media (max-width: 768px) {
+      .modal-dialog.confirm {
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 30%;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="confirmModal" class="modal">
-    <div class="modal-content">
-      <span class="close" id="closeModal">&times;</span>
-      <h2>Did you cook any of these?</h2>
-      <form class="confirm-form" method="POST" action="{{url_for('confirm')}}">
-        {% for recipe in recipes %}
-        <div>
-          <!-- Create a checkbox for each recipe -->
-          <input
-            type="checkbox"
-            id="{{ loop.index }}"
-            name="recipeCheckbox"
-            value="{{ recipe.title }}"
-          />
-          <!-- Display the title of the recipe next to the checkbox -->
-          <label for="{{ loop.index }}">{{ recipe.title }}</label>
+  <div
+    class="modal fade"
+    id="confirmModal"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="confirmModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog confirm" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="recipeModalLabel">
+            Did you cook any of these?
+          </h5>
+          <button
+            type="button"
+            class="close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-        {% endfor %}
-
-        <!-- Add a submit button to submit the form -->
-        <input type="submit" value="Confirm" />
-      </form>
+        <div class="confirm-content-container">
+          {% for recipe in recipes %}
+          <div class="content-line">
+            <input
+              type="checkbox"
+              id="{{ loop.index }}"
+              name="recipeCheckbox"
+              value="{{ recipe.id }}"
+            />
+            <label for="{{ loop.index }}">{{ recipe.title }}</label>
+          </div>
+          {% endfor %}
+        </div>
+        <div id="confirm-button-container">
+          <button data-bs-dismiss="modal" class="bad-btn" id="confirmBtn">
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
   </div>
   <div class="main-container">
+    {% if (not hideClear) and (recipes) %}
     <div class="button-bar">
-      <button class="bad-btn" id="clearRecipesBtn">Clear Recipes</button>
+      <button
+        class="bad-btn"
+        id="clearRecipesBtn"
+        data-bs-toggle="modal"
+        data-bs-target="#confirmModal"
+      >
+        Clear Recipes
+      </button>
     </div>
+    {% endif %}
 
     <div class="container-fluid mt-4">
       <div class="row" id="recipe-container">
@@ -175,22 +201,33 @@ endblock%} {% block content %}
     });
   }
 
-  document
-    .getElementById("clearRecipesBtn")
-    .addEventListener("click", function () {
-      // Show the modal when the button is clicked
-      document.getElementById("confirmModal").style.display = "block";
-    });
-
-  document.getElementById("closeModal").addEventListener("click", function () {
-    document.getElementById("confirmModal").style.display = "none";
+  //add event listener for when user clicks the button with id confirmBtn
+  document.getElementById("confirmBtn").addEventListener("click", function () {
+    submitCookedRecipes();
   });
 
-  function clearSelectedRecipes() {
-    // Add logic to clear selected recipes based on checkbox state
+  function submitCookedRecipes() {
+    var checkboxes = document.getElementsByName("recipeCheckbox");
+    var checkedRecipes = [];
+    for (var i = 0; i < checkboxes.length; i++) {
+      if (checkboxes[i].checked) {
+        checkedRecipes.push(checkboxes[i].value);
+      }
+    }
 
-    // For now, just hide the modal
-    document.getElementById("confirmModal").style.display = "none";
+    $.ajax({
+      url: "/submit-cooked-recipes",
+      type: "POST",
+      data: JSON.stringify({ recipe_ids: checkedRecipes }),
+      contentType: "application/json",
+      success: function (data) {
+        window.location.href = "clear-recipe-list";
+        location.reload();
+      },
+      error: function () {
+        console.error("Failed to clear recipes");
+      },
+    });
   }
 </script>
 {% endblock %}
