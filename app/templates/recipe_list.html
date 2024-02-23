@@ -1,106 +1,233 @@
-{% extends "base.html" %}
-
-{% block navbar%}
-{% include 'navbar.html'%}
-{% endblock%}
-
-
-{% block content %}
+{% extends "base.html" %} {% block navbar%} {% include 'navbar.html'%} {%
+endblock%} {% block content %}
 
 <head>
-    <style>
+  <style>
+    body {
+      margin-top: 5vh;
+    }
 
-        body {
-            margin-top: 5vh;
-        }
+    .download-button {
+      display: inline-block;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    }
 
-        .download-button {
-            display: inline-block;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .download-button:hover {
-            transform: scale(1.05);
-        }
-        
-        .download-button img {
-            width: 80px; /* Adjust the width as needed */
-            height: 80px; /* Adjust the height as needed */
-            display: block;
-            margin: 0 auto;
-        }
+    .download-button:hover {
+      transform: scale(1.05);
+    }
 
-        .download-button {
-            text-align: center;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-decoration: none !important;
-        }
+    .download-button img {
+      width: 80px; /* Adjust the width as needed */
+      height: 80px; /* Adjust the height as needed */
+      display: block;
+      margin: 0 auto;
+    }
 
-        #clear-list-container {
-            text-align: right;
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
+    .download-button {
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--primary-color);
+      text-decoration: none !important;
+    }
 
-    </style>
+    #clear-list-container {
+      text-align: right;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    .button-bar {
+      display: flex;
+      padding-top: 20px;
+      justify-content: flex-end; /* Align buttons to the right side */
+      align-items: center; /* Align buttons vertically centered */
+    }
+
+    .modal-dialog.confirm {
+      width: 40%;
+    }
+
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+    }
+
+    label {
+      display: flex;
+      font-weight: bold;
+      font-size: 18px;
+      margin-right: 20px;
+      padding-left: 10px;
+      justify-content: flex-start;
+      wordwrap: break-word;
+    }
+
+    .confirm-content-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 20px;
+      margin-bottom: 20px;
+      padding-left: 20px;
+      justify-content: flex-start;
+    }
+
+    #confirm-button-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      margin-top: 0px;
+    }
+
+    .content-line {
+      display: flex;
+      align-items: center;
+      text-align: left;
+    }
+
+    @media (max-width: 768px) {
+      .modal-dialog.confirm {
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 30%;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<div id='clear-list-container'>
-    <a href="{{ url_for('clear_recipe_list')}}">Clear Recipes</a>
-</div>
-<div class="container-fluid mt-4 ">
-    <!--<form method="GET" class="mt-4 d-flex justify-content-center align-items-center">
-        {% if recipes %}
-            <a href="{{ url_for('load_meal_plan') }}" class="download-button">
-                <img src="{{ url_for('static', filename='/icons/download_file.png') }}" alt="Download Icon">
-                Download Meal Plan
-            </a>
-        {% endif %}
-    </form>
-    -->
-
-    
-
-    <div class="row" id="recipe-container">
-        {% if not recipes %}
-            <div class="col-md-12">
-                <h2>Nothing here yet, get to browsing!</h2>
-            </div>
-        {% endif %}
-    {% include 'recipe_partial.html'%}
+  <div
+    class="modal fade"
+    id="confirmModal"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="confirmModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog confirm" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="recipeModalLabel">
+            Did you cook any of these?
+          </h5>
+          <button
+            type="button"
+            class="close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="confirm-content-container">
+          {% for recipe in recipes %}
+          <div class="content-line">
+            <input
+              type="checkbox"
+              id="{{ loop.index }}"
+              name="recipeCheckbox"
+              value="{{ recipe.id }}"
+            />
+            <label for="{{ loop.index }}">{{ recipe.title }}</label>
+          </div>
+          {% endfor %}
+        </div>
+        <div id="confirm-button-container">
+          <button data-bs-dismiss="modal" class="bad-btn" id="confirmBtn">
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
+  <div class="main-container">
+    {% if (not hideClear) and (recipes) %}
+    <div class="button-bar">
+      <button
+        class="bad-btn"
+        id="clearRecipesBtn"
+        data-bs-toggle="modal"
+        data-bs-target="#confirmModal"
+      >
+        Clear Recipes
+      </button>
+    </div>
+    {% endif %}
 
+    <div class="container-fluid mt-4">
+      <div class="row" id="recipe-container">
+        {% if not recipes %}
+        <div class="col-md-12">
+          <h2>Nothing here yet, get to browsing!</h2>
+        </div>
+        {% endif %} {% include 'recipe_partial.html'%}
+      </div>
+    </div>
+  </div>
 </body>
 
 {% include 'recipe_functions.html' %}
 
 <script>
-    function toggleRecipeInList(recipeId) {
+  function toggleRecipeInList(recipeId) {
+    // Send the recipe ID to the server to toggle its state
+    $.ajax({
+      url: "/toggle-recipe-in-list/" + recipeId,
+      type: "GET",
+      success: function (data) {
+        $("#" + recipeId).hide(); // Hide the element with ID recipe.id
+        var recipeCount = getRecipeListCount();
+        updateRecipeCounters(recipeCount);
+      },
+      error: function () {
+        console.error("Failed to toggle recipe in list");
+      },
+    });
+  }
 
-        // Send the recipe ID to the server to toggle its state
-            $.ajax({
-                url: '/toggle-recipe-in-list/' + recipeId,
-                type: "GET",
-                success: function (data) {
-                    $('#' + recipeId).hide(); // Hide the element with ID recipe.id
-                    var recipeCount = getRecipeListCount();
-                    updateRecipeCounters(recipeCount);
-                },
-                error: function () {
-                    console.error('Failed to toggle recipe in list');
-                    // Handle error if needed
-                }
-            });
-        }
+  //add event listener for when user clicks the button with id confirmBtn
+  document.getElementById("confirmBtn").addEventListener("click", function () {
+    submitCookedRecipes();
+  });
 
+  function submitCookedRecipes() {
+    var checkboxes = document.getElementsByName("recipeCheckbox");
+    var checkedRecipes = [];
+    for (var i = 0; i < checkboxes.length; i++) {
+      if (checkboxes[i].checked) {
+        checkedRecipes.push(checkboxes[i].value);
+      }
+    }
+
+    $.ajax({
+      url: "/submit-cooked-recipes",
+      type: "POST",
+      data: JSON.stringify({ recipe_ids: checkedRecipes }),
+      contentType: "application/json",
+      success: function (data) {
+        window.location.href = "clear-recipe-list";
+        location.reload();
+      },
+      error: function () {
+        console.error("Failed to clear recipes");
+      },
+    });
+  }
 </script>
 {% endblock %}

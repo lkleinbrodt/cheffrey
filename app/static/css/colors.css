@@ -10,16 +10,17 @@
 } */
 
 :root {
-  --background-color: #FAF1E4;
+  --background-color: #faf1e4;
   --background-color-rgb: 250, 241, 228;
   --primary-color: #435334;
   --primary-color-rgb: 67, 83, 52;
-  --secondary-color: #9EB384;
+  --secondary-color: #9eb384;
   --secondary-color-rgb: 158, 179, 132;
-  --tertiary-color: #CEDEBD;
+  --tertiary-color: #cedebd;
   --tertiary-color-rgb: 206, 222, 189;
   --grey-color: #888888;
   --grey-color-rgb: 136, 136, 136;
   --light-grey-color: #f0f0f0;
   --light-grey-rgb: 240, 240, 240;
+  --bad-button-color: #daa07b;
 }

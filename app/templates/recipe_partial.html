@@ -1,182 +1,222 @@
 <style>
+  .recipe-col {
+    background-color: var(--background-color);
+    height: 75vh;
+  }
 
-    .recipe-col {
-        background-color: var(--background-color);
-        height: 75vh;
+  .card {
+    background-color: rgba(255, 255, 255, 0.5);
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .card-img-top {
+    object-fit: cover; /* Ensure the image covers the entire card */
+    height: 40%;
+    max-height: 40%;
+    cursor: pointer;
+  }
+
+  .text-container {
+    margin-bottom: 0px;
+    display: inline-block;
+    flex-direction: column;
+    padding: 0px;
+  }
+
+  .card-title {
+    color: var(--primary-color);
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding-left: 0px;
+    padding-right: 0px;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .card-text {
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--primary-color);
+  }
+
+  .view-full-recipe-button {
+    cursor: pointer;
+    color: var(--primary-color);
+  }
+
+  .button-container {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-around;
+    padding: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+    align-items: center;
+  }
+
+  .modal-dialog {
+    max-width: 80%;
+    margin-top: 10vh;
+  }
+
+  .favorite-btn {
+    cursor: pointer;
+    color: var(--primary-color);
+    font-size: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .modal-dialog {
+      max-width: 100%;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .card {
-        background-color: rgba(255, 255, 255, 0.5);
-        height: 100%;
-        overflow-y: auto;
+      background-color: rgba(255, 255, 255, 0.5);
+      height: auto;
     }
 
     .card-body {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
+      display: flex;
+      flex-direction: column;
+      height: auto;
     }
 
-    
     .card-img-top {
-        object-fit: cover; /* Ensure the image covers the entire card */
-        height: 40%;
-        max-height: 40%;
+      object-fit: cover; /* Ensure the image covers the entire card */
+      height: auto;
+      max-height: 40%;
     }
 
-    .text-container {
-        margin-bottom: 0px;
-        display: inline-block;
-        flex-direction: column;
-        padding: 0px;
-
+    .recipe-col {
+      height: auto;
+      flex: 0 0 100%; /* Set to full width on mobile */
+      max-width: 100%; /* Set to full width on mobile */
     }
-
-    .card-title {
-        color: var(--primary-color);
-        font-size: 2rem;
-        font-weight: bold;
-    }
-
-    .card-text {
-        font-size: 1.25rem;
-        font-style: italic;
-        color: var(--primary-color);
-    }
-
-    .view-full-recipe-button {
-        cursor: pointer;
-        color: var(--primary-color);
-    }
-
-    .button-container {
-        margin-top: auto;
-        display: flex;
-        justify-content: space-around;
-        padding: 0px;
-        margin-left: 0px;
-        margin-right: 0px;
-        align-items: center;
-    }
-
-    .modal-dialog {
-        max-width: 80%;
-        margin-top: 10vh;
-    }
-
-    .favorite-btn {
-        cursor: pointer;
-        color: var(--primary-color);
-        font-size: 2rem;
-    }
-
-    @media (max-width: 768px) {
-        .modal-dialog {
-            max-width: 100%;
-        }
-
-        .card {
-            background-color: rgba(255, 255, 255, 0.5);
-            height: auto;
-        }
-    
-        .card-body {
-            display: flex;
-            flex-direction: column;
-            height: auto;
-        }
-
-        .card-img-top {
-            object-fit: cover; /* Ensure the image covers the entire card */
-            height: auto;
-            max-height: 40%;
-        }
-
-        .recipe-col {
-            height: auto;
-            flex: 0 0 100%; /* Set to full width on mobile */
-            max-width: 100%; /* Set to full width on mobile */
-        }
-        
-    }
-    
-
+  }
 </style>
 
 {% for recipe in recipes %}
 <div class="col-md-4 mb-4 recipe-col" id="{{recipe.id}}">
-    <div class="card">
-        {% if recipe.image_url %}
-            <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.title }}">
-        {% endif %}
-        <div class="card-body">
-            <div class='text-container'>
-                <h5 class="card-title">{{ recipe.title }}</h5>
-                <hr style='margin: 5px'>
-                <p class="card-text">{{ recipe.description }}</p>
-            </div>
-            <div class="button-container">
-                <a class="view-full-recipe-button" data-bs-toggle="modal" data-bs-target="#recipeModal{{ recipe.id }}">
-                    Full Recipe
-                </a>
-                <button type="button" class="btn {% if recipe.in_list %}btn-danger{% else %}btn-secondary{% endif %} save-btn" data-recipe-id="{{ recipe.id }}">
-                    {% if recipe.in_list %}Remove from List{% else %}Save to List{% endif %}
-                </button>
-                <i type="button" class="fa-heart {% if recipe.in_favorites %}fas{% else %}far{% endif %} favorite-btn" data-recipe-id="{{ recipe.id }}">
-                </i>
-            </div>
-            <!--<a href="{{ url_for('recipe', recipe_id=recipe.id) }}" class="btn btn-primary">-->
-        </div>
+  <div class="card">
+    {% if recipe.image_url %}
+    <img
+      src="{{ recipe.image_url }}"
+      class="card-img-top"
+      alt="{{ recipe.title }}"
+      data-bs-toggle="modal"
+      data-bs-target="#recipeModal{{ recipe.id }}"
+    />
+    {% endif %}
+    <div class="card-body">
+      <div class="text-container">
+        <h5
+          class="card-title"
+          data-bs-toggle="modal"
+          data-bs-target="#recipeModal{{ recipe.id }}"
+        >
+          {{ recipe.title }}
+        </h5>
+        <hr style="margin: 5px" />
+        <p class="card-text">{{ recipe.description }}</p>
+      </div>
+      <div class="button-container">
+        <a
+          class="view-full-recipe-button"
+          data-bs-toggle="modal"
+          data-bs-target="#recipeModal{{ recipe.id }}"
+        >
+          Full Recipe
+        </a>
+        <button
+          type="button"
+          class="btn {% if recipe.in_list %}btn-danger{% else %}btn-secondary{% endif %} save-btn"
+          data-recipe-id="{{ recipe.id }}"
+        >
+          {% if recipe.in_list %}Remove from List{% else %}Save to List{% endif
+          %}
+        </button>
+        <i
+          type="button"
+          class="fa-heart {% if recipe.in_favorites %}fas{% else %}far{% endif %} favorite-btn"
+          data-recipe-id="{{ recipe.id }}"
+        >
+        </i>
+      </div>
+      <!--<a href="{{ url_for('recipe', recipe_id=recipe.id) }}" class="btn btn-primary">-->
     </div>
+  </div>
 </div>
 
 <!-- Recipe Modal -->
 
-
-
-<div class="modal fade" id="recipeModal{{ recipe.id }}" tabindex="-1" role="dialog" aria-labelledby="recipeModalLabel{{ recipe.id }}" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="recipeModalLabel{{ recipe.id }}">{{ recipe.title }}</h2>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+<div
+  class="modal fade"
+  id="recipeModal{{ recipe.id }}"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="recipeModalLabel{{ recipe.id }}"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="recipeModalLabel{{ recipe.id }}">
+          {{ recipe.title }}
+        </h2>
+        <button
+          type="button"
+          class="close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-md-4">
+              <img
+                src="{{ recipe.image_url }}"
+                class="img-fluid"
+                alt="{{ recipe.title }}"
+              />
+              <h4>Ingredients:</h4>
+              <ul>
+                {% for ingredient in recipe.ingredient_list %}
+                <li>{{ ingredient }}</li>
+                {% endfor %}
+              </ul>
             </div>
-            <div class="modal-body">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <img src="{{ recipe.image_url }}" class="img-fluid" alt="{{ recipe.title }}">
-                            <h4>Ingredients:</h4>
-                            <ul>
-
-                                {% for ingredient in recipe.ingredient_list %}
-                                    <li>{{ ingredient }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        <div class="col-md-8">
-                            <p>{{ recipe.description }}</p>
-                            <h4>Instructions:</h4>
-                            <ul>
-                                {% for instruction in recipe.instruction_list %}
-                                    <li>{{ instruction }}</li>
-                                {% endfor %}
-                            </ul>
-                            
-                        </div>
-                    </div>
-                </div>
+            <div class="col-md-8">
+              <p>{{ recipe.description }}</p>
+              <h4>Instructions:</h4>
+              <ul>
+                {% for instruction in recipe.instruction_list %}
+                <li>{{ instruction }}</li>
+                {% endfor %}
+              </ul>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+          </div>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
     </div>
+  </div>
 </div>
-
-
-
 
 {% endfor %}
