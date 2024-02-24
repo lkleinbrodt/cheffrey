@@ -221,8 +221,16 @@ endblock%} {% block content %}
       data: JSON.stringify({ recipe_ids: checkedRecipes }),
       contentType: "application/json",
       success: function (data) {
-        window.location.href = "clear-recipe-list";
-        location.reload();
+        $.ajax({
+          url: "/clear-recipe-list",
+          type: "GET",
+          success: function (data) {
+            location.reload();
+          },
+          error: function () {
+            console.error("Failed to clear recipes");
+          },
+        });
       },
       error: function () {
         console.error("Failed to clear recipes");

@@ -1,33 +1,33 @@
 <style>
-    .force-redraw {
-        display: none;
-    }
+  .force-redraw {
+    display: none;
+  }
 </style>
 <script>
-function getRecipeListCount() {
+  function getRecipeListCount() {
     var count;
 
     $.ajax({
-        url: '/get-recipe-list-count',  // Replace with the actual endpoint
-        type: 'GET',
-        async: false,  // Set async to false to wait for the response synchronously
-        success: function (data) {
-            count = data.count;
-        },
-        error: function () {
-            console.error('Failed to fetch recipe list count');
-        }
+      url: "/get-recipe-list-count", // Replace with the actual endpoint
+      type: "GET",
+      async: false, // Set async to false to wait for the response synchronously
+      success: function (data) {
+        count = data.count;
+      },
+      error: function () {
+        console.error("Failed to fetch recipe list count");
+      },
     });
 
     return count;
-}
+  }
 
-function updateRecipeCounters(count) {
-    console.log('updating recipe count to ' + count);
-    
-    $('#recipe-list-link').attr('data-count', count);
-    $('#brandLogo').attr('data-count', count);
-    $('#recipe-list-menu-link').attr('data-count', count);
+  function updateRecipeCounters(count) {
+    console.log("updating recipe count to " + count);
+
+    $("#recipe-list-link").attr("data-count", count);
+    $("#brandLogo").attr("data-count", count);
+    $("#recipe-list-menu-link").attr("data-count", count);
 
     // Force a redraw
     // This is ugly and should be unnecessary
@@ -37,75 +37,71 @@ function updateRecipeCounters(count) {
     // Force a reflow using offsetWidth
     // use offset width because it triggers a reflow without causing layout changes
     //(you can also accomplish this by setting a class with display none and then toggling that class twice)
-    $('#recipe-list-link')[0].offsetWidth;
-    $('#brandLogo')[0].offsetWidth;
-    $('#recipe-list-menu-link')[0].offsetWidth;
+    $("#recipe-list-link")[0].offsetWidth;
+    $("#brandLogo")[0].offsetWidth;
+    $("#recipe-list-menu-link")[0].offsetWidth;
+  }
 
-    
+  var recipeCount = getRecipeListCount();
 
-}
+  updateRecipeCounters(recipeCount);
 
-var recipeCount = getRecipeListCount();
-
-updateRecipeCounters(recipeCount);
-
-$(document).on('click', '.save-btn', function() {
-    var recipeId = $(this).data('recipe-id');
+  $(document).on("click", ".save-btn", function () {
+    var recipeId = $(this).data("recipe-id");
     toggleRecipeInList(recipeId);
-});
+  });
 
-function toggleRecipeInList(recipeId) {
-    console.log('toggle');
+  function toggleRecipeInList(recipeId) {
+    console.log("toggle");
 
     // Send the recipe ID to the server to toggle its state
     $.ajax({
-        url: '/toggle-recipe-in-list/' + recipeId,
-        type: "GET",
-        success: function (data) {
-            
-            updateListButtonState(recipeId);
-            updateRecipeCounters(getRecipeListCount());
-            
-            // You may want to provide feedback to the user if needed
-        },
-        error: function () {
-            console.error('Failed to toggle recipe in list');
-            // Handle error if needed
-        }
-    });
-}
+      url: "/toggle-recipe-in-list/" + recipeId,
+      type: "GET",
+      success: function (data) {
+        updateListButtonState(recipeId);
+        updateRecipeCounters(getRecipeListCount());
 
-$(document).on('click', '.favorite-btn', function() {
-    var recipeId = $(this).data('recipe-id');
+        // You may want to provide feedback to the user if needed
+      },
+      error: function () {
+        console.error("Failed to toggle recipe in list");
+        // Handle error if needed
+      },
+    });
+  }
+
+  $(document).on("click", ".favorite-btn", function () {
+    var recipeId = $(this).data("recipe-id");
     toggleFavorite(recipeId);
-});
+  });
 
-function toggleFavorite(recipeId) {
-
-// Send the recipe ID to the server to toggle its state
+  function toggleFavorite(recipeId) {
+    // Send the recipe ID to the server to toggle its state
     $.ajax({
-        url: '/toggle-favorite/' + recipeId,
-        type: "GET",
-        success: function (data) {
-            updateFavoriteButtonState(recipeId);
-        },
-        error: function () {
-            console.error('Failed to toggle recipe favorite');
-            // Handle error if needed
-        }
+      url: "/toggle-favorite/" + recipeId,
+      type: "GET",
+      success: function (data) {
+        updateFavoriteButtonState(recipeId);
+      },
+      error: function () {
+        console.error("Failed to toggle recipe favorite");
+        // Handle error if needed
+      },
     });
-}
+  }
 
-function updateFavoriteButtonState(recipeId, inFavorite) {
+  function updateFavoriteButtonState(recipeId, inFavorite) {
     var button = $('.favorite-btn[data-recipe-id="' + recipeId + '"]');
-    button.toggleClass('far fas')
-}
+    button.toggleClass("far fas");
+  }
 
-
-function updateListButtonState(recipeId, inList) {
+  function updateListButtonState(recipeId, inList) {
     var button = $('.save-btn[data-recipe-id="' + recipeId + '"]');
-    button.toggleClass('btn-secondary btn-danger').text(function(i, text) {
-        return text.trim() === 'Save to List' ? 'Remove from List' : 'Save to List';
+    button.toggleClass("btn-secondary danger").text(function (i, text) {
+      return text.trim() === "Save to List"
+        ? "Remove from List"
+        : "Save to List";
     });
-}
+  }
 </script>

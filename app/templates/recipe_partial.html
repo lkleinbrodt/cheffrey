@@ -45,6 +45,7 @@
     font-size: 1.25rem;
     font-style: italic;
     color: var(--primary-color);
+    padding-bottom: 15px;
   }
 
   .view-full-recipe-button {
@@ -71,6 +72,16 @@
     cursor: pointer;
     color: var(--primary-color);
     font-size: 2rem;
+  }
+
+  .btn {
+    width: 40%;
+  }
+
+  .btn.danger {
+    background-color: var(--bad-button-color);
+    border-color: var(--bad-button-color);
+    padding: 0.25rem 0.5rem;
   }
 
   @media (max-width: 768px) {
@@ -139,7 +150,7 @@
         </a>
         <button
           type="button"
-          class="btn {% if recipe.in_list %}btn-danger{% else %}btn-secondary{% endif %} save-btn"
+          class="btn {% if recipe.in_list %}danger{% else %}btn-secondary{% endif %} save-btn"
           data-recipe-id="{{ recipe.id }}"
         >
           {% if recipe.in_list %}Remove from List{% else %}Save to List{% endif
