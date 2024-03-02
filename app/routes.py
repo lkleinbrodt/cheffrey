@@ -17,9 +17,10 @@ from sqlalchemy.exc import IntegrityError
 from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRecipe
 from app import app, db, admin
 import json
-
+from flask_cors import cross_origin
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 from urllib.parse import urlsplit
-
+from werkzeug.security import check_password_hash
 from app.models import User, Recipe, RecipeList, Favorite
 from app.forms import LoginForm, RegistrationForm, SettingsForm
 import datetime
@@ -54,8 +55,7 @@ def refresh_explore():
     return jsonify({"status": "success"})
 
 
-@app.route("/load-more-recipes/<int:page>")
-@login_required
+@app.route("/load-more-recipes/<int:page>", methods=["GET"])
 def load_more_recipes(page):
     per_page = 6  # Adjust as needed
     max_pages = 10
@@ -66,61 +66,55 @@ def load_more_recipes(page):
         # recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
 
     recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
-    recipes = [Recipe.from_dict(recipe) for recipe in recipes]
+    # recipes = [Recipe.from_dict(recipe) for recipe in recipes]
 
     ##TODO: improve
-    for recipe in recipes:
-        # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
-        recipe_list_item = RecipeList.query.filter_by(
-            user_id=current_user.id, recipe_id=recipe.id
-        ).first()
-        if recipe_list_item:
-            recipe.in_list = True
-        else:
-            recipe.in_list = False
-        favorite_item = Favorite.query.filter_by(
-            user_id=current_user.id, recipe_id=recipe.id
-        ).first()
-        if favorite_item:
-            recipe.in_favorites = True
-        else:
-            recipe.in_favorites = False
+    # for recipe in recipes:
+    #     # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
+    #     recipe.ingredient_list = eval(recipe.ingredients)
+    #     recipe.instruction_list = eval(recipe.instructions_list)
+    #     recipe_list_item = RecipeList.query.filter_by(
+    #         user_id=current_user.id, recipe_id=recipe.id
+    #     ).first()
+    #     if recipe_list_item:
+    #         recipe.in_list = True
+    #     else:
+    #         recipe.in_list = False
+    #     favorite_item = Favorite.query.filter_by(
+    #         user_id=current_user.id, recipe_id=recipe.id
+    #     ).first()
+    #     if favorite_item:
+    #         recipe.in_favorites = True
+    #     else:
+    #         recipe.in_favorites = False
 
     # TODO: improve
 
-    return render_template("recipe_partial.html", recipes=recipes)
+    return jsonify({"recipes": recipes})
 
 
-@app.route("/login", methods=["POST", "GET"])
+@app.route("/login", methods=["POST"])
 @limiter.limit("5 per 5 seconds")  # Adjust the limit as needed
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for("explore"))
 
-    form = LoginForm(request.form)
-    if form.validate_on_submit():
-        user = db.session.scalar(
-            sa.select(User).where(User.username == form.username.data)
-        )
+    # Assuming the incoming request is JSON
+    data = request.get_json()
 
-        if user is None or not user.check_password(form.password.data):
-            flash("Invalid username or password")
-            return redirect(url_for("login"))
+    # Extract username and password from the JSON data
+    username = data.get("username")
+    password = data.get("password")
 
-        login_user(user, remember=form.remember_me.data)
+    if not username or not password:
+        return jsonify({"message": "Username and password are required"}), 400
 
-        next_page = request.args.get("next")
-        # if there is no next, no problem
-        # if there is a next, make sure it's a relative path, otherwise redirect to index
-        # this is to prevent a malicious user from inserting a URL to a malicious site
-        if not next_page or urlsplit(next_page).netloc != "":
-            next_page = url_for("index")
+    user = User.query.filter_by(username=username).first()
 
-        return redirect(next_page)
+    if user is None or not check_password_hash(user.password_hash, password):
+        return jsonify({"message": "Invalid username or password"}), 401
 
-    return render_template("login.html", title="Sign In", form=form)
+    access_token = create_access_token(identity=user.id)
+
+    return jsonify(access_token=access_token), 200
 
 
 @app.route("/logout")
@@ -131,20 +125,31 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/register", methods=["GET", "POST"])
+@app.route("/register", methods=["POST"])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for("index"))
-    form = RegistrationForm()
-    if form.validate_on_submit():
-        user = User(username=form.username.data)
-        user.set_password(form.password.data)
+    data = request.get_json()
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+
+    if not username or not password:
+        return jsonify({"message": "Missing fields"}), 400
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({"message": "Username already exists"}), 400
+
+    try:
+        user = User(username=username)
+        user.set_password(password)
         db.session.add(user)
         db.session.commit()
-        login_user(user, remember=True)
-        flash("Congratulations, you are now a registered user!")
-        return redirect(url_for("explore"))
-    return render_template("register.html", title="Register", form=form)
+
+        access_token = create_access_token(identity=user.id)
+
+        return jsonify(access_token=access_token), 200
+
+    except:
+        db.session.rollback()
+        return jsonify({"message": "Error creating user"}), 500
 
 
 @app.route("/settings", methods=["GET", "POST"])
@@ -342,25 +347,28 @@ def saved():
 
 
 @app.route("/recipe-list")
-@login_required
+@jwt_required()
 def recipe_list():
-    recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
-    recipes = []
-    for recipe_list_item in recipe_list:
+    print("WOAH")
+    recipe_list = RecipeList.query.filter_by(user_id=get_jwt_identity()).all()
+    recipes = [r.to_dict() for r in recipe_list]
+    # TODO: re do this
+    # for recipe_list_item in recipe_list:
 
-        recipe = recipe_list_item.recipe
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
-        recipe.in_list = True
-        favorite_item = Favorite.query.filter_by(
-            user_id=current_user.id, recipe_id=recipe.id
-        ).first()
-        if favorite_item:
-            recipe.in_favorites = True
-        else:
-            recipe.in_favorites = False
-        recipes.append(recipe)
-    return render_template("recipe_list.html", recipes=recipes)
+    #     recipe = recipe_list_item.recipe
+    #     recipe.ingredient_list = eval(recipe.ingredients)
+    #     recipe.instruction_list = eval(recipe.instructions_list)
+    #     recipe.in_list = True
+    #     favorite_item = Favorite.query.filter_by(
+    #         user_id=current_user.id, recipe_id=recipe.id
+    #     ).first()
+    #     if favorite_item:
+    #         recipe.in_favorites = True
+    #     else:
+    #         recipe.in_favorites = False
+    #     recipes.append(recipe)
+
+    return jsonify({"recipes": recipes})
 
 
 @app.route("/cooked-recipes")

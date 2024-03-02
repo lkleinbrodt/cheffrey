@@ -8,6 +8,8 @@ from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_session import Session
 from flask_caching import Cache
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 
 
 app = Flask(__name__)
@@ -22,6 +24,8 @@ login.login_view = (
 )
 Session(app)
 cache = Cache(app)
+CORS(app)
+JWTManager(app)
 
 
 class MyAdminIndexView(AdminIndexView):
