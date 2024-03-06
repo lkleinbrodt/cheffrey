@@ -47,14 +47,14 @@ def explore():
     return render_template("explore.html")
 
 
-@app.route("/refresh-explore", methods=["GET"])
+@app.route("/api/refresh-explore", methods=["GET"])
 @login_required
 def refresh_explore():
     session.pop("explore_recipes", None)
     return jsonify({"status": "success"})
 
 
-@app.route("/load-more-recipes/<int:page>")
+@app.route("/api/load-more-recipes/<int:page>")
 @login_required
 def load_more_recipes(page):
     per_page = 6  # Adjust as needed
@@ -181,7 +181,7 @@ def recipe(recipe_id):
     return render_template("recipe.html", recipe=recipe)
 
 
-@app.route("/add-to-favorites/<int:recipe_id>")
+@app.route("/api/add-to-favorites/<int:recipe_id>")
 @login_required
 def add_to_favorites(recipe_id):
     favorite = Favorite(user_id=current_user.id, recipe_id=recipe_id)
@@ -196,7 +196,7 @@ def add_to_favorites(recipe_id):
         return jsonify({"status": "error"})
 
 
-@app.route("/remove-from-favorites/<int:recipe_id>")
+@app.route("/api/remove-from-favorites/<int:recipe_id>")
 @login_required
 def remove_from_favorites(recipe_id):
     favorite = Favorite.query.filter_by(
@@ -212,7 +212,7 @@ def remove_from_favorites(recipe_id):
     return jsonify({"status": "success"})
 
 
-@app.route("/add-to-recipe-list/<int:recipe_id>")
+@app.route("/api/add-to-recipe-list/<int:recipe_id>")
 @login_required
 def add_to_recipe_list(recipe_id):
 
@@ -228,7 +228,7 @@ def add_to_recipe_list(recipe_id):
         return jsonify({"status": "error"})
 
 
-@app.route("/remove-from-recipe-list/<int:recipe_id>")
+@app.route("/api/remove-from-recipe-list/<int:recipe_id>")
 @login_required
 def remove_from_recipe_list(recipe_id):
     recipe_list_item = RecipeList.query.filter_by(
@@ -254,7 +254,17 @@ def clear_recipe_list():
     return redirect(url_for("recipe_list"))
 
 
-@app.route("/submit-cooked-recipes", methods=["POST"])
+@app.route("/api/clear-recipe-list")
+@login_required
+def clear_recipe_list_api():
+    recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
+    for recipe_list_item in recipe_list:
+        db.session.delete(recipe_list_item)
+    db.session.commit()
+    return jsonify({"status": "success"})
+
+
+@app.route("/api/submit-cooked-recipes", methods=["POST"])
 @login_required
 def submit_cooked_recipes():
     recipe_ids = request.json["recipe_ids"]
@@ -270,7 +280,7 @@ def submit_cooked_recipes():
     return jsonify({"status": "success"})
 
 
-@app.route("/toggle-recipe-in-list/<int:recipe_id>")
+@app.route("/api/toggle-recipe-in-list/<int:recipe_id>")
 @login_required
 def toggle_recipe_in_list(recipe_id):
     recipe_list_item = RecipeList.query.filter_by(
@@ -287,7 +297,7 @@ def toggle_recipe_in_list(recipe_id):
     return jsonify({"status": "success"})
 
 
-@app.route("/toggle-favorite/<int:recipe_id>")
+@app.route("/api/toggle-favorite/<int:recipe_id>")
 @login_required
 def toggle_favorite(recipe_id):
     favorite = Favorite.query.filter_by(
@@ -464,17 +474,12 @@ def shopping_list():
     )
 
 
-@app.route("/test")
-def test():
-    return render_template("test.html")
-
-
 @app.route("/favicon.ico")
 def favicon():
     return url_for("static", filename="data:,")
 
 
-@app.route("/get-recipe-list-count", methods=["GET"])
+@app.route("/api/get-recipe-list-count", methods=["GET"])
 @login_required
 def get_recipe_list_count():
     # TODO: which ones better?
@@ -483,7 +488,7 @@ def get_recipe_list_count():
     return jsonify({"count": count})
 
 
-@app.route("/get-recipe-list", methods=["GET"])
+@app.route("/api/get-recipe-list", methods=["GET"])
 @login_required
 def get_recipe_list():
     recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()

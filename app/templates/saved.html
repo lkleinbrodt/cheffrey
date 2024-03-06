@@ -75,7 +75,7 @@ endblock%} {% block content %}
   function toggleFavorite(recipeId) {
     // Send the recipe ID to the server to toggle its state
     $.ajax({
-      url: "/toggle-favorite/" + recipeId,
+      url: "/api/toggle-favorite/" + recipeId,
       type: "GET",
       success: function (data) {
         $("#" + recipeId).hide(); // Hide the element with ID recipe.id
