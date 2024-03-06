@@ -1,45 +1,45 @@
 import { React, useEffect, useState } from "react";
-import { View, Text, Alert, StyleSheet } from "react-native";
-import axios from "../components/axios";
+import { View, Text, Alert, StyleSheet, Button } from "react-native";
 import RecipeGrid from "../components/RecipeGrid";
-import * as SecureStore from "expo-secure-store";
-import Colors from "../config/colors";
+import colors from "../config/colors";
 import Screen from "../components/Screen";
+import recipesAPI from "../api/recipes";
+import useAuth from "../auth/useAuth";
+
 const RecipeList = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const auth = useAuth();
 
-  SecureStore.getItemAsync("token").then((token) => {
-    if (token) {
-      axios.defaults.headers["Authorization"] = `Bearer ${token}`;
-    } else {
-      console.log("Token does not exist, redirecting to login");
-      router.replace("login");
-    }
-  });
-
-  const fetchData = async () => {
-    console.log("trying to fetch recipe list");
-    axios
-      .get("recipe-list")
-      .then((response) => {
-        setRecipes(response.data.recipes);
-      })
-      .catch((error) => {
-        //log the error with plenty of context
-        console.error("Error loading recipes", error);
-        Alert.alert("Error", "Error loading recipes");
-      });
+  const fetchRecipes = async () => {
+    setLoading(true);
+    const response = await recipesAPI.loadRecipeList();
+    if (!response.ok) return setError(true);
+    console.log(response);
+    setRecipes(response.data.recipes);
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchData();
+    fetchRecipes();
   }, [navigation]);
 
   return (
     <Screen style={styles.screen}>
       <View>
-        <Text>Recipe List</Text>
-        <RecipeGrid recipes={recipes} />
+        {error && (
+          <>
+            <Text>Couldn't retrieve the recipes.</Text>
+            <Button title="Retry" onPress={fetchRecipes} />
+          </>
+        )}
+        {recipes.length === 0 ? (
+          <Text>Add recipes to your list to see them here.</Text>
+        ) : (
+          <RecipeGrid recipes={recipes} />
+        )}
+        <Button title="Logout" onPress={() => auth.logOut()} />
       </View>
     </Screen>
   );
@@ -47,7 +47,7 @@ const RecipeList = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: Colors.backgroundColor,
+    backgroundColor: colors.background,
   },
 });
 export default RecipeList;

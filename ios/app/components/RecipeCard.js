@@ -21,6 +21,7 @@ const RecipeCard = ({ recipe, onPress }) => {
           source={{ uri: recipe.image_url }}
           style={styles.cardImage}
           alt={recipe.title}
+          defaultSource={require("../assets/chef.png")}
         />
 
         <View style={styles.cardBody}>

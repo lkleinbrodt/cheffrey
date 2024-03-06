@@ -25,7 +25,7 @@ login.login_view = (
 Session(app)
 cache = Cache(app)
 CORS(app)
-JWTManager(app)
+jwt = JWTManager(app)
 
 
 class MyAdminIndexView(AdminIndexView):

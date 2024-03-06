@@ -16,7 +16,7 @@ class LoginForm(FlaskForm):
 class RegistrationForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired()])
     # email = StringField('Email', validators = [DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
+    password = PasswordField("Password", validators=[DataRequired(), Length(min=5)])
     password2 = PasswordField(
         "Repeat Password",
         validators=[DataRequired(), EqualTo("password", "Passwords do not match.")],

@@ -15,10 +15,16 @@ import sqlalchemy as sa
 from config import Config
 from sqlalchemy.exc import IntegrityError
 from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRecipe
-from app import app, db, admin
+from app import app, db, admin, jwt
 import json
 from flask_cors import cross_origin
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from flask_jwt_extended import (
+    create_access_token,
+    get_jwt_identity,
+    jwt_required,
+    verify_jwt_in_request,
+    decode_token,
+)
 from urllib.parse import urlsplit
 from werkzeug.security import check_password_hash
 from app.models import User, Recipe, RecipeList, Favorite
@@ -49,15 +55,60 @@ def explore():
 
 
 @app.route("/api/refresh-explore", methods=["GET"])
+def refresh_explore_api():
+    session.pop("explore_recipes", None)
+    return jsonify({"status": "success"})
+
+
+@app.route("/refresh-explore", methods=["GET"])
 @login_required
 def refresh_explore():
     session.pop("explore_recipes", None)
     return jsonify({"status": "success"})
 
 
-@app.route("/api/load-more-recipes/<int:page>")
+@app.route("/load-more-recipes/<int:page>")
 @login_required
 def load_more_recipes(page):
+    per_page = 6  # Adjust as needed
+    max_pages = 10
+
+    if "explore_recipes" not in session:
+        recipes = Recipe.query.order_by(func.random()).limit(per_page * max_pages)
+        session["explore_recipes"] = [recipe.to_dict() for recipe in recipes]
+        # recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
+
+    recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
+    recipes = [Recipe.from_dict(recipe) for recipe in recipes]
+
+    ##TODO: improve
+    for recipe in recipes:
+        # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
+        recipe.ingredient_list = eval(recipe.ingredients)
+        recipe.instruction_list = eval(recipe.instructions_list)
+        recipe_list_item = RecipeList.query.filter_by(
+            user_id=current_user.id, recipe_id=recipe.id
+        ).first()
+        if recipe_list_item:
+            recipe.in_list = True
+        else:
+            recipe.in_list = False
+        favorite_item = Favorite.query.filter_by(
+            user_id=current_user.id, recipe_id=recipe.id
+        ).first()
+        if favorite_item:
+            recipe.in_favorites = True
+        else:
+            recipe.in_favorites = False
+
+    # TODO: improve
+
+    return render_template("recipe_partial.html", recipes=recipes)
+
+
+@app.route("/api/load-more-recipes/", methods=["GET"])
+def load_more_recipes_api():
+    page = int(request.args.get("page", 1))
     per_page = 6  # Adjust as needed
     max_pages = 10
 
@@ -94,9 +145,39 @@ def load_more_recipes(page):
     return jsonify({"recipes": recipes})
 
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["POST", "GET"])
 @limiter.limit("5 per 5 seconds")  # Adjust the limit as needed
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("explore"))
+
+    form = LoginForm(request.form)
+    if form.validate_on_submit():
+        user = db.session.scalar(
+            sa.select(User).where(User.username == form.username.data)
+        )
+
+        if user is None or not user.check_password(form.password.data):
+            flash("Invalid username or password")
+            return redirect(url_for("login"))
+
+        login_user(user, remember=form.remember_me.data)
+
+        next_page = request.args.get("next")
+        # if there is no next, no problem
+        # if there is a next, make sure it's a relative path, otherwise redirect to index
+        # this is to prevent a malicious user from inserting a URL to a malicious site
+        if not next_page or urlsplit(next_page).netloc != "":
+            next_page = url_for("index")
+
+        return redirect(next_page)
+
+    return render_template("login.html", title="Sign In", form=form)
+
+
+@app.route("/api/login", methods=["POST"])
+@limiter.limit("5 per 5 seconds")  # Adjust the limit as needed
+def login_api():
 
     # Assuming the incoming request is JSON
     data = request.get_json()
@@ -113,9 +194,19 @@ def login():
     if user is None or not check_password_hash(user.password_hash, password):
         return jsonify({"message": "Invalid username or password"}), 401
 
-    access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=user)
 
-    return jsonify(access_token=access_token), 200
+    return jsonify(access_token), 200
+
+
+@jwt.additional_claims_loader
+def add_claims_to_access_token(user):
+    return {"role": user.role, "username": user.username, "id": user.id}
+
+
+@jwt.user_identity_loader
+def user_identity_lookup(user):
+    return user.id
 
 
 @app.route("/logout")
@@ -126,8 +217,24 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/register", methods=["POST"])
+@app.route("/register", methods=["GET", "POST"])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        login_user(user, remember=True)
+        flash("Congratulations, you are now a registered user!")
+        return redirect(url_for("explore"))
+    return render_template("register.html", title="Register", form=form)
+
+
+@app.route("/api/register", methods=["POST"])
+def register_api():
     data = request.get_json()
     username = data.get("username", "").strip()
     password = data.get("password", "").strip()
@@ -357,12 +464,11 @@ def saved():
     return render_template("saved.html", favorites=favorites, cooked=cooked)
 
 
-@app.route("/recipe-list")
+@app.route("/api/recipe-list")
 @jwt_required()
 def recipe_list():
-    print("WOAH")
     recipe_list = RecipeList.query.filter_by(user_id=get_jwt_identity()).all()
-    recipes = [r.to_dict() for r in recipe_list]
+    recipes = [r.recipe.to_dict() for r in recipe_list]
     # TODO: re do this
     # for recipe_list_item in recipe_list:
 

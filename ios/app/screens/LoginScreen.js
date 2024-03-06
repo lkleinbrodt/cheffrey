@@ -9,8 +9,10 @@ import {
 } from "../components/forms/index.js";
 import authAPI from "../api/auth.js";
 import * as Yup from "yup";
-import jwtDecode from "jwt-decode";
-import AuthContext from "../auth/context.js";
+import useAuth from "../auth/useAuth.js";
+
+//required to properly decode the token
+import "core-js/stable/atob";
 
 const validationSchema = Yup.object().shape({
   username: Yup.string().required().label("Username"),
@@ -18,15 +20,14 @@ const validationSchema = Yup.object().shape({
 });
 
 function LoginScreen(props) {
-  const authContext = useContext(AuthContext);
+  const auth = useAuth();
   const [loginFailed, setLoginFailed] = useState(false);
 
   const handleSubmit = async ({ username, password }) => {
     const result = await authAPI.login(username, password);
     if (!result.ok) return setLoginFailed(true);
     setLoginFailed(false);
-    const user = jwtDecode(result.data);
-    authContext.setUser(user);
+    auth.logIn(result.data);
   };
   return (
     <Screen style={styles.container}>

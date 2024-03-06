@@ -1,9 +1,7 @@
-import { React, useEffect, useState } from "react";
-import { StyleSheet, ActivityIndicator } from "react-native";
+import { React, useEffect, useState, useContext } from "react";
+import { StyleSheet, ActivityIndicator, Text } from "react-native";
 import LottieActivityIndicator from "../components/ActivityIndicator";
-import axios from "../components/axios";
 import RecipeGrid from "../components/RecipeGrid";
-import * as SecureStore from "expo-secure-store";
 import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
@@ -16,19 +14,15 @@ const Explore = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    SecureStore.getItemAsync("token").then((token) => {
-      if (token) {
-        console.log("Token exists:", token);
-        axios.defaults.headers["Authorization"] = `Bearer ${token}`;
-      } else {
-        console.log("Token does not exist, redirecting to login");
-        navigation.replace("login");
-      }
-    });
-  }, []);
+  const onRefresh = async () => {
+    await recipesAPI.refreshExplore();
+    setPage(1);
+    setRecipes([]);
+    fetchRecipes(1);
+  };
 
   const fetchRecipes = async (pageNumber) => {
+    console.log("Fetching page number: ", pageNumber);
     setLoading(true);
     const response = await recipesAPI.loadRandomRecipes(pageNumber);
     if (!response.ok) return setError(true);
@@ -51,6 +45,7 @@ const Explore = ({ navigation }) => {
   useEffect(() => {
     setPageLoading(true);
     fetchRecipes(page);
+    setPageLoading(false);
   }, []);
 
   return (
@@ -66,6 +61,7 @@ const Explore = ({ navigation }) => {
         recipes={recipes}
         navigation={navigation}
         onScrollToBottom={handleScrollToBottom}
+        onRefresh={onRefresh}
       />
       {loading && (
         <ActivityIndicator
