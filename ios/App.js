@@ -1,23 +1,72 @@
-import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import React, { useState, useEffect } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-
-import Login from "./app/Login"; // Import your home screen component
-import Explore from "./app/Explore"; // Import your explore screen component
-import Home from "."; // Import your home screen component
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";
+import Explore from "./app/screens/ExploreScreen";
+import RecipeList from "./app/screens/RecipesScreen";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import AuthNavigator from "./app/navigation/AuthNavigator";
+import navigationTheme from "./app/navigation/navigationTheme";
+import AppNavigator from "./app/navigation/AppNavigator";
+import AuthContext from "./app/auth/context";
 
 const Stack = createStackNavigator();
-
-function App() {
+const Tab = createBottomTabNavigator();
+//TODO: nesting navigators
+const TabNavigator = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="Explore" component={Explore} />
-        <Stack.Screen name="Login" component={Login} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveBackgroundColor: "tomato",
+        tabBarActiveTintColor: "white",
+        tabBarAnactiveBackgroundColor: "#eee",
+        tabBarInactiveTintColor: "black",
+      }}
+    >
+      <Tab.Screen
+        name="Explore"
+        component={Explore}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome size={28} name="compass" color={color} />
+          ),
+        }}
+        screenOptions={{ tabBarIcon: "hey" }}
+      />
+      <Tab.Screen
+        name="RecipeList"
+        component={RecipeList}
+        options={{
+          title: "Recipes",
+          tabBarIcon: ({ color }) => (
+            <FontAwesome size={28} name="list" color={color} />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
+const StackNavigator = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="Explore" component={Explore} />
+      <Stack.Screen name="RecipeList" component={RecipeList} />
+    </Stack.Navigator>
+  );
+};
+
+export default function App() {
+  const [user, setUser] = useState();
+
+  return (
+    <AuthContext.Provider value={{ user, setUser }}>
+      <NavigationContainer theme={navigationTheme}>
+        {user ? <AppNavigator /> : <AuthNavigator />}
+      </NavigationContainer>
+    </AuthContext.Provider>
   );
 }
-
-export default App;

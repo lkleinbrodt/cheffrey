@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import ImageViewer from "../components/ImageViewer.js";
+import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { router } from "expo-router";
@@ -15,26 +14,17 @@ const Home = () => {
   useEffect(() => {
     SecureStore.getItemAsync("token").then((token) => {
       if (!token) {
-        consolelog("Token does not exist, redirecting to login");
-        router.replace("Login");
+        console.log("Token does not exist, redirecting to login");
+        router.replace("login");
       }
     });
   }, []);
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        <ImageViewer placeholderImageSource={CheffreyLogo} />
+        <Image source={CheffreyLogo} style={styles.image} />
       </View>
       <Text style={styles.title}>Cheffrey</Text>
-      <View style={[styles.buttonContainer]}>
-        <Pressable
-          style={[styles.button, { backgroundColor: "#fff" }]}
-          onPress={() => handleNavPress("Explore")}
-        >
-          <FontAwesome name="sign-in" size={18} style={styles.buttonIcon} />
-          <Text style={[styles.buttonLabel]}>Explore</Text>
-        </Pressable>
-      </View>
     </View>
   );
 };
@@ -47,6 +37,11 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     paddingTop: 58,
+  },
+  image: {
+    width: 320,
+    height: 320,
+    borderRadius: 18,
   },
   title: {
     fontSize: 36,
