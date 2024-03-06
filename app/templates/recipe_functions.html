@@ -8,7 +8,7 @@
     var count;
 
     $.ajax({
-      url: "/get-recipe-list-count", // Replace with the actual endpoint
+      url: "/api/get-recipe-list-count", // Replace with the actual endpoint
       type: "GET",
       async: false, // Set async to false to wait for the response synchronously
       success: function (data) {
@@ -56,7 +56,7 @@
 
     // Send the recipe ID to the server to toggle its state
     $.ajax({
-      url: "/toggle-recipe-in-list/" + recipeId,
+      url: "/api/toggle-recipe-in-list/" + recipeId,
       type: "GET",
       success: function (data) {
         updateListButtonState(recipeId);
@@ -79,7 +79,7 @@
   function toggleFavorite(recipeId) {
     // Send the recipe ID to the server to toggle its state
     $.ajax({
-      url: "/toggle-favorite/" + recipeId,
+      url: "/api/toggle-favorite/" + recipeId,
       type: "GET",
       success: function (data) {
         updateFavoriteButtonState(recipeId);
