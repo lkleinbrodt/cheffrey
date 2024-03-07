@@ -56,7 +56,7 @@
 
     // Send the recipe ID to the server to toggle its state
     $.ajax({
-      url: "/api/toggle-recipe-in-list/" + recipeId,
+      url: "/toggle-recipe-in-list/" + recipeId,
       type: "GET",
       success: function (data) {
         updateListButtonState(recipeId);
@@ -79,7 +79,7 @@
   function toggleFavorite(recipeId) {
     // Send the recipe ID to the server to toggle its state
     $.ajax({
-      url: "/api/toggle-favorite/" + recipeId,
+      url: "/toggle-favorite/" + recipeId,
       type: "GET",
       success: function (data) {
         updateFavoriteButtonState(recipeId);
