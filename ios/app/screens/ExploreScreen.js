@@ -1,11 +1,10 @@
 import { React, useEffect, useState, useContext } from "react";
-import { StyleSheet, ActivityIndicator, Text } from "react-native";
+import { StyleSheet, ActivityIndicator, Text, Button } from "react-native";
 import LottieActivityIndicator from "../components/ActivityIndicator";
 import RecipeGrid from "../components/RecipeGrid";
 import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
-import { Button } from "../components/Button";
 
 const Explore = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -13,6 +12,7 @@ const Explore = ({ navigation }) => {
   const [pageLoading, setPageLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [atBottom, setAtBottom] = useState(false);
 
   const onRefresh = async () => {
     await recipesAPI.refreshExplore();
@@ -32,14 +32,13 @@ const Explore = ({ navigation }) => {
   };
 
   const handleScrollToBottom = () => {
-    // Increment the page and fetch new recipes
-    setLoading(true);
     const nextPage = page + 1;
-    if (nextPage > 10) {
-      setRecipes([]);
+    if (nextPage > 2) {
+      return false;
     }
     fetchRecipes(nextPage);
     setPage(nextPage);
+    return true;
   };
 
   useEffect(() => {
@@ -52,7 +51,7 @@ const Explore = ({ navigation }) => {
     <Screen style={styles.screen}>
       {error && (
         <>
-          <AppText>Couldn't retrieve the recipes.</AppText>
+          <Text>Couldn't retrieve the recipes.</Text>
           <Button title="Retry" onPress={() => fetchRecipes(page)} />
         </>
       )}
@@ -70,6 +69,7 @@ const Explore = ({ navigation }) => {
           color={colors.primary}
         />
       )}
+      <Button title="Load more" onPress={onRefresh} />
     </Screen>
   );
 };

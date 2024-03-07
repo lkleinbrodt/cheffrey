@@ -1,11 +1,9 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-{
-}
-import RecipesScreen from "../screens/RecipesScreen.js";
 import FeedNavigator from "./FeedNavigator.js";
-
+import SavedNavigator from "./SavedNavigator.js";
+import ListNavigator from "./ListNavigator.js";
 const Tab = createBottomTabNavigator();
 
 const AppNavigator = () => (
@@ -20,8 +18,22 @@ const AppNavigator = () => (
       }}
     />
     <Tab.Screen
-      name="Recipes"
-      component={RecipesScreen}
+      name="Saved"
+      component={SavedNavigator}
+      options={{
+        tabBarIcon: ({ color, size }) => (
+          <MaterialCommunityIcons
+            name="bookmark-multiple"
+            color={color}
+            size={size}
+          />
+        ),
+        unmountOnBlur: true,
+      }}
+    />
+    <Tab.Screen
+      name="My List"
+      component={ListNavigator}
       options={{
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons

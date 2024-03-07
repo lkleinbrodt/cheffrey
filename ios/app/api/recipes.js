@@ -11,8 +11,37 @@ function loadRecipeList() {
 function refreshExplore() {
   return client.get("/refresh-explore");
 }
+
+function toggleRecipeInList(recipe_id) {
+  return client.post("/toggle-recipe-in-list/", { recipe_id });
+}
+
+function toggleRecipeInFavorites(recipe_id) {
+  return client.post("/toggle-favorite/", { recipe_id });
+}
+
+function clearRecipeList() {
+  return client.post("/clear-recipe-list");
+}
+
+function loadFavorites() {
+  return client.get("/get-favorites");
+}
+function loadCooked() {
+  return client.get("/get-cooked");
+}
+
+function loadShoppingList() {
+  return client.get("/get-shopping-list/");
+}
 export default {
   loadRandomRecipes,
   loadRecipeList,
   refreshExplore,
+  toggleRecipeInList,
+  toggleRecipeInFavorites,
+  clearRecipeList,
+  loadFavorites,
+  loadCooked,
+  loadShoppingList,
 };

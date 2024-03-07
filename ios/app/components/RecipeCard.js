@@ -7,13 +7,23 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from "react-native";
-import RecipeModal from "./RecipeModal";
-const RecipeCard = ({ recipe, onPress }) => {
-  const [showFullRecipe, setShowFullRecipe] = useState(false);
+import colors from "../config/colors";
+import recipesAPI from "../api/recipes";
+import { FontAwesome } from "@expo/vector-icons"; // Import the required icon from Expo Vector Icons
 
-  const handleFullRecipePress = () => {
-    setShowFullRecipe(!showFullRecipe);
+const RecipeCard = ({ recipe, onPress }) => {
+  const [isSaved, setIsSaved] = useState(recipe.in_list);
+  const [isFavorite, setIsFavorite] = useState(recipe.in_favorites);
+
+  const handleSavePress = () => {
+    recipesAPI.toggleRecipeInList(recipe.id);
+    setIsSaved(!isSaved);
   };
+  const handleFavoritesPress = () => {
+    recipesAPI.toggleRecipeInFavorites(recipe.id);
+    setIsFavorite(!isFavorite);
+  };
+
   return (
     <TouchableWithoutFeedback onPress={onPress}>
       <View style={styles.card}>
@@ -34,38 +44,34 @@ const RecipeCard = ({ recipe, onPress }) => {
           </View>
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={styles.viewRecipeButton}
-              onPress={handleFullRecipePress}
-            >
-              <Text style={styles.buttonText}>Full Recipe</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
               style={[
                 styles.saveButton,
-                { backgroundColor: recipe.in_list ? "red" : "gray" },
+                {
+                  backgroundColor: isSaved ? colors.danger : colors.primary,
+                },
               ]}
-              onPress={() => console.log("Save to List or Remove from List")}
+              onPress={handleSavePress}
             >
               <Text style={styles.buttonText}>
-                {recipe.in_list ? "Remove from List" : "Save to List"}
+                {isSaved ? "Remove from List" : "Add to List"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.favoriteButton}
-              onPress={() => console.log("Toggle Favorites")}
+              style={{
+                backgroundColor: colors.white,
+                padding: 10,
+                borderRadius: 50,
+              }}
+              onPress={handleFavoritesPress}
             >
-              <Text style={styles.buttonText}>Favorite</Text>
+              <FontAwesome
+                name={isFavorite ? "heart" : "heart-o"}
+                size={30}
+                color={isFavorite ? "red" : colors.primary}
+              />
             </TouchableOpacity>
           </View>
         </View>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={showFullRecipe}
-          onRequestClose={handleFullRecipePress}
-        >
-          <RecipeModal recipe={recipe} closeModal={handleFullRecipePress} />
-        </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -103,8 +109,10 @@ const styles = {
   },
   buttonContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     alignItems: "center",
+    gap: 50,
+    marginLeft: 30,
   },
   viewRecipeButton: {
     backgroundColor: "#007bff",

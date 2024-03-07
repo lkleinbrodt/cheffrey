@@ -98,11 +98,6 @@ export default function App() {
     return null;
   }
 
-  if (!isReady)
-    return (
-      <AppLoading startAsync={restoreToken} onFinish={() => setIsReady(true)} />
-    );
-
   return (
     <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <AuthContext.Provider value={{ user, setUser }}>

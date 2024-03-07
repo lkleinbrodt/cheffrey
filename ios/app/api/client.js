@@ -10,7 +10,6 @@ apiClient.addAsyncRequestTransform(async (request) => {
   if (!authToken) return;
   request.headers["Authorization"] = `Bearer ${authToken}`;
   request.headers["x-auth-token"] = authToken;
-  console.log("Request: ", request);
 });
 
 export default apiClient;
