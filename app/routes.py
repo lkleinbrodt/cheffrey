@@ -70,7 +70,7 @@ def refresh_explore():
 @app.route("/load-more-recipes/<int:page>")
 @login_required
 def load_more_recipes(page):
-    per_page = 6  # Adjust as needed
+    per_page = 10  # Adjust as needed
     max_pages = 10
 
     if "explore_recipes" not in session:
@@ -115,18 +115,16 @@ def load_more_recipes_api():
     user_id = get_jwt_identity()
 
     if "explore_recipes" not in session:
+        print("no recipes in session yet")
         recipes = Recipe.query.order_by(func.random()).limit(per_page * max_pages)
         session["explore_recipes"] = [recipe.to_dict() for recipe in recipes]
         # recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
 
     recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
-    # recipes = [Recipe.from_dict(recipe) for recipe in recipes]
 
     ##TODO: improve
     # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
     for recipe in recipes:
-        recipe["ingredient_list"] = eval(recipe["ingredients"])
-        recipe["instruction_list"] = eval(recipe["instructions_list"])
         recipe_list_item = RecipeList.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
@@ -141,8 +139,6 @@ def load_more_recipes_api():
             recipe["in_favorites"] = True
         else:
             recipe["in_favorites"] = False
-
-    # TODO: improve
 
     return jsonify({"recipes": recipes})
 
@@ -635,7 +631,7 @@ def generate_meal_plan():
     return response
 
 
-@app.route("/api/get-shopping-list/", methods=["GET"])
+@app.route("/api/get-shopping-list", methods=["GET"])
 @jwt_required()
 def shopping_list_api():
     # TODO: ugly
@@ -752,6 +748,49 @@ def get_recipe_list():
             recipe.in_favorites = False
         recipe.in_list = True
         recipes.append(recipe)
+    return jsonify({"recipes": recipes})
+
+
+@app.route("/api/search-recipes/", methods=["POST"])
+@jwt_required(optional=True)
+def search_api():
+
+    per_page = 6  # Adjust as needed
+
+    query = request.json["query"]
+    page = request.json.get("page", None)
+
+    if ("search_recipes" not in session) or (query != session["search_query"]):
+        recipes = Recipe.query.filter(Recipe.title.ilike(f"%{query}%")).all()
+        session["search_recipes"] = [recipe.to_dict() for recipe in recipes]
+        session["search_query"] = query
+
+    recipes = session["search_recipes"]
+    if page is not None:
+        start_idx = per_page * (page - 1)
+        if start_idx > len(recipes):
+            return jsonify({"recipes": []})
+        recipes = recipes[start_idx : per_page * page]
+
+    user_id = get_jwt_identity()
+
+    if user_id is not None:
+        for recipe in recipes:
+            recipe_list_item = RecipeList.query.filter_by(
+                user_id=user_id, recipe_id=recipe["id"]
+            ).first()
+        if recipe_list_item:
+            recipe["in_list"] = True
+        else:
+            recipe["in_list"] = False
+        favorite_item = Favorite.query.filter_by(
+            user_id=user_id, recipe_id=recipe["id"]
+        ).first()
+        if favorite_item:
+            recipe["in_favorites"] = True
+        else:
+            recipe["in_favorites"] = False
+    print("done searching")
     return jsonify({"recipes": recipes})
 
 

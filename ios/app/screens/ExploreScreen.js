@@ -5,6 +5,7 @@ import RecipeGrid from "../components/RecipeGrid";
 import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
+import SearchBar from "../components/SearchBar";
 
 const Explore = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -13,16 +14,37 @@ const Explore = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [atBottom, setAtBottom] = useState(false);
+  const [maxPages, setMaxPages] = useState(10);
+  const [query, setQuery] = useState("");
 
-  const onRefresh = async () => {
-    await recipesAPI.refreshExplore();
-    setPage(1);
-    setRecipes([]);
-    fetchRecipes(1);
+  const onSearch = async (query) => {
+    setQuery(query);
+    if (!query) {
+      setMaxPages(10);
+      setPage(1);
+      setPageLoading(true);
+      fetchExploreRecipes(1);
+      setPageLoading(false);
+    } else {
+      setPageLoading(true);
+      setRecipes([]);
+      setPage(1);
+      fetchSearchRecipes(query, 1);
+      setPageLoading(false);
+    }
   };
 
-  const fetchRecipes = async (pageNumber) => {
-    console.log("Fetching page number: ", pageNumber);
+  const onRefresh = async () => {
+    setPageLoading(true);
+    setRecipes([]);
+    setQuery("");
+    await recipesAPI.refreshExplore();
+    setPage(1);
+    await fetchExploreRecipes(1);
+    setPageLoading(false);
+  };
+
+  const fetchExploreRecipes = async (pageNumber) => {
     setLoading(true);
     const response = await recipesAPI.loadRandomRecipes(pageNumber);
     if (!response.ok) return setError(true);
@@ -31,19 +53,30 @@ const Explore = ({ navigation }) => {
     setLoading(false);
   };
 
+  const fetchSearchRecipes = async (query, pageNumber) => {
+    setLoading(true);
+    const response = await recipesAPI.searchRecipes(query, pageNumber);
+    if (!response.ok) return setError(true);
+    setRecipes((prevRecipes) => [...prevRecipes, ...response.data.recipes]);
+    setLoading(false);
+  };
+
   const handleScrollToBottom = () => {
     const nextPage = page + 1;
-    if (nextPage > 2) {
-      return false;
+    if (nextPage > maxPages) {
+      return;
     }
-    fetchRecipes(nextPage);
+    if (query) {
+      fetchSearchRecipes(query, nextPage);
+    } else {
+      fetchExploreRecipes(nextPage);
+    }
     setPage(nextPage);
-    return true;
   };
 
   useEffect(() => {
     setPageLoading(true);
-    fetchRecipes(page);
+    fetchExploreRecipes(page);
     setPageLoading(false);
   }, []);
 
@@ -55,12 +88,13 @@ const Explore = ({ navigation }) => {
           <Button title="Retry" onPress={() => fetchRecipes(page)} />
         </>
       )}
-      <LottieActivityIndicator key="loading1" visible={pageLoading} />
+
       <RecipeGrid
         recipes={recipes}
         navigation={navigation}
         onScrollToBottom={handleScrollToBottom}
         onRefresh={onRefresh}
+        searchBar={<SearchBar onSearch={onSearch} />}
       />
       {loading && (
         <ActivityIndicator
@@ -69,7 +103,7 @@ const Explore = ({ navigation }) => {
           color={colors.primary}
         />
       )}
-      <Button title="Load more" onPress={onRefresh} />
+      <LottieActivityIndicator key="loading1" visible={pageLoading} />
     </Screen>
   );
 };

@@ -1,7 +1,6 @@
 import React from "react";
-import { View, Text, Image, FlatList, ScrollView } from "react-native";
+import { View, Text, Image, ScrollView } from "react-native";
 import colors from "../config/colors";
-import Screen from "../components/Screen";
 
 const RecipeDetailsScreen = ({ route }) => {
   const recipe = route.params.recipe;

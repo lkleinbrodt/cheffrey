@@ -32,7 +32,11 @@ function loadCooked() {
 }
 
 function loadShoppingList() {
-  return client.get("/get-shopping-list/");
+  return client.get("/get-shopping-list");
+}
+
+function searchRecipes(query, page) {
+  return client.post("/search-recipes/", { query, page });
 }
 export default {
   loadRandomRecipes,
@@ -44,4 +48,5 @@ export default {
   loadFavorites,
   loadCooked,
   loadShoppingList,
+  searchRecipes,
 };
