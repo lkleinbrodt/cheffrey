@@ -4,27 +4,25 @@ import * as Yup from "yup";
 
 import Screen from "../components/Screen";
 import { Form, FormField, SubmitButton } from "../components/forms";
+import accountAPI from "../api/account";
 
 const validationSchema = Yup.object().shape({
-  name: Yup.string().required().label("Name"),
   email: Yup.string().required().email().label("Email"),
   password: Yup.string().required().min(4).label("Password"),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref("password"), null], "Passwords must match")
+    .required("Password confirmation is required")
+    .label("Confirm Password"),
 });
 
 function RegisterScreen() {
   return (
     <Screen style={styles.container}>
       <Form
-        initialValues={{ name: "", email: "", password: "" }}
-        onSubmit={(values) => console.log(values)}
+        initialValues={{ email: "", password: "", confirmPassword: "" }}
+        onSubmit={(values) => accountAPI.register(values)}
         validationSchema={validationSchema}
       >
-        <FormField
-          autoCorrect={false}
-          icon="account"
-          name="name"
-          placeholder="Name"
-        />
         <FormField
           autoCapitalize="none"
           autoCorrect={false}
@@ -40,6 +38,15 @@ function RegisterScreen() {
           icon="lock"
           name="password"
           placeholder="Password"
+          secureTextEntry
+          textContentType="password"
+        />
+        <FormField
+          autoCapitalize="none"
+          autoCorrect={false}
+          icon="lock"
+          name="confirmPassword"
+          placeholder="Confirm Password"
           secureTextEntry
           textContentType="password"
         />

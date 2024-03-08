@@ -22,7 +22,6 @@ const RecipeList = ({ navigation }) => {
   const auth = useAuth();
 
   const fetchRecipes = async () => {
-    console.log("fetching recipes");
     setLoading(true);
     const response = await recipesAPI.loadRecipeList();
     if (!response.ok) return setError(true);
@@ -60,33 +59,31 @@ const RecipeList = ({ navigation }) => {
 
   return (
     <Screen style={styles.screen}>
-      <View>
-        {error && (
-          <>
-            <Text>Couldn't retrieve the recipes.</Text>
-            <Button title="Retry" onPress={fetchRecipes} />
-          </>
-        )}
-        {recipes.length === 0 ? (
-          <Message
-            message="No recipes yet."
-            subMessage="Add recipes to your list to see them here."
-          />
-        ) : (
-          <RecipeGrid
-            recipes={recipes}
-            navigation={navigation}
-            navigateScreen={routes.RECIPES_RECIPE_DETAILS}
-            onScrollToBottom={() => {}}
-            onRefresh={() => {}}
-            footer={
-              <TouchableOpacity style={styles.clearButton} onPress={clearList}>
-                <Text style={styles.clearButtonText}>Clear List</Text>
-              </TouchableOpacity>
-            }
-          />
-        )}
-      </View>
+      {error && (
+        <>
+          <Text>Couldn't retrieve the recipes.</Text>
+          <Button title="Retry" onPress={fetchRecipes} />
+        </>
+      )}
+      {recipes.length === 0 ? (
+        <Message
+          message="No recipes yet."
+          subMessage="Add recipes to your list to see them here."
+        />
+      ) : (
+        <RecipeGrid
+          recipes={recipes}
+          navigation={navigation}
+          navigateScreen={routes.RECIPES_RECIPE_DETAILS}
+          onScrollToBottom={() => {}}
+          onRefresh={() => {}}
+          footer={
+            <TouchableOpacity style={styles.clearButton} onPress={clearList}>
+              <Text style={styles.clearButtonText}>Clear List</Text>
+            </TouchableOpacity>
+          }
+        />
+      )}
     </Screen>
   );
 };

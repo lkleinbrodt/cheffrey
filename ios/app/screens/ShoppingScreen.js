@@ -14,6 +14,7 @@ import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import CheckboxItem from "../components/CheckboxItem";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Message from "../components/Message";
 
 const ShoppingScreen = ({ navigation }) => {
   const [ingredientsDict, setIngredientsDict] = useState({});
@@ -36,7 +37,6 @@ const ShoppingScreen = ({ navigation }) => {
   };
 
   const cleanUpIngredients = () => {
-    console.log(checkedIngredients);
     //for every ingredient in ingredientsDict, check if it is in checkedIngredients
     //if it is, remove it from that category and add it to the "Already Bought" category
     const updatedIngredientsDict = { ...ingredientsDict };
@@ -88,7 +88,6 @@ const ShoppingScreen = ({ navigation }) => {
   );
 
   const handleCheckIngredient = (ingredient) => {
-    console.log(ingredient);
     const updatedCheckedIngredients = checkedIngredients.includes(ingredient)
       ? checkedIngredients.filter((item) => item !== ingredient)
       : [...checkedIngredients, ingredient];
@@ -98,8 +97,12 @@ const ShoppingScreen = ({ navigation }) => {
 
   return (
     <Screen style={styles.screen}>
-      {loading ? (
-        <LottieActivityIndicator />
+      <LottieActivityIndicator key="loading1" visible={loading} />
+      {Object.keys(ingredientsDict).length === 0 ? (
+        <Message
+          message="Empty"
+          subMessage="Add items to your list to see their ingredients here."
+        />
       ) : (
         <SectionList
           sections={Object.entries(ingredientsDict).map(

@@ -7,14 +7,14 @@ from app.models import User
 
 
 class LoginForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired()])
+    email = StringField("Email", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
     remember_me = BooleanField("Remember Me")
     submit = SubmitField("Sign In")
 
 
 class RegistrationForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired()])
+    email = StringField("Email", validators=[DataRequired()])
     # email = StringField('Email', validators = [DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired(), Length(min=5)])
     password2 = PasswordField(
@@ -23,10 +23,10 @@ class RegistrationForm(FlaskForm):
     )
     submit = SubmitField("Register")
 
-    def validate_username(self, username):
-        user = db.session.scalar(sa.select(User).where(User.username == username.data))
+    def validate_email(self, email):
+        user = db.session.scalar(sa.select(User).where(User.email == email.data))
         if user is not None:
-            raise ValidationError("Please use a different username.")
+            raise ValidationError("User already exists with that email.")
 
     # def validate_email(self, email):
     #     user = db.session.scalar(

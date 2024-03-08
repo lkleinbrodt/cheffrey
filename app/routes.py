@@ -151,12 +151,10 @@ def login():
 
     form = LoginForm(request.form)
     if form.validate_on_submit():
-        user = db.session.scalar(
-            sa.select(User).where(User.username == form.username.data)
-        )
+        user = db.session.scalar(sa.select(User).where(User.email == form.email.data))
 
         if user is None or not user.check_password(form.password.data):
-            flash("Invalid username or password")
+            flash("Invalid email or password")
             return redirect(url_for("login"))
 
         login_user(user, remember=form.remember_me.data)
@@ -180,17 +178,16 @@ def login_api():
     # Assuming the incoming request is JSON
     data = request.get_json()
 
-    # Extract username and password from the JSON data
-    username = data.get("username")
+    email = data.get("email")
     password = data.get("password")
 
-    if not username or not password:
-        return jsonify({"message": "Username and password are required"}), 400
+    if not email or not password:
+        return jsonify({"message": "email and password are required"}), 400
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(email=email).first()
 
     if user is None or not check_password_hash(user.password_hash, password):
-        return jsonify({"message": "Invalid username or password"}), 401
+        return jsonify({"message": "Invalid email or password"}), 401
 
     access_token = create_access_token(identity=user)
 
@@ -199,7 +196,7 @@ def login_api():
 
 @jwt.additional_claims_loader
 def add_claims_to_access_token(user):
-    return {"role": user.role, "username": user.username, "id": user.id}
+    return {"role": user.role, "email": user.email, "id": user.id}
 
 
 @jwt.user_identity_loader
@@ -221,7 +218,7 @@ def register():
         return redirect(url_for("index"))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data)
+        user = User(email=form.email.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -234,17 +231,17 @@ def register():
 @app.route("/api/register", methods=["POST"])
 def register_api():
     data = request.get_json()
-    username = data.get("username", "").strip()
+    email = data.get("email", "").strip()
     password = data.get("password", "").strip()
 
-    if not username or not password:
+    if not email or not password:
         return jsonify({"message": "Missing fields"}), 400
 
-    if User.query.filter_by(username=username).first():
-        return jsonify({"message": "Username already exists"}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({"message": "User already exists with that email"}), 400
 
     try:
-        user = User(username=username)
+        user = User(email=email)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
