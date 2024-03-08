@@ -156,7 +156,7 @@ endblock%} {% block content %}
       </div>
     </div>
   </div>
-  <div class="main-container">
+  <div class="container-fluid mt-4">
     {% if (not hideClear) and (recipes) %}
     <div class="button-bar">
       <button
@@ -216,7 +216,7 @@ endblock%} {% block content %}
     }
 
     $.ajax({
-      url: "/submit-cooked-recipes",
+      url: "/api/submit-cooked-recipes",
       type: "POST",
       data: JSON.stringify({ recipe_ids: checkedRecipes }),
       contentType: "application/json",

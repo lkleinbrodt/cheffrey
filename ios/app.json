@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "ios",
+    "slug": "cheffrey",
+    "scheme": "myapp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./app/assets/chef.png",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-apple-authentication",
+      "expo-secure-store",
+      "expo-router"
+    ],
+    "splash": {
+      "image": "./app/assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#faf1e4"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "usesAppleSignIn": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./app/assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

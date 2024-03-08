@@ -15,11 +15,18 @@ import sqlalchemy as sa
 from config import Config
 from sqlalchemy.exc import IntegrityError
 from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRecipe
-from app import app, db, admin
+from app import app, db, admin, jwt
 import json
-
+from flask_cors import cross_origin
+from flask_jwt_extended import (
+    create_access_token,
+    get_jwt_identity,
+    jwt_required,
+    verify_jwt_in_request,
+    decode_token,
+)
 from urllib.parse import urlsplit
-
+from werkzeug.security import check_password_hash
 from app.models import User, Recipe, RecipeList, Favorite
 from app.forms import LoginForm, RegistrationForm, SettingsForm
 import datetime
@@ -47,6 +54,12 @@ def explore():
     return render_template("explore.html")
 
 
+@app.route("/api/refresh-explore", methods=["GET"])
+def refresh_explore_api():
+    session.pop("explore_recipes", None)
+    return jsonify({"status": "success"})
+
+
 @app.route("/refresh-explore", methods=["GET"])
 @login_required
 def refresh_explore():
@@ -57,7 +70,7 @@ def refresh_explore():
 @app.route("/load-more-recipes/<int:page>")
 @login_required
 def load_more_recipes(page):
-    per_page = 6  # Adjust as needed
+    per_page = 10  # Adjust as needed
     max_pages = 10
 
     if "explore_recipes" not in session:
@@ -93,6 +106,43 @@ def load_more_recipes(page):
     return render_template("recipe_partial.html", recipes=recipes)
 
 
+@app.route("/api/load-more-recipes/", methods=["GET"])
+@jwt_required()
+def load_more_recipes_api():
+    page = int(request.args.get("page", 1))
+    per_page = 6  # Adjust as needed
+    max_pages = 10
+    user_id = get_jwt_identity()
+
+    if "explore_recipes" not in session:
+        print("no recipes in session yet")
+        recipes = Recipe.query.order_by(func.random()).limit(per_page * max_pages)
+        session["explore_recipes"] = [recipe.to_dict() for recipe in recipes]
+        # recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
+
+    recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
+
+    ##TODO: improve
+    # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
+    for recipe in recipes:
+        recipe_list_item = RecipeList.query.filter_by(
+            user_id=user_id, recipe_id=recipe["id"]
+        ).first()
+        if recipe_list_item:
+            recipe["in_list"] = True
+        else:
+            recipe["in_list"] = False
+        favorite_item = Favorite.query.filter_by(
+            user_id=user_id, recipe_id=recipe["id"]
+        ).first()
+        if favorite_item:
+            recipe["in_favorites"] = True
+        else:
+            recipe["in_favorites"] = False
+
+    return jsonify({"recipes": recipes})
+
+
 @app.route("/login", methods=["POST", "GET"])
 @limiter.limit("5 per 5 seconds")  # Adjust the limit as needed
 def login():
@@ -123,6 +173,40 @@ def login():
     return render_template("login.html", title="Sign In", form=form)
 
 
+@app.route("/api/login", methods=["POST"])
+@limiter.limit("5 per 5 seconds")  # Adjust the limit as needed
+def login_api():
+
+    # Assuming the incoming request is JSON
+    data = request.get_json()
+
+    # Extract username and password from the JSON data
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return jsonify({"message": "Username and password are required"}), 400
+
+    user = User.query.filter_by(username=username).first()
+
+    if user is None or not check_password_hash(user.password_hash, password):
+        return jsonify({"message": "Invalid username or password"}), 401
+
+    access_token = create_access_token(identity=user)
+
+    return jsonify(access_token), 200
+
+
+@jwt.additional_claims_loader
+def add_claims_to_access_token(user):
+    return {"role": user.role, "username": user.username, "id": user.id}
+
+
+@jwt.user_identity_loader
+def user_identity_lookup(user):
+    return user.id
+
+
 @app.route("/logout")
 @login_required
 def logout():
@@ -145,6 +229,33 @@ def register():
         flash("Congratulations, you are now a registered user!")
         return redirect(url_for("explore"))
     return render_template("register.html", title="Register", form=form)
+
+
+@app.route("/api/register", methods=["POST"])
+def register_api():
+    data = request.get_json()
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+
+    if not username or not password:
+        return jsonify({"message": "Missing fields"}), 400
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({"message": "Username already exists"}), 400
+
+    try:
+        user = User(username=username)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+
+        access_token = create_access_token(identity=user.id)
+
+        return jsonify(access_token=access_token), 200
+
+    except:
+        db.session.rollback()
+        return jsonify({"message": "Error creating user"}), 500
 
 
 @app.route("/settings", methods=["GET", "POST"])
@@ -181,7 +292,7 @@ def recipe(recipe_id):
     return render_template("recipe.html", recipe=recipe)
 
 
-@app.route("/add-to-favorites/<int:recipe_id>")
+@app.route("/api/add-to-favorites/<int:recipe_id>")
 @login_required
 def add_to_favorites(recipe_id):
     favorite = Favorite(user_id=current_user.id, recipe_id=recipe_id)
@@ -196,7 +307,7 @@ def add_to_favorites(recipe_id):
         return jsonify({"status": "error"})
 
 
-@app.route("/remove-from-favorites/<int:recipe_id>")
+@app.route("/api/remove-from-favorites/<int:recipe_id>")
 @login_required
 def remove_from_favorites(recipe_id):
     favorite = Favorite.query.filter_by(
@@ -212,7 +323,7 @@ def remove_from_favorites(recipe_id):
     return jsonify({"status": "success"})
 
 
-@app.route("/add-to-recipe-list/<int:recipe_id>")
+@app.route("/api/add-to-recipe-list/<int:recipe_id>")
 @login_required
 def add_to_recipe_list(recipe_id):
 
@@ -228,7 +339,7 @@ def add_to_recipe_list(recipe_id):
         return jsonify({"status": "error"})
 
 
-@app.route("/remove-from-recipe-list/<int:recipe_id>")
+@app.route("/api/remove-from-recipe-list/<int:recipe_id>")
 @login_required
 def remove_from_recipe_list(recipe_id):
     recipe_list_item = RecipeList.query.filter_by(
@@ -254,7 +365,17 @@ def clear_recipe_list():
     return redirect(url_for("recipe_list"))
 
 
-@app.route("/submit-cooked-recipes", methods=["POST"])
+@app.route("/api/clear-recipe-list", methods=["POST"])
+@jwt_required()
+def clear_recipe_list_api():
+    recipe_list = RecipeList.query.filter_by(user_id=get_jwt_identity()).all()
+    for recipe_list_item in recipe_list:
+        db.session.delete(recipe_list_item)
+    db.session.commit()
+    return jsonify({"status": "success"})
+
+
+@app.route("/api/submit-cooked-recipes", methods=["POST"])
 @login_required
 def submit_cooked_recipes():
     recipe_ids = request.json["recipe_ids"]
@@ -287,6 +408,26 @@ def toggle_recipe_in_list(recipe_id):
     return jsonify({"status": "success"})
 
 
+@app.route("/api/toggle-recipe-in-list/", methods=["POST"])
+@jwt_required()
+def toggle_recipe_in_list_api():
+    user_id = get_jwt_identity()
+    recipe_id = request.json["recipe_id"]
+    recipe_list_item = RecipeList.query.filter_by(
+        user_id=user_id, recipe_id=recipe_id
+    ).first()
+    if recipe_list_item:
+        db.session.delete(recipe_list_item)
+        # flash('Removed from recipe list.', 'success')
+    else:
+        print(f"Adding recipe {recipe_id} to list")
+        recipe_list_item = RecipeList(user_id=user_id, recipe_id=recipe_id)
+        db.session.add(recipe_list_item)
+        # flash('Added to recipe list!', 'success')
+    db.session.commit()
+    return jsonify({"status": "success"})
+
+
 @app.route("/toggle-favorite/<int:recipe_id>")
 @login_required
 def toggle_favorite(recipe_id):
@@ -302,6 +443,67 @@ def toggle_favorite(recipe_id):
         # flash('Added to favorites!', 'success')
     db.session.commit()
     return jsonify({"status": "success"})
+
+
+@app.route("/api/toggle-favorite/", methods=["POST"])
+@jwt_required()
+def toggle_favorite_api():
+    user_id = get_jwt_identity()
+    recipe_id = request.json["recipe_id"]
+
+    favorite = Favorite.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+    if favorite:
+        db.session.delete(favorite)
+        # flash('Removed from favorites.', 'success')
+    else:
+        favorite = Favorite(user_id=user_id, recipe_id=recipe_id)
+        db.session.add(favorite)
+        # flash('Added to favorites!', 'success')
+    db.session.commit()
+    return jsonify({"status": "success"})
+
+
+@app.route("/api/get-favorites", methods=["GET"])
+@jwt_required()
+def get_favorites_api():
+    user_id = get_jwt_identity()
+    favorites = Favorite.query.filter_by(user_id=user_id).all()
+    recipes = []
+    for favorite in favorites:
+        recipe = favorite.recipe.to_dict()
+        recipe["in_favorites"] = True
+        recipes.append(recipe)
+    return jsonify({"favorites": recipes})
+
+
+@app.route("/api/get-cooked", methods=["GET"])
+@jwt_required()
+def get_cooked_api():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    cooked = user.cooked_recipes
+
+    # TODO: bad way to do this
+    favorites = Favorite.query.filter_by(user_id=user.id).all()
+    favorites = [favorite.recipe for favorite in favorites]
+
+    for recipe in cooked:
+        recipe.ingredient_list = eval(recipe.ingredients)
+        recipe.instruction_list = eval(recipe.instructions_list)
+        recipe_list_item = RecipeList.query.filter_by(
+            user_id=user.id, recipe_id=recipe.id
+        ).first()
+
+        if recipe_list_item:
+            recipe.in_list = True
+        else:
+            recipe.in_list = False
+        if recipe in favorites:
+            recipe.in_favorites = True
+        else:
+            recipe.in_favorite = False
+
+    return jsonify({"cooked": cooked})
 
 
 @app.route("/saved")
@@ -363,6 +565,27 @@ def recipe_list():
     return render_template("recipe_list.html", recipes=recipes)
 
 
+@app.route("/api/recipe-list")
+@jwt_required()
+def recipe_list_api():
+    user_id = get_jwt_identity()
+    recipe_list = RecipeList.query.filter_by(user_id=user_id).all()
+    recipes = []
+    for recipe in recipe_list:
+        recipe = recipe.recipe.to_dict()
+        recipe["in_list"] = True
+        favorite_item = Favorite.query.filter_by(
+            user_id=user_id, recipe_id=recipe["id"]
+        ).first()
+        if favorite_item:
+            recipe["in_favorites"] = True
+        else:
+            recipe["in_favorites"] = False
+        recipes.append(recipe)
+    print("returning")
+    return jsonify({"recipes": recipes}), 200
+
+
 @app.route("/cooked-recipes")
 @login_required
 def cooked_recipes():
@@ -406,6 +629,37 @@ def generate_meal_plan():
     response.headers["Content-Disposition"] = f"attachment; filename={filename}.html"
     app.logger.info("Done generating meal plan")
     return response
+
+
+@app.route("/api/get-shopping-list", methods=["GET"])
+@jwt_required()
+def shopping_list_api():
+    # TODO: ugly
+    with open("data/ingredient2category.json", "r") as f:
+        ingredient2category = json.load(f)
+
+    user_id = get_jwt_identity()
+    recipe_list_items = RecipeList.query.filter_by(user_id=user_id).all()
+
+    recipe_list = [
+        HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
+    ]
+
+    ingredient_dict = {}
+
+    n_ingredients = 0
+    for recipe in recipe_list:
+        for ingredient in eval(recipe.ingredients):
+            category = ingredient2category.get(ingredient, "Other")
+            ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
+            n_ingredients += 1
+
+    # Sort ingredient_dict by category, with "Other" category last
+    ingredient_dict = dict(
+        sorted(ingredient_dict.items(), key=lambda x: (x[0] == "Other", x[0]))
+    )
+
+    return jsonify(ingredient_dict)
 
 
 @app.route("/shopping-list")
@@ -464,17 +718,12 @@ def shopping_list():
     )
 
 
-@app.route("/test")
-def test():
-    return render_template("test.html")
-
-
 @app.route("/favicon.ico")
 def favicon():
     return url_for("static", filename="data:,")
 
 
-@app.route("/get-recipe-list-count", methods=["GET"])
+@app.route("/api/get-recipe-list-count", methods=["GET"])
 @login_required
 def get_recipe_list_count():
     # TODO: which ones better?
@@ -483,7 +732,7 @@ def get_recipe_list_count():
     return jsonify({"count": count})
 
 
-@app.route("/get-recipe-list", methods=["GET"])
+@app.route("/api/get-recipe-list", methods=["GET"])
 @login_required
 def get_recipe_list():
     recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
@@ -499,6 +748,49 @@ def get_recipe_list():
             recipe.in_favorites = False
         recipe.in_list = True
         recipes.append(recipe)
+    return jsonify({"recipes": recipes})
+
+
+@app.route("/api/search-recipes/", methods=["POST"])
+@jwt_required(optional=True)
+def search_api():
+
+    per_page = 6  # Adjust as needed
+
+    query = request.json["query"]
+    page = request.json.get("page", None)
+
+    if ("search_recipes" not in session) or (query != session["search_query"]):
+        recipes = Recipe.query.filter(Recipe.title.ilike(f"%{query}%")).all()
+        session["search_recipes"] = [recipe.to_dict() for recipe in recipes]
+        session["search_query"] = query
+
+    recipes = session["search_recipes"]
+    if page is not None:
+        start_idx = per_page * (page - 1)
+        if start_idx > len(recipes):
+            return jsonify({"recipes": []})
+        recipes = recipes[start_idx : per_page * page]
+
+    user_id = get_jwt_identity()
+
+    if user_id is not None:
+        for recipe in recipes:
+            recipe_list_item = RecipeList.query.filter_by(
+                user_id=user_id, recipe_id=recipe["id"]
+            ).first()
+        if recipe_list_item:
+            recipe["in_list"] = True
+        else:
+            recipe["in_list"] = False
+        favorite_item = Favorite.query.filter_by(
+            user_id=user_id, recipe_id=recipe["id"]
+        ).first()
+        if favorite_item:
+            recipe["in_favorites"] = True
+        else:
+            recipe["in_favorites"] = False
+    print("done searching")
     return jsonify({"recipes": recipes})
 
 
