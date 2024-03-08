@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
   Text,
+  FlatList,
 } from "react-native";
 import LottieActivityIndicator from "../components/ActivityIndicator";
 import RecipeGrid from "../components/RecipeGrid";
@@ -12,9 +13,12 @@ import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import CheckboxItem from "../components/CheckboxItem";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const ShoppingScreen = ({ navigation }) => {
   const [ingredientsDict, setIngredientsDict] = useState({});
+  const [checkedIngredients, setCheckedIngredients] = useState([]);
+
   const [loading, setLoading] = useState(false);
 
   const fetchIngredients = async () => {
@@ -31,11 +35,41 @@ const ShoppingScreen = ({ navigation }) => {
     setLoading(false);
   };
 
+  const cleanUpIngredients = () => {
+    console.log(checkedIngredients);
+    //for every ingredient in ingredientsDict, check if it is in checkedIngredients
+    //if it is, remove it from that category and add it to the "Already Bought" category
+    const updatedIngredientsDict = { ...ingredientsDict };
+    for (const category in updatedIngredientsDict) {
+      updatedIngredientsDict[category] = updatedIngredientsDict[
+        category
+      ].filter((ingredient) => !checkedIngredients.includes(ingredient));
+    }
+    //if the "Already Bought" category doesn't exist, create it
+    if (!updatedIngredientsDict["Already Bought"]) {
+      updatedIngredientsDict["Already Bought"] = [];
+    }
+
+    updatedIngredientsDict["Already Bought"] = [
+      ...updatedIngredientsDict["Already Bought"],
+      ...checkedIngredients,
+    ];
+    setIngredientsDict(updatedIngredientsDict);
+    setCheckedIngredients([]);
+  };
+
   useEffect(() => {
     fetchIngredients();
   }, []);
 
-  const renderItem = ({ item }) => <CheckboxItem label={item} />;
+  const renderItem = ({ item }) => (
+    //todo: find a way to keep it checked when it moves to already bought.
+    <CheckboxItem
+      label={item}
+      isChecked={false}
+      onCheck={() => handleCheckIngredient(item)}
+    />
+  );
 
   const renderSectionHeader = ({ section: { title } }) => (
     <View style={styles.categoryHeader}>
@@ -43,6 +77,24 @@ const ShoppingScreen = ({ navigation }) => {
       <View style={styles.hr} />
     </View>
   );
+
+  const renderFloatingButton = () => (
+    <TouchableOpacity
+      style={styles.floatingButton}
+      onPress={cleanUpIngredients}
+    >
+      <MaterialCommunityIcons name="broom" size={24} color={colors.white} />
+    </TouchableOpacity>
+  );
+
+  const handleCheckIngredient = (ingredient) => {
+    console.log(ingredient);
+    const updatedCheckedIngredients = checkedIngredients.includes(ingredient)
+      ? checkedIngredients.filter((item) => item !== ingredient)
+      : [...checkedIngredients, ingredient];
+
+    setCheckedIngredients(updatedCheckedIngredients);
+  };
 
   return (
     <Screen style={styles.screen}>
@@ -61,6 +113,7 @@ const ShoppingScreen = ({ navigation }) => {
           renderSectionHeader={renderSectionHeader}
         />
       )}
+      {renderFloatingButton()}
     </Screen>
   );
 };
@@ -87,6 +140,15 @@ const styles = StyleSheet.create({
   hr: {
     borderBottomColor: colors.medium,
     borderBottomWidth: 1,
+  },
+  floatingButton: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 30,
+    elevation: 5,
   },
 });
 

@@ -4,11 +4,12 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { FontAwesome } from "@expo/vector-icons"; // Make sure to install the FontAwesome package if not already installed
 
-const CheckboxItem = ({ label }) => {
-  const [isChecked, setChecked] = useState(false);
+const CheckboxItem = ({ label, isChecked, onCheck }) => {
+  const [isChecked, setChecked] = useState(isChecked);
 
   const handlePress = () => {
     setChecked(!isChecked);
+    onCheck();
   };
 
   return (

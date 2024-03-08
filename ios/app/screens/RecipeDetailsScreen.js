@@ -5,13 +5,13 @@ import colors from "../config/colors";
 const RecipeDetailsScreen = ({ route }) => {
   const recipe = route.params.recipe;
 
-  //convert recipe.ingredients from string to array
-  //it is stored like this: "['ingredient1', 'ingredient2', 'ingredient3']"
-  recipe.ingredients = recipe.ingredients
-    .replace("[", "")
-    .replace("]", "")
-    .replace(/'/g, "")
-    .split(", ");
+  if (typeof recipe.ingredients === "string") {
+    recipe.ingredients = recipe.ingredients
+      .replace("[", "")
+      .replace("]", "")
+      .replace(/'/g, "")
+      .split(", ");
+  }
 
   const renderIngredientItem = ({ item, key }) => (
     <Text key={key} style={styles.ingredientsItem}>{`\u2022 ${item}`}</Text>

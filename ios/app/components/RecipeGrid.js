@@ -120,9 +120,11 @@ import colors from "../config/colors";
 const RecipeGrid = ({
   recipes,
   navigation,
+  navigateScreen,
   onScrollToBottom,
   onRefresh,
   searchBar,
+  footer,
 }) => {
   const [refreshing, setRefreshing] = useState(false);
 
@@ -142,9 +144,7 @@ const RecipeGrid = ({
     <View style={styles.GridContainer}>
       <RecipeCard
         recipe={item}
-        onPress={() =>
-          navigation.navigate(routes.RECIPE_DETAILS, { recipe: item })
-        }
+        onPress={() => navigation.navigate(navigateScreen, { recipe: item })}
       />
     </View>
   );
@@ -165,12 +165,14 @@ const RecipeGrid = ({
         }
         ListHeaderComponent={searchBar}
         ListFooterComponent={
-          <TouchableOpacity
-            style={styles.scrollToTopButton}
-            onPress={scrollToTop}
-          >
-            <Text style={styles.scrollToTopButtonText}>Back to Top</Text>
-          </TouchableOpacity>
+          footer ?? (
+            <TouchableOpacity
+              style={styles.scrollToTopButton}
+              onPress={scrollToTop}
+            >
+              <Text style={styles.scrollToTopButtonText}>Back to Top</Text>
+            </TouchableOpacity>
+          )
         }
       />
     </View>

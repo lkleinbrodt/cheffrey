@@ -1,11 +1,19 @@
 import { React, useEffect, useState } from "react";
-import { View, Text, Alert, StyleSheet, Button } from "react-native";
+import {
+  View,
+  Text,
+  Alert,
+  StyleSheet,
+  Button,
+  TouchableOpacity,
+} from "react-native";
 import RecipeGrid from "../components/RecipeGrid";
 import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import useAuth from "../auth/useAuth";
 import Message from "../components/Message";
+import routes from "../navigation/routes";
 
 const RecipeList = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -68,12 +76,16 @@ const RecipeList = ({ navigation }) => {
           <RecipeGrid
             recipes={recipes}
             navigation={navigation}
+            navigateScreen={routes.RECIPES_RECIPE_DETAILS}
             onScrollToBottom={() => {}}
             onRefresh={() => {}}
+            footer={
+              <TouchableOpacity style={styles.clearButton} onPress={clearList}>
+                <Text style={styles.clearButtonText}>Clear List</Text>
+              </TouchableOpacity>
+            }
           />
         )}
-        <Button title="Clear List" onPress={clearList} />
-        <Button title="Logout" onPress={() => auth.logOut()} />
       </View>
     </Screen>
   );
@@ -82,6 +94,20 @@ const RecipeList = ({ navigation }) => {
 const styles = StyleSheet.create({
   screen: {
     backgroundColor: colors.background,
+  },
+  clearButton: {
+    backgroundColor: colors.secondary,
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 20,
+    justifyContent: "center",
+    width: "33%", // Fixed width of 33% of the screen
+    alignSelf: "center", // Center the button horizontally
+  },
+  clearButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    textAlign: "center",
   },
 });
 export default RecipeList;

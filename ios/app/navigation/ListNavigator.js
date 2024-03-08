@@ -1,7 +1,7 @@
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import RecipesScreen from "../screens/RecipesScreen.js";
+import RecipeListNavigator from "./RecipeListNavigator.js";
 import ShoppingScreen from "../screens/ShoppingScreen.js";
 
 const Tab = createMaterialTopTabNavigator();
@@ -23,7 +23,7 @@ const ListNavigator = () => {
     >
       <Tab.Screen
         name="Recipes"
-        component={RecipesScreen}
+        component={RecipeListNavigator}
         options={
           {
             // tabBarIcon: ({ color, size }) => (

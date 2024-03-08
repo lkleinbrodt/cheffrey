@@ -1,20 +1,20 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import ExploreScreen from "../screens/ExploreScreen";
+import RecipesScreen from "../screens/RecipesScreen.js";
 import RecipeDetailsScreen from "../screens/RecipeDetailsScreen";
 import routes from "./routes";
 
 const Stack = createStackNavigator();
 
-const FeedNavigator = () => (
+const RecipeListNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Recipes" component={ExploreScreen} />
+    <Stack.Screen name="RecipeList" component={RecipesScreen} />
     <Stack.Screen
-      name={routes.FEED_RECIPE_DETAILS}
+      name={routes.RECIPES_RECIPE_DETAILS}
       component={RecipeDetailsScreen}
-      options={{ headerShown: true }}
+      options={{ headerShown: false }}
     />
   </Stack.Navigator>
 );
 
-export default FeedNavigator;
+export default RecipeListNavigator;

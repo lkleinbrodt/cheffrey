@@ -7,6 +7,7 @@ import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import { Button } from "../components/Button";
 import Message from "../components/Message";
+import routes from "../navigation/routes";
 
 const CookedScreen = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -51,6 +52,7 @@ const CookedScreen = ({ navigation }) => {
         <RecipeGrid
           recipes={recipes}
           navigation={navigation}
+          navigateScreen={routes.COOKED_RECIPE_DETAILS}
           onScrollToBottom={handleScrollToBottom}
           onRefresh={onRefresh}
         />

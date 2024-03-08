@@ -6,6 +6,7 @@ import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import SearchBar from "../components/SearchBar";
+import routes from "../navigation/routes";
 
 const Explore = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -92,6 +93,7 @@ const Explore = ({ navigation }) => {
       <RecipeGrid
         recipes={recipes}
         navigation={navigation}
+        navigateScreen={routes.FEED_RECIPE_DETAILS}
         onScrollToBottom={handleScrollToBottom}
         onRefresh={onRefresh}
         searchBar={<SearchBar onSearch={onSearch} />}

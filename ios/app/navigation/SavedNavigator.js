@@ -1,12 +1,9 @@
 import React from "react";
-import { StyleSheet, SafeAreaView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import FavoritesScreen from "../screens/FavoritesScreen.js";
-import CookedScreen from "../screens/CookedScreen.js";
-import colors from "../config/colors";
+import CookedNavigator from "./CookedNavigator.js";
+import FavoritesNavigator from "./FavoritesNavigator.js";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -27,7 +24,7 @@ const SavedNavigator = () => {
     >
       <Tab.Screen
         name="Favorites"
-        component={FavoritesScreen}
+        component={FavoritesNavigator}
         options={
           {
             // tabBarIcon: ({ color, size }) => (
@@ -43,7 +40,7 @@ const SavedNavigator = () => {
       />
       <Tab.Screen
         name="Cooked"
-        component={CookedScreen}
+        component={CookedNavigator}
         // options={{
         //   tabBarIcon: ({ color, size }) => (
         //     <MaterialCommunityIcons
