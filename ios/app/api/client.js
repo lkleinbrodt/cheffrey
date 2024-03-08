@@ -3,7 +3,7 @@ import authStorage from "../auth/storage";
 // import cache from "../utility/cache";
 
 const apiClient = create({
-  baseURL: "http://10.0.0.71:5001/api",
+  baseURL: "https://www.cheffrey.org/api/",
   timeout: 10000,
 });
 
