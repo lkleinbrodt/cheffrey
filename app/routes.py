@@ -176,10 +176,10 @@ def login():
 def login_api():
 
     # Assuming the incoming request is JSON
-    data = request.get_json()
+    data = request.json
 
-    email = data.get("email")
-    password = data.get("password")
+    email = data.get("email").strip()
+    password = data.get("password").strip()
 
     if not email or not password:
         return jsonify({"message": "email and password are required"}), 400
@@ -230,7 +230,9 @@ def register():
 
 @app.route("/api/register", methods=["POST"])
 def register_api():
-    data = request.get_json()
+
+    data = request.json
+    print(data)
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()
 
@@ -243,14 +245,13 @@ def register_api():
     try:
         user = User(email=email)
         user.set_password(password)
+        access_token = create_access_token(identity=user)
         db.session.add(user)
         db.session.commit()
-
-        access_token = create_access_token(identity=user.id)
-
         return jsonify(access_token=access_token), 200
 
-    except:
+    except Exception as e:
+        print(e)
         db.session.rollback()
         return jsonify({"message": "Error creating user"}), 500
 

@@ -1,10 +1,13 @@
 import React from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Alert } from "react-native";
 import * as Yup from "yup";
 
 import Screen from "../components/Screen";
 import { Form, FormField, SubmitButton } from "../components/forms";
 import accountAPI from "../api/account";
+import authApi from "../api/auth";
+import useAuth from "../auth/useAuth";
+import useApi from "../hooks/useApi";
 
 const validationSchema = Yup.object().shape({
   email: Yup.string().required().email().label("Email"),
@@ -15,12 +18,29 @@ const validationSchema = Yup.object().shape({
     .label("Confirm Password"),
 });
 
-function RegisterScreen() {
+function RegisterScreen({ navigation }) {
+  const loginApi = useApi(authApi.login);
+  const auth = useAuth();
+
+  const handleSubmit = async ({ email, password }) => {
+    const result = await accountAPI.register(email, password);
+    if (!result.ok) {
+      console.log(result);
+      console.log(result.data.message);
+      if (result.data) return Alert.alert("Error", result.data.message);
+      else {
+        return alert("Error", "An unexpected error occurred.");
+      }
+    }
+    const { data: authToken } = await authApi.login(email, password);
+    auth.logIn(authToken);
+  };
+
   return (
     <Screen style={styles.container}>
       <Form
         initialValues={{ email: "", password: "", confirmPassword: "" }}
-        onSubmit={(values) => accountAPI.register(values)}
+        onSubmit={handleSubmit}
         validationSchema={validationSchema}
       >
         <FormField

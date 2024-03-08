@@ -83,13 +83,6 @@ const Explore = ({ navigation }) => {
 
   return (
     <Screen style={styles.screen}>
-      {error && (
-        <>
-          <Text>Couldn't retrieve the recipes.</Text>
-          <Button title="Retry" onPress={() => fetchRecipes(page)} />
-        </>
-      )}
-
       <RecipeGrid
         recipes={recipes}
         navigation={navigation}
