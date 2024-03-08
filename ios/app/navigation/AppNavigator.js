@@ -42,6 +42,7 @@ const AppNavigator = () => (
             size={size}
           />
         ),
+        unmountOnBlur: true,
       }}
     />
   </Tab.Navigator>

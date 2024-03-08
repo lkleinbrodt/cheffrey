@@ -65,9 +65,9 @@ const RecipeList = ({ navigation }) => {
             subMessage="Add recipes to your list to see them here."
           />
         ) : (
-          // pass empty functions to the onScrollToBottom and onRefresh params
           <RecipeGrid
             recipes={recipes}
+            navigation={navigation}
             onScrollToBottom={() => {}}
             onRefresh={() => {}}
           />

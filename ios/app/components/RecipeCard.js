@@ -2,11 +2,11 @@ import { React, useState } from "react";
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
 } from "react-native";
+import { Image } from "react-native-expo-image-cache";
 import colors from "../config/colors";
 import recipesAPI from "../api/recipes";
 import { FontAwesome } from "@expo/vector-icons"; // Import the required icon from Expo Vector Icons
@@ -28,10 +28,11 @@ const RecipeCard = ({ recipe, onPress }) => {
     <TouchableWithoutFeedback onPress={onPress}>
       <View style={styles.card}>
         <Image
-          source={{ uri: recipe.image_url }}
+          uri={recipe.image_url}
           style={styles.cardImage}
           alt={recipe.title}
-          defaultSource={require("../assets/chef.png")}
+          tint="light"
+          preview={{ uri: "../assets/chef.png" }}
         />
 
         <View style={styles.cardBody}>
