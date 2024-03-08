@@ -156,7 +156,7 @@ endblock%} {% block content %}
       </div>
     </div>
   </div>
-  <div class="main-container">
+  <div class="container-fluid mt-4">
     {% if (not hideClear) and (recipes) %}
     <div class="button-bar">
       <button
@@ -188,7 +188,7 @@ endblock%} {% block content %}
   function toggleRecipeInList(recipeId) {
     // Send the recipe ID to the server to toggle its state
     $.ajax({
-      url: "/api/toggle-recipe-in-list/" + recipeId,
+      url: "/toggle-recipe-in-list/" + recipeId,
       type: "GET",
       success: function (data) {
         $("#" + recipeId).hide(); // Hide the element with ID recipe.id

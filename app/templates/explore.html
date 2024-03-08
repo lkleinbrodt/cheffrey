@@ -53,7 +53,7 @@
             
 
             $.ajax({
-                url: '/api/load-more-recipes/' + page,
+                url: '/load-more-recipes/' + page,
                 type: "GET",
                 success: function (data) {
                     if (data.trim() !== "") {
@@ -76,7 +76,7 @@
 
     $(document).on('click', '#refresh-btn', function() {
         $.ajax({
-            url: '/api/refresh-explore',
+            url: '/refresh-explore',
             type: 'GET',
             success: function (data) {
                 // Redirect to the explore page
