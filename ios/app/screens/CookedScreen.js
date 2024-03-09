@@ -36,12 +36,6 @@ const CookedScreen = ({ navigation }) => {
 
   return (
     <Screen style={styles.screen}>
-      {error && (
-        <>
-          <Text>Couldn't retrieve the recipes.</Text>
-          <Button title="Retry" onPress={() => fetchRecipes()} />
-        </>
-      )}
       <LottieActivityIndicator key="loading1" visible={pageLoading} />
       {recipes.length === 0 ? (
         <Message

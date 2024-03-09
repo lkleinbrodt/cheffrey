@@ -22,7 +22,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.lkleinbrodt.cheffrey"
     },
     "android": {
       "adaptiveIcon": {
@@ -32,6 +33,20 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "b745f031-af85-4247-8b24-debf753f6c7b"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b745f031-af85-4247-8b24-debf753f6c7b"
     }
   }
 }

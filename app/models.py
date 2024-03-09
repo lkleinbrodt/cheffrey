@@ -18,7 +18,7 @@ cooked_recipes_table = db.Table(
 class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = sa.Column(sa.Integer, primary_key=True)
-    username = sa.Column(sa.String(64), index=True, unique=True)
+    email = sa.Column(sa.String(128), index=True, unique=True)
     password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
 
     phone_number = db.Column(db.String(15), unique=True, nullable=True)
@@ -45,7 +45,7 @@ class User(UserMixin, db.Model):
             self.cooked_recipes.append(recipe)
 
     def __repr__(self):
-        return f"<User {self.username}>"
+        return f"<User {self.email}>"
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

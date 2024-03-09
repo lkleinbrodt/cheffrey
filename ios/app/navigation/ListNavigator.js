@@ -40,6 +40,9 @@ const ListNavigator = () => {
       <Tab.Screen
         name="Shopping List"
         component={ShoppingScreen}
+        options={{
+          unmountOnBlur: true,
+        }}
         // options={{
         //   tabBarIcon: ({ color, size }) => (
         //     <MaterialCommunityIcons
