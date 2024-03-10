@@ -16,4 +16,4 @@ read -p "Enter OPENAI_API_KEY: " OPENAI_API_KEY
 export OPENAI_API_KEY="$OPENAI_API_KEY"
 
 # Run the Python script
-python app/recipes_to_database.py
+python -m app.recipes_to_database
