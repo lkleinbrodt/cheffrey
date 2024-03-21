@@ -12,6 +12,7 @@ const FavoritesNavigator = () => (
     <Stack.Screen
       name={routes.FAVORITES_RECIPE_DETAILS}
       component={RecipeDetailsScreen}
+      options={{ headerShown: true, title: "Details" }}
     />
   </Stack.Navigator>
 );

@@ -12,7 +12,7 @@ const RecipeListNavigator = () => (
     <Stack.Screen
       name={routes.RECIPES_RECIPE_DETAILS}
       component={RecipeDetailsScreen}
-      options={{ headerShown: false }}
+      options={{ headerShown: true, title: "Details" }}
     />
   </Stack.Navigator>
 );

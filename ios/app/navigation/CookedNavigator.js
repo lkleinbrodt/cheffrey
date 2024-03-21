@@ -12,7 +12,7 @@ const CookedNavigator = () => (
     <Stack.Screen
       name={routes.COOKED_RECIPE_DETAILS}
       component={RecipeDetailsScreen}
-      options={{ headerShown: true }}
+      options={{ headerShown: true, title: "Details" }}
     />
   </Stack.Navigator>
 );

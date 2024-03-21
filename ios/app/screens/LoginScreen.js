@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Image } from "react-native";
+import { StyleSheet, Image, Text, TouchableOpacity } from "react-native";
 import Screen from "../components/Screen.js";
 import {
   Form,
@@ -10,6 +10,7 @@ import {
 import authAPI from "../api/auth.js";
 import * as Yup from "yup";
 import useAuth from "../auth/useAuth.js";
+import colors from "../config/colors.js";
 
 //required to properly decode the token
 import "core-js/stable/atob";
@@ -19,7 +20,7 @@ const validationSchema = Yup.object().shape({
   password: Yup.string().required().min(4).label("Password"),
 });
 
-function LoginScreen(props) {
+function LoginScreen({ navigation }) {
   const auth = useAuth();
   const [loginFailed, setLoginFailed] = useState(false);
 
@@ -65,6 +66,16 @@ function LoginScreen(props) {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+  },
+  registerButton: {
+    alignSelf: "center",
+    marginTop: 80,
+    backgroundColor: colors.secondary,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 15,
+    width: "50%",
   },
   logo: {
     width: 80,

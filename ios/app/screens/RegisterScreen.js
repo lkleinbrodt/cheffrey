@@ -7,7 +7,6 @@ import { Form, FormField, SubmitButton } from "../components/forms";
 import accountAPI from "../api/account";
 import authApi from "../api/auth";
 import useAuth from "../auth/useAuth";
-import useApi from "../hooks/useApi";
 
 const validationSchema = Yup.object().shape({
   email: Yup.string().required().email().label("Email"),
@@ -19,7 +18,6 @@ const validationSchema = Yup.object().shape({
 });
 
 function RegisterScreen({ navigation }) {
-  const loginApi = useApi(authApi.login);
   const auth = useAuth();
 
   const handleSubmit = async ({ email, password }) => {

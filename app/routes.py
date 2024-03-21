@@ -256,6 +256,32 @@ def register_api():
         return jsonify({"message": "Error creating user"}), 500
 
 
+@app.route("/api/change-password", methods=["POST"])
+@jwt_required()
+def change_password_api():
+    print("changing password")
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.json
+    old_password = data.get("currentPassword", "").strip()
+    new_password = data.get("newPassword", "").strip()
+
+    if not old_password or not new_password:
+        return jsonify({"message": "Missing fields"}), 400
+
+    if not check_password_hash(user.password_hash, old_password):
+        return jsonify({"message": "Incorrect password"}), 401
+
+    try:
+        user.set_password(new_password)
+        db.session.commit()
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+        return jsonify({"message": "Error changing password"}), 500
+    return jsonify({"message": "Password changed successfully"}), 200
+
+
 @app.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
@@ -772,11 +798,10 @@ def search_api():
 
     user_id = get_jwt_identity()
 
-    if user_id is not None:
-        for recipe in recipes:
-            recipe_list_item = RecipeList.query.filter_by(
-                user_id=user_id, recipe_id=recipe["id"]
-            ).first()
+    for recipe in recipes:
+        recipe_list_item = RecipeList.query.filter_by(
+            user_id=user_id, recipe_id=recipe["id"]
+        ).first()
         if recipe_list_item:
             recipe["in_list"] = True
         else:
@@ -788,7 +813,7 @@ def search_api():
             recipe["in_favorites"] = True
         else:
             recipe["in_favorites"] = False
-    print("done searching")
+
     return jsonify({"recipes": recipes})
 
 
