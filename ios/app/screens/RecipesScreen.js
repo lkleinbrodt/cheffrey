@@ -59,9 +59,16 @@ const RecipeList = ({ navigation }) => {
     );
   };
 
+  if (loading) {
+    return (
+      <Screen style={styles.screen}>
+        <LottieActivityIndicator key="loading" visible={loading} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen style={styles.screen}>
-      <LottieActivityIndicator key="loading" visible={loading} />
       {error && (
         <>
           <Text>Couldn't retrieve the recipes.</Text>
