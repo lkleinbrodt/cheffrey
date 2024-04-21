@@ -22,6 +22,7 @@ from flask_cors import cross_origin
 from itsdangerous import URLSafeTimedSerializer
 from flask_jwt_extended import (
     create_access_token,
+    create_refresh_token,
     get_jwt_identity,
     jwt_required,
     verify_jwt_in_request,
@@ -198,18 +199,41 @@ def login_api():
         return jsonify({"message": "Invalid email or password"}), 401
 
     access_token = create_access_token(identity=user)
+    refresh_token = create_refresh_token(identity=user)
 
-    return jsonify(access_token), 200
+    return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
 
 @jwt.additional_claims_loader
 def add_claims_to_access_token(user):
-    return {"role": user.role, "email": user.email, "id": user.id}
+    return {
+        "role": user.role,
+        "email": user.email,
+        "id": user.id,
+        "emailVerified": user.email_verified,
+    }
 
 
 @jwt.user_identity_loader
 def user_identity_lookup(user):
     return user.id
+
+
+# Register a callback function that loads a user from your database whenever
+# a protected route is accessed. This should return any python object on a
+# successful lookup, or None if the lookup failed for any reason (for example
+# if the user has been deleted from the database).
+@jwt.user_lookup_loader
+def user_lookup_callback(_jwt_header, jwt_data):
+    identity = jwt_data["sub"]
+    return User.query.filter_by(id=identity).one_or_none()
+
+
+@app.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    access_token = create_access_token(identity=current_user)
+    return jsonify(access_token=access_token)
 
 
 @app.route("/logout")
@@ -245,7 +269,6 @@ def register():
 def register_api():
 
     data = request.json
-    print(data)
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()
 
@@ -259,6 +282,12 @@ def register_api():
         user = User(email=email)
         user.set_password(password)
         access_token = create_access_token(identity=user)
+
+        if email in Config.ADMIN_EMAILS:
+            user.role = "admin"
+        else:
+            user.role = "user"
+
         db.session.add(user)
         db.session.commit()
         return jsonify(access_token=access_token), 200
