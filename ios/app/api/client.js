@@ -1,11 +1,26 @@
 import { create } from "apisauce";
-import authStorage from "../auth/storage";
-// import cache from "../utility/cache";
+import config from "../../config";
+// import { refreshAccessToken, isTokenExpired } from "./refresh";
 
 const apiClient = create({
-  baseURL: "https://www.cheffrey.org/api/",
+  baseURL: config.baseURL,
   timeout: 10000,
 });
+
+// const addAuthToken = async (request) => {
+//   const authToken = await authStorage.getToken();
+//   if (!authToken) return;
+
+//   if (await isTokenExpired()) {
+//     refreshAccessToken();
+//   }
+
+//   request.headers["Authorization"] = `Bearer ${authToken}`;
+// };
+
+// apiClient.addAsyncRequestTransform(addAuthToken);
+
+export default apiClient;
 
 //TODO: black/whitelist for which requests to cache
 // const get = apiClient.get;
@@ -20,12 +35,3 @@ const apiClient = create({
 //   const data = await cache.get(url);
 //   return data ? { ok: true, data } : response;
 // };
-
-apiClient.addAsyncRequestTransform(async (request) => {
-  const authToken = await authStorage.getToken();
-  if (!authToken) return;
-  request.headers["Authorization"] = `Bearer ${authToken}`;
-  request.headers["x-auth-token"] = authToken;
-});
-
-export default apiClient;

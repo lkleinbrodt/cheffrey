@@ -28,7 +28,9 @@ function LoginScreen({ navigation }) {
     const result = await authAPI.login(email, password);
     if (!result.ok) return setLoginFailed(true);
     setLoginFailed(false);
-    auth.logIn(result.data);
+    console.log("access:", result.data.access_token);
+    console.log("refresh:", result.data.refresh_token);
+    auth.logIn(result.data.access_token, result.data.refresh_token);
   };
   return (
     <Screen style={styles.container}>

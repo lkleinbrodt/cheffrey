@@ -4,7 +4,7 @@ import * as Yup from "yup";
 
 import Screen from "../components/Screen";
 import { Form, FormField, SubmitButton } from "../components/forms";
-import accountAPI from "../api/account";
+import usersAPI from "../api/users";
 import authApi from "../api/auth";
 import useAuth from "../auth/useAuth";
 
@@ -21,17 +21,17 @@ function RegisterScreen({ navigation }) {
   const auth = useAuth();
 
   const handleSubmit = async ({ email, password }) => {
-    const result = await accountAPI.register(email, password);
+    const result = await usersAPI.register(email, password);
     if (!result.ok) {
       console.log(result);
       console.log(result.data.message);
       if (result.data) return Alert.alert("Error", result.data.message);
       else {
-        return alert("Error", "An unexpected error occurred.");
+        return alert("Error", "Asssn unexpected error occurred.");
       }
     }
-    const { data: authToken } = await authApi.login(email, password);
-    auth.logIn(authToken);
+    const loginResult = await authApi.login(email, password);
+    auth.logIn(loginResult.data.access_token, loginResult.data.refresh_token);
   };
 
   return (
