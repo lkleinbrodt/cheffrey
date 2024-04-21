@@ -13,6 +13,8 @@ import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import useAuth from "../auth/useAuth";
 import Message from "../components/Message";
+import LottieActivityIndicator from "../components/ActivityIndicator";
+
 import routes from "../navigation/routes";
 
 const RecipeList = ({ navigation }) => {
@@ -56,6 +58,14 @@ const RecipeList = ({ navigation }) => {
       { cancelable: false }
     );
   };
+
+  if (loading) {
+    return (
+      <Screen style={styles.screen}>
+        <LottieActivityIndicator key="loading" visible={loading} />
+      </Screen>
+    );
+  }
 
   return (
     <Screen style={styles.screen}>

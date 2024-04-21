@@ -21,6 +21,11 @@ class Config:
             "postgres://", "postgresql://"
         )
 
+    MAIL_SERVER = os.environ.get("MAIL_SERVER")
+    MAIL_PORT = os.environ.get("MAIL_PORT")
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+
     AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
     S3_BUCKET = os.environ.get("S3_BUCKET")
@@ -29,3 +34,5 @@ class Config:
     CACHE_DEFAULT_TIMEOUT = 300 * 5
     JWT_SECRET_KEY = SECRET_KEY
     JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(0)  # never expires
+
+    ADMIN_EMAILS = ["lkleinbrodt@gmail.com"]

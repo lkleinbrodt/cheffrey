@@ -11,7 +11,7 @@ import routes from "../navigation/routes";
 
 const FavoritesScreen = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
-  const [pageLoading, setPageLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState(false);
 
   const onRefresh = async () => {
@@ -21,22 +21,29 @@ const FavoritesScreen = ({ navigation }) => {
   };
 
   const fetchRecipes = async () => {
+    setPageLoading(true);
     const response = await recipesAPI.loadFavorites();
     if (!response.ok) return setError(true);
     setRecipes(response.data.favorites);
+    setPageLoading(false);
   };
 
   useEffect(() => {
-    setPageLoading(true);
     fetchRecipes();
-    setPageLoading(false);
   }, []);
 
   const handleScrollToBottom = () => {};
 
+  if (pageLoading) {
+    return (
+      <Screen style={styles.screen}>
+        <LottieActivityIndicator key="loading1" visible={pageLoading} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen style={styles.screen}>
-      <LottieActivityIndicator key="loading1" visible={pageLoading} />
       {recipes.length === 0 ? (
         <Message message="No favorites yet." subMessage="Get to browsing!" />
       ) : (

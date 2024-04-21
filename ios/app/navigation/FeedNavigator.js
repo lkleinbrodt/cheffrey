@@ -12,7 +12,7 @@ const FeedNavigator = () => (
     <Stack.Screen
       name={routes.FEED_RECIPE_DETAILS}
       component={RecipeDetailsScreen}
-      options={{ headerShown: true }}
+      options={{ headerShown: true, title: "Details" }}
     />
   </Stack.Navigator>
 );

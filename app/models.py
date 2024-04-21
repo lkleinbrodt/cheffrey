@@ -40,6 +40,8 @@ class User(UserMixin, db.Model):
         backref=db.backref("cooking_users", lazy="dynamic"),
     )
 
+    email_verified = db.Column(db.Boolean, default=False)
+
     def add_cooked_recipe(self, recipe):
         if recipe not in self.cooked_recipes:
             self.cooked_recipes.append(recipe)

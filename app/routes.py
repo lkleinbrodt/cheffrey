@@ -1,3 +1,4 @@
+import random
 from flask import (
     flash,
     redirect,
@@ -18,8 +19,10 @@ from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRec
 from app import app, db, admin, jwt
 import json
 from flask_cors import cross_origin
+from itsdangerous import URLSafeTimedSerializer
 from flask_jwt_extended import (
     create_access_token,
+    create_refresh_token,
     get_jwt_identity,
     jwt_required,
     verify_jwt_in_request,
@@ -30,9 +33,15 @@ from werkzeug.security import check_password_hash
 from app.models import User, Recipe, RecipeList, Favorite
 from app.forms import LoginForm, RegistrationForm, SettingsForm
 import datetime
-from sqlalchemy.sql import func  # Import the func function
+from sqlalchemy.sql import func
+from app.MailBot import MailBot
+import os
+
 
 limiter = Limiter(app=app, key_func=get_remote_address)
+serializer = URLSafeTimedSerializer(os.getenv("SECRET_KEY"))
+
+# logger = create_logger(__name__, level="DEBUG")
 
 
 @app.before_request
@@ -190,18 +199,41 @@ def login_api():
         return jsonify({"message": "Invalid email or password"}), 401
 
     access_token = create_access_token(identity=user)
+    refresh_token = create_refresh_token(identity=user)
 
-    return jsonify(access_token), 200
+    return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
 
 @jwt.additional_claims_loader
 def add_claims_to_access_token(user):
-    return {"role": user.role, "email": user.email, "id": user.id}
+    return {
+        "role": user.role,
+        "email": user.email,
+        "id": user.id,
+        "emailVerified": user.email_verified,
+    }
 
 
 @jwt.user_identity_loader
 def user_identity_lookup(user):
     return user.id
+
+
+# Register a callback function that loads a user from your database whenever
+# a protected route is accessed. This should return any python object on a
+# successful lookup, or None if the lookup failed for any reason (for example
+# if the user has been deleted from the database).
+@jwt.user_lookup_loader
+def user_lookup_callback(_jwt_header, jwt_data):
+    identity = jwt_data["sub"]
+    return User.query.filter_by(id=identity).one_or_none()
+
+
+@app.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    access_token = create_access_token(identity=current_user)
+    return jsonify(access_token=access_token)
 
 
 @app.route("/logout")
@@ -220,6 +252,11 @@ def register():
     if form.validate_on_submit():
         user = User(email=form.email.data)
         user.set_password(form.password.data)
+
+        if form.email.data in Config.ADMIN_EMAILS:
+            user.role = "admin"
+        else:
+            user.role = "user"
         db.session.add(user)
         db.session.commit()
         login_user(user, remember=True)
@@ -232,7 +269,6 @@ def register():
 def register_api():
 
     data = request.json
-    print(data)
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()
 
@@ -246,6 +282,12 @@ def register_api():
         user = User(email=email)
         user.set_password(password)
         access_token = create_access_token(identity=user)
+
+        if email in Config.ADMIN_EMAILS:
+            user.role = "admin"
+        else:
+            user.role = "user"
+
         db.session.add(user)
         db.session.commit()
         return jsonify(access_token=access_token), 200
@@ -254,6 +296,32 @@ def register_api():
         print(e)
         db.session.rollback()
         return jsonify({"message": "Error creating user"}), 500
+
+
+@app.route("/api/change-password", methods=["POST"])
+@jwt_required()
+def change_password_api():
+    print("changing password")
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.json
+    old_password = data.get("currentPassword", "").strip()
+    new_password = data.get("newPassword", "").strip()
+
+    if not old_password or not new_password:
+        return jsonify({"message": "Missing fields"}), 400
+
+    if not check_password_hash(user.password_hash, old_password):
+        return jsonify({"message": "Incorrect password"}), 401
+
+    try:
+        user.set_password(new_password)
+        db.session.commit()
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+        return jsonify({"message": "Error changing password"}), 500
+    return jsonify({"message": "Password changed successfully"}), 200
 
 
 @app.route("/settings", methods=["GET", "POST"])
@@ -772,11 +840,10 @@ def search_api():
 
     user_id = get_jwt_identity()
 
-    if user_id is not None:
-        for recipe in recipes:
-            recipe_list_item = RecipeList.query.filter_by(
-                user_id=user_id, recipe_id=recipe["id"]
-            ).first()
+    for recipe in recipes:
+        recipe_list_item = RecipeList.query.filter_by(
+            user_id=user_id, recipe_id=recipe["id"]
+        ).first()
         if recipe_list_item:
             recipe["in_list"] = True
         else:
@@ -788,7 +855,7 @@ def search_api():
             recipe["in_favorites"] = True
         else:
             recipe["in_favorites"] = False
-    print("done searching")
+
     return jsonify({"recipes": recipes})
 
 
@@ -816,3 +883,107 @@ def search():
             recipe.in_favorites = False
 
     return render_template("search.html", recipes=recipes, search_term=query)
+
+
+def generate_email_verification_token(email):
+    token = serializer.dumps(email, salt="email-verification")
+    return token
+
+
+def send_verification_email(email):
+
+    token = generate_email_verification_token(email)
+    mailer = MailBot()
+
+    user = User.query.filter_by(email=email).first()
+    if user is None:
+        return jsonify({"error": "Email not found"}), 404
+
+    subject = "GuitarPic: Verify Your Email"
+    url = url_for("main.verify_email", token=token, _external=True)
+    body = f"Click the following link to verify your email: {url}"
+
+    mailer.send_email(subject, body, email)
+
+    return True
+
+
+@app.route("/api/send-verification-email", methods=["GET"])
+@jwt_required()
+def send_verification_email_route():
+    # check if email is already verified
+    if current_user.email_verified:
+        return jsonify({"message": "Email already verified"}), 200
+
+    email = current_user.email
+    try:
+        send_verification_email(email)
+    except Exception as e:
+        # logger.error(f"Error sending verification email: {e}")
+        return jsonify({"error": "Error sending verification email"}), 500
+
+    return jsonify({"message": "Verification email sent"}), 200
+
+
+@app.route("/verify-email", methods=["GET"])
+def verify_email():
+    token = request.args.get("token")
+    try:
+        email = serializer.loads(token, salt="email-verification", max_age=3600)
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            return jsonify({"error": "Email not found"}), 404
+        if user.email_verified:
+            return jsonify({"message": "Email already verified"}), 200
+        user.email_verified = True
+        db.session.commit()
+        return jsonify({"message": "Email verified"}), 200
+    except Exception as e:
+        # logger.exception("Unable to verify email")
+
+        return jsonify({"error": "Unable to verify email"}), 400
+
+
+@app.route("/forgot-password", methods=["POST"])
+def send_forget_password_email():
+    data = request.json
+    email = data.get("email")
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "Email not found"}), 404
+
+    current_expiration = user.can_change_password_expiry
+    if current_expiration is not None:
+        if current_expiration > datetime.utcnow():
+            return (
+                jsonify(
+                    {
+                        "error": "There is already an active verification code. Please use that code or wait to generate a new one."
+                    }
+                ),
+                400,
+            )
+
+    token = str(random.randint(100000, 999999))
+    mailer = MailBot()
+    subject = "GuitarPic: Reset Your Password"
+    body = f"Use the following code to reset your password: {token}"
+    try:
+        mailer.send_email(subject, body, email)
+    except Exception as e:
+        # logger.error(f"Error sending forget password email: {e}")
+        return jsonify({"error": "Error sending forget password email"}), 500
+
+    try:
+        user.can_change_password = True
+        user.can_change_password_expiry = datetime.utcnow() + datetime.timedelta(
+            minutes=30
+        )
+        user.change_password_code = token
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        # logger.error(f"Error updating user: {e}")
+        return jsonify({"error": "Error updating user"}), 500
+
+    return jsonify({"message": "Forget password email sent"}), 200
