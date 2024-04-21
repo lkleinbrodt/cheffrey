@@ -1,3 +1,4 @@
+import random
 from flask import (
     flash,
     redirect,
@@ -18,6 +19,7 @@ from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRec
 from app import app, db, admin, jwt
 import json
 from flask_cors import cross_origin
+from itsdangerous import URLSafeTimedSerializer
 from flask_jwt_extended import (
     create_access_token,
     get_jwt_identity,
@@ -30,9 +32,15 @@ from werkzeug.security import check_password_hash
 from app.models import User, Recipe, RecipeList, Favorite
 from app.forms import LoginForm, RegistrationForm, SettingsForm
 import datetime
-from sqlalchemy.sql import func  # Import the func function
+from sqlalchemy.sql import func
+from app.MailBot import MailBot
+import os
+
 
 limiter = Limiter(app=app, key_func=get_remote_address)
+serializer = URLSafeTimedSerializer(os.getenv("SECRET_KEY"))
+
+# logger = create_logger(__name__, level="DEBUG")
 
 
 @app.before_request
@@ -220,6 +228,11 @@ def register():
     if form.validate_on_submit():
         user = User(email=form.email.data)
         user.set_password(form.password.data)
+
+        if form.email.data in Config.ADMIN_EMAILS:
+            user.role = "admin"
+        else:
+            user.role = "user"
         db.session.add(user)
         db.session.commit()
         login_user(user, remember=True)
@@ -841,3 +854,107 @@ def search():
             recipe.in_favorites = False
 
     return render_template("search.html", recipes=recipes, search_term=query)
+
+
+def generate_email_verification_token(email):
+    token = serializer.dumps(email, salt="email-verification")
+    return token
+
+
+def send_verification_email(email):
+
+    token = generate_email_verification_token(email)
+    mailer = MailBot()
+
+    user = User.query.filter_by(email=email).first()
+    if user is None:
+        return jsonify({"error": "Email not found"}), 404
+
+    subject = "GuitarPic: Verify Your Email"
+    url = url_for("main.verify_email", token=token, _external=True)
+    body = f"Click the following link to verify your email: {url}"
+
+    mailer.send_email(subject, body, email)
+
+    return True
+
+
+@app.route("/api/send-verification-email", methods=["GET"])
+@jwt_required()
+def send_verification_email_route():
+    # check if email is already verified
+    if current_user.email_verified:
+        return jsonify({"message": "Email already verified"}), 200
+
+    email = current_user.email
+    try:
+        send_verification_email(email)
+    except Exception as e:
+        # logger.error(f"Error sending verification email: {e}")
+        return jsonify({"error": "Error sending verification email"}), 500
+
+    return jsonify({"message": "Verification email sent"}), 200
+
+
+@app.route("/verify-email", methods=["GET"])
+def verify_email():
+    token = request.args.get("token")
+    try:
+        email = serializer.loads(token, salt="email-verification", max_age=3600)
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            return jsonify({"error": "Email not found"}), 404
+        if user.email_verified:
+            return jsonify({"message": "Email already verified"}), 200
+        user.email_verified = True
+        db.session.commit()
+        return jsonify({"message": "Email verified"}), 200
+    except Exception as e:
+        # logger.exception("Unable to verify email")
+
+        return jsonify({"error": "Unable to verify email"}), 400
+
+
+@app.route("/forgot-password", methods=["POST"])
+def send_forget_password_email():
+    data = request.json
+    email = data.get("email")
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "Email not found"}), 404
+
+    current_expiration = user.can_change_password_expiry
+    if current_expiration is not None:
+        if current_expiration > datetime.utcnow():
+            return (
+                jsonify(
+                    {
+                        "error": "There is already an active verification code. Please use that code or wait to generate a new one."
+                    }
+                ),
+                400,
+            )
+
+    token = str(random.randint(100000, 999999))
+    mailer = MailBot()
+    subject = "GuitarPic: Reset Your Password"
+    body = f"Use the following code to reset your password: {token}"
+    try:
+        mailer.send_email(subject, body, email)
+    except Exception as e:
+        # logger.error(f"Error sending forget password email: {e}")
+        return jsonify({"error": "Error sending forget password email"}), 500
+
+    try:
+        user.can_change_password = True
+        user.can_change_password_expiry = datetime.utcnow() + datetime.timedelta(
+            minutes=30
+        )
+        user.change_password_code = token
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        # logger.error(f"Error updating user: {e}")
+        return jsonify({"error": "Error updating user"}), 500
+
+    return jsonify({"message": "Forget password email sent"}), 200
