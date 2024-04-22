@@ -1,20 +1,18 @@
 import { React, useEffect, useState, useContext } from "react";
-import { StyleSheet, ActivityIndicator, Text, Button } from "react-native";
-import LottieActivityIndicator from "../components/ActivityIndicator";
+import { StyleSheet, ActivityIndicator } from "react-native";
 import RecipeGrid from "../components/RecipeGrid";
 import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import SearchBar from "../components/SearchBar";
 import routes from "../navigation/routes";
+import { ScrollView } from "react-native-gesture-handler";
 
 const Explore = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
   const [page, setPage] = useState(1);
   const [pageLoading, setPageLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [atBottom, setAtBottom] = useState(false);
   const [maxPages, setMaxPages] = useState(10);
   const [query, setQuery] = useState("");
 
@@ -36,13 +34,13 @@ const Explore = ({ navigation }) => {
   };
 
   const onRefresh = async () => {
-    setPageLoading(true);
+    // setPageLoading(true);
     setRecipes([]);
     setQuery("");
     await recipesAPI.refreshExplore();
     setPage(1);
     await fetchExploreRecipes(1);
-    setPageLoading(false);
+    // setPageLoading(false);
   };
 
   const fetchExploreRecipes = async (pageNumber) => {
@@ -50,7 +48,13 @@ const Explore = ({ navigation }) => {
     const response = await recipesAPI.loadRandomRecipes(pageNumber);
     if (!response.ok) return setError(true);
 
-    setRecipes((prevRecipes) => [...prevRecipes, ...response.data.recipes]);
+    //remove any recipes in the response that are already in the list
+    //#TODO: can we be more efficient here?
+    const newRecipes = response.data.recipes.filter(
+      (recipe) => !recipes.some((r) => r.id === recipe.id)
+    );
+
+    setRecipes((prevRecipes) => [...prevRecipes, ...newRecipes]);
     setLoading(false);
   };
 
@@ -81,6 +85,19 @@ const Explore = ({ navigation }) => {
     setPageLoading(false);
   }, []);
 
+  if (pageLoading) {
+    return (
+      <Screen style={styles.screen}>
+        <SearchBar onSearch={onSearch} />
+        <ActivityIndicator
+          style={styles.pageLoading}
+          size="large"
+          color={colors.primary}
+        />
+      </Screen>
+    );
+  }
+
   return (
     <Screen style={styles.screen}>
       <RecipeGrid
@@ -98,7 +115,6 @@ const Explore = ({ navigation }) => {
           color={colors.primary}
         />
       )}
-      <LottieActivityIndicator key="loading1" visible={pageLoading} />
     </Screen>
   );
 };
@@ -107,9 +123,14 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: colors.background,
   },
+  pageLoading: {
+    position: "absolute",
+    top: "50%",
+    alignSelf: "center",
+  },
   loading: {
     position: "absolute",
-    bottom: 16,
+    bottom: 20,
     alignSelf: "center",
   },
 });

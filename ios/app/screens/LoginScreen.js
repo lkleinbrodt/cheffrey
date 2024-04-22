@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Image, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, Image, ActivityIndicator } from "react-native";
 import Screen from "../components/Screen.js";
 import {
   Form,
@@ -23,18 +23,21 @@ const validationSchema = Yup.object().shape({
 function LoginScreen({ navigation }) {
   const auth = useAuth();
   const [loginFailed, setLoginFailed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async ({ email, password }) => {
+    setLoading(true);
     const result = await authAPI.login(email, password);
     if (!result.ok) return setLoginFailed(true);
     setLoginFailed(false);
-    console.log("access:", result.data.access_token);
-    console.log("refresh:", result.data.refresh_token);
     auth.logIn(result.data.access_token, result.data.refresh_token);
+    setLoading(false);
   };
+
   return (
     <Screen style={styles.container}>
-      <Image source={require("../assets/chef.png")} style={styles.logo} />
+      <Image source={require("../assets/chef_head.png")} style={styles.logo} />
+
       <Form
         initialValues={{ email: "", password: "" }}
         onSubmit={handleSubmit}
@@ -59,7 +62,16 @@ function LoginScreen({ navigation }) {
           secureTextEntry
           textContentType="password"
         />
-        <SubmitButton title="Login" />
+
+        {loading ? (
+          <ActivityIndicator
+            style={styles.loading}
+            size="large"
+            color={colors.primary}
+          />
+        ) : (
+          <SubmitButton title="Login" />
+        )}
       </Form>
     </Screen>
   );
@@ -80,11 +92,11 @@ const styles = StyleSheet.create({
     width: "50%",
   },
   logo: {
-    width: 80,
-    height: 80,
+    height: 200,
     alignSelf: "center",
+    resizeMode: "contain",
     marginTop: 50,
-    marginBottom: 20,
+    marginBottom: 75,
   },
 });
 

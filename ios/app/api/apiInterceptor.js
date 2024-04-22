@@ -16,7 +16,6 @@ function ApiInterceptor(props) {
     if (!transformersAdded) {
       apiClient.addAsyncRequestTransform(async (request) => {
         const authToken = await authStorage.getToken();
-        console.log("authToken", authToken);
 
         if (!authToken) {
           return;

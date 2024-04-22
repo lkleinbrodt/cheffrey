@@ -23,8 +23,6 @@ function RegisterScreen({ navigation }) {
   const handleSubmit = async ({ email, password }) => {
     const result = await usersAPI.register(email, password);
     if (!result.ok) {
-      console.log(result);
-      console.log(result.data.message);
       if (result.data) return Alert.alert("Error", result.data.message);
       else {
         return alert("Error", "Asssn unexpected error occurred.");

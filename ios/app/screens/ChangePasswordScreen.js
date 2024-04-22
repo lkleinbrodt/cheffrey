@@ -19,7 +19,6 @@ function ChangePasswordScreen({ navigation }) {
   const [changePasswordFailed, setChangePasswordFailed] = useState(false);
 
   const handleChangePassword = async ({ currentPassword, newPassword }) => {
-    console.log(currentPassword, newPassword);
     const result = await usersAPI.changePassword(currentPassword, newPassword);
 
     if (!result.ok) {

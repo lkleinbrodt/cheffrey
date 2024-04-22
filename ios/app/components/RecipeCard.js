@@ -32,7 +32,7 @@ const RecipeCard = ({ recipe, onPress }) => {
           style={styles.cardImage}
           alt={recipe.title}
           tint="light"
-          preview={{ uri: "../assets/chef.png" }}
+          preview={{ uri: "../assets/platter_stamp.png" }}
         />
 
         <View style={styles.cardBody}>

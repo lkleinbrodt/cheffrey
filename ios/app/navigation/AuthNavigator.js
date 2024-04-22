@@ -4,11 +4,20 @@ import { createStackNavigator } from "@react-navigation/stack";
 import LoginScreen from "../screens/LoginScreen";
 import WelcomeScreen from "../screens/WelcomeScreen";
 import RegisterScreen from "../screens/RegisterScreen";
+import colors from "../config/colors";
 const Stack = createStackNavigator();
 
 const AuthNavigator = () => {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.background,
+          shadowColor: "transparent",
+        },
+        headerTintColor: colors.primary,
+      }}
+    >
       <Stack.Screen
         name="Welcome"
         component={WelcomeScreen}

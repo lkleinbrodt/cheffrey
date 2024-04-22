@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ios",
+    "name": "Cheffrey",
     "slug": "cheffrey",
     "scheme": "myapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/chef.png",
+    "icon": "./app/assets/logo_stamp_square.png",
     "userInterfaceStyle": "light",
     "plugins": [
       "expo-apple-authentication",
@@ -13,7 +13,7 @@
       "expo-router"
     ],
     "splash": {
-      "image": "./app/assets/splash.png",
+      "image": "./app/assets/logo_stamp.png",
       "resizeMode": "contain",
       "backgroundColor": "#faf1e4"
     },
@@ -29,10 +29,11 @@
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.lkleinbrodt.cheffrey"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./app/assets/logo_stamp.png"
     },
     "extra": {
       "router": {
