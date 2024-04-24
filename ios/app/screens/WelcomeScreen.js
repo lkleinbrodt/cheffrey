@@ -3,6 +3,7 @@ import { ImageBackground, StyleSheet, View, Image, Text } from "react-native";
 import Screen from "../components/Screen";
 import Button from "../components/Button";
 import colors from "../config/colors";
+import defaultStyles from "../config/styles";
 
 function WelcomeScreen({ navigation }) {
   return (
@@ -11,7 +12,7 @@ function WelcomeScreen({ navigation }) {
         <Text style={styles.title}>Cheffrey</Text>
         <Image
           style={styles.logo}
-          source={require("../assets/chef_head.png")}
+          source={require("../assets/logo_stamp.png")}
         />
         <Text style={styles.tagline}>What are we cooking?</Text>
       </View>
@@ -33,9 +34,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   buttonsContainer: {
-    padding: 20,
+    paddingHorizontal: 30,
     alignItems: "center",
-    paddingBottom: 50,
+    marginBottom: 50,
     width: "100%",
   },
   logo: {
@@ -44,19 +45,23 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 100,
+    marginBottom: 75,
   },
   tagline: {
+    ...defaultStyles.text,
     fontSize: 25,
     fontWeight: "300",
     paddingVertical: 20,
     fontStyle: "italic",
   },
   title: {
+    ...defaultStyles.text,
     fontSize: 50,
     fontWeight: "600",
     paddingVertical: 20,
     color: colors.primary,
+    fontStyle: "italic",
+    fontWeight: "bold",
   },
 });
 

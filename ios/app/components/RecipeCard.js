@@ -122,10 +122,11 @@ const styles = {
     flex: 1,
     marginRight: 5,
   },
+
   saveButton: {
     padding: 10,
     borderRadius: 5,
-    flex: 1,
+    flex: 0.75,
     marginRight: 5,
   },
   favoriteButton: {

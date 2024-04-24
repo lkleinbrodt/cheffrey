@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 import colors from "../config/colors";
+import defaultStyles from "../config/styles";
 
 function AppButton({ title, onPress, color = "primary" }) {
   return (
@@ -25,9 +26,10 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   text: {
+    ...defaultStyles.text,
     color: colors.white,
     fontSize: 18,
-    textTransform: "uppercase",
+    // textTransform: "uppercase",
     fontWeight: "bold",
   },
 });

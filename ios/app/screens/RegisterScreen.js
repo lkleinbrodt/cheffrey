@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Alert } from "react-native";
+import { StyleSheet, Alert, Image, View } from "react-native";
 import * as Yup from "yup";
 
 import Screen from "../components/Screen";
@@ -7,6 +7,8 @@ import { Form, FormField, SubmitButton } from "../components/forms";
 import usersAPI from "../api/users";
 import authApi from "../api/auth";
 import useAuth from "../auth/useAuth";
+import Text from "../components/Text";
+import colors from "../config/colors";
 
 const validationSchema = Yup.object().shape({
   email: Yup.string().required().email().label("Email"),
@@ -34,40 +36,49 @@ function RegisterScreen({ navigation }) {
 
   return (
     <Screen style={styles.container}>
-      <Form
-        initialValues={{ email: "", password: "", confirmPassword: "" }}
-        onSubmit={handleSubmit}
-        validationSchema={validationSchema}
-      >
-        <FormField
-          autoCapitalize="none"
-          autoCorrect={false}
-          icon="email"
-          keyboardType="email-address"
-          name="email"
-          placeholder="Email"
-          textContentType="emailAddress"
+      <View style={styles.welcomeBanner}>
+        <Image
+          source={require("../assets/chef_head.png")}
+          style={styles.logo}
         />
-        <FormField
-          autoCapitalize="none"
-          autoCorrect={false}
-          icon="lock"
-          name="password"
-          placeholder="Password"
-          secureTextEntry
-          textContentType="password"
-        />
-        <FormField
-          autoCapitalize="none"
-          autoCorrect={false}
-          icon="lock"
-          name="confirmPassword"
-          placeholder="Confirm Password"
-          secureTextEntry
-          textContentType="password"
-        />
-        <SubmitButton title="Register" />
-      </Form>
+        <Text style={styles.welcomeText}>Welcome to Cheffrey!</Text>
+      </View>
+      <View style={styles.formContainer}>
+        <Form
+          initialValues={{ email: "", password: "", confirmPassword: "" }}
+          onSubmit={handleSubmit}
+          validationSchema={validationSchema}
+        >
+          <FormField
+            autoCapitalize="none"
+            autoCorrect={false}
+            icon="email"
+            keyboardType="email-address"
+            name="email"
+            placeholder="Email"
+            textContentType="emailAddress"
+          />
+          <FormField
+            autoCapitalize="none"
+            autoCorrect={false}
+            icon="lock"
+            name="password"
+            placeholder="Password"
+            secureTextEntry
+            textContentType="password"
+          />
+          <FormField
+            autoCapitalize="none"
+            autoCorrect={false}
+            icon="lock"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            secureTextEntry
+            textContentType="password"
+          />
+          <SubmitButton title="Register" />
+        </Form>
+      </View>
     </Screen>
   );
 }
@@ -75,6 +86,28 @@ function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+  },
+  welcomeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginBottom: 20,
+    marginTop: 20,
+  },
+  logo: {
+    width: 50,
+    height: 50,
+    resizeMode: "contain",
+    marginHorizontal: 15,
+  },
+  welcomeText: {
+    fontSize: 24,
+    color: colors.primary,
+    fontWeight: "bold",
+    paddingTop: 10,
+  },
+  formContainer: {
+    padding: 15,
   },
 });
 

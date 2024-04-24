@@ -5,7 +5,7 @@ import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import SearchBar from "../components/SearchBar";
-import routes from "../navigation/routes";
+import routeNames from "../navigation/routeNames";
 import { ScrollView } from "react-native-gesture-handler";
 
 const Explore = ({ navigation }) => {
@@ -14,6 +14,7 @@ const Explore = ({ navigation }) => {
   const [pageLoading, setPageLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [maxPages, setMaxPages] = useState(10);
+  const [error, setError] = useState(false);
   const [query, setQuery] = useState("");
 
   const onSearch = async (query) => {
@@ -103,7 +104,7 @@ const Explore = ({ navigation }) => {
       <RecipeGrid
         recipes={recipes}
         navigation={navigation}
-        navigateScreen={routes.FEED_RECIPE_DETAILS}
+        navigateScreen={routeNames.FEED_RECIPE_DETAILS}
         onScrollToBottom={handleScrollToBottom}
         onRefresh={onRefresh}
         searchBar={<SearchBar onSearch={onSearch} />}

@@ -5,7 +5,7 @@ import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import Message from "../components/Message";
-import routes from "../navigation/routes";
+import routeNames from "../navigation/routeNames";
 
 const FavoritesScreen = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -52,7 +52,7 @@ const FavoritesScreen = ({ navigation }) => {
         <RecipeGrid
           recipes={recipes}
           navigation={navigation}
-          navigateScreen={routes.FAVORITES_RECIPE_DETAILS}
+          navigateScreen={routeNames.FAVORITES_RECIPE_DETAILS}
           onScrollToBottom={handleScrollToBottom}
           onRefresh={onRefresh}
         />

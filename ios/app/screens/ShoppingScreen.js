@@ -19,6 +19,7 @@ import Message from "../components/Message";
 const ShoppingScreen = ({ navigation }) => {
   const [ingredientsDict, setIngredientsDict] = useState({});
   const [checkedIngredients, setCheckedIngredients] = useState([]);
+  const [error, setError] = useState(false);
 
   const [loading, setLoading] = useState(false);
 

@@ -14,7 +14,7 @@ import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import useAuth from "../auth/useAuth";
 import Message from "../components/Message";
-import routes from "../navigation/routes";
+import routeNames from "../navigation/routeNames";
 
 const RecipeList = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -87,7 +87,7 @@ const RecipeList = ({ navigation }) => {
         <RecipeGrid
           recipes={recipes}
           navigation={navigation}
-          navigateScreen={routes.RECIPES_RECIPE_DETAILS}
+          navigateScreen={routeNames.RECIPES_RECIPE_DETAILS}
           onScrollToBottom={() => {}}
           onRefresh={() => {}}
           footer={
