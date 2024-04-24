@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Image, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, Image, ActivityIndicator, View } from "react-native";
 import Screen from "../components/Screen.js";
 import {
   Form,
@@ -8,9 +8,12 @@ import {
   ErrorMessage,
 } from "../components/forms/index.js";
 import authAPI from "../api/auth.js";
+import { Button } from "react-native";
 import * as Yup from "yup";
 import useAuth from "../auth/useAuth.js";
 import colors from "../config/colors.js";
+import routeNames from "../navigation/routeNames.js";
+import Text from "../components/Text.js";
 
 //required to properly decode the token
 import "core-js/stable/atob";
@@ -23,42 +26,70 @@ const validationSchema = Yup.object().shape({
 function LoginScreen({ navigation }) {
   const auth = useAuth();
   const [loginFailed, setLoginFailed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async ({ email, password }) => {
+    setLoading(true);
     const result = await authAPI.login(email, password);
     if (!result.ok) return setLoginFailed(true);
     setLoginFailed(false);
-    auth.logIn(result.data);
+    auth.logIn(result.data.access_token, result.data.refresh_token);
+    setLoading(false);
   };
+
   return (
     <Screen style={styles.container}>
-      <Image source={require("../assets/chef.png")} style={styles.logo} />
-      <Form
-        initialValues={{ email: "", password: "" }}
-        onSubmit={handleSubmit}
-        validationSchema={validationSchema}
-      >
-        <ErrorMessage error="Invalid email or password" visible={loginFailed} />
-        <FormField
-          autoCapitalize="none"
-          autoCorrect={false}
-          icon="email"
-          keyboardType="email-address"
-          name="email"
-          placeholder="Email"
-          textContentType="emailAddress"
+      <View style={styles.welcomeBanner}>
+        <Image
+          source={require("../assets/chef_head.png")}
+          style={styles.logo}
         />
-        <FormField
-          autoCapitalize="none"
-          autoCorrect={false}
-          icon="lock"
-          name="password"
-          placeholder="Password"
-          secureTextEntry
-          textContentType="password"
-        />
-        <SubmitButton title="Login" />
-      </Form>
+        <Text style={styles.welcomeText}>Welcome Back!</Text>
+      </View>
+      <View style={styles.formContainer}>
+        <Form
+          initialValues={{ email: "", password: "" }}
+          onSubmit={handleSubmit}
+          validationSchema={validationSchema}
+        >
+          <ErrorMessage
+            error="Invalid email or password"
+            visible={loginFailed}
+          />
+          <FormField
+            autoCapitalize="none"
+            autoCorrect={false}
+            icon="email"
+            keyboardType="email-address"
+            name="email"
+            placeholder="Email"
+            textContentType="emailAddress"
+          />
+          <FormField
+            autoCapitalize="none"
+            autoCorrect={false}
+            icon="lock"
+            name="password"
+            placeholder="Password"
+            secureTextEntry
+            textContentType="password"
+          />
+
+          {loading ? (
+            <ActivityIndicator
+              style={styles.loading}
+              size="large"
+              color={colors.primary}
+            />
+          ) : (
+            <SubmitButton title="Login" />
+          )}
+        </Form>
+      </View>
+      <Button
+        title="Forgot my password"
+        onPress={() => navigation.navigate(routeNames.FORGOT_PASSWORD)}
+      />
     </Screen>
   );
 }
@@ -66,6 +97,9 @@ function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+  },
+  formContainer: {
+    padding: 15,
   },
   registerButton: {
     alignSelf: "center",
@@ -77,127 +111,25 @@ const styles = StyleSheet.create({
     padding: 15,
     width: "50%",
   },
-  logo: {
-    width: 80,
-    height: 80,
-    alignSelf: "center",
-    marginTop: 50,
+  welcomeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
     marginBottom: 20,
+    marginTop: 20,
+  },
+  logo: {
+    width: 50,
+    height: 50,
+    resizeMode: "contain",
+    marginHorizontal: 20,
+  },
+  welcomeText: {
+    fontSize: 32,
+    color: colors.primary,
+    fontWeight: "bold",
+    paddingTop: 10,
   },
 });
 
 export default LoginScreen;
-
-// const L = () => {
-//   const [username, setUsername] = useState("");
-//   const [password, setPassword] = useState("");
-
-//   useEffect(() => {
-//     SecureStore.getItemAsync("token").then((token) => {
-//       console.log("Token:", token);
-//       // If token exists, redirect to another page
-//       if (token) {
-//         console.log("Token exists:", token);
-//         router.replace("tabs/explore");
-//       }
-//     });
-//   }, []);
-
-//   const handleLogin = async () => {
-//     // Validate inputs
-//     if (!username || !password) {
-//       Alert.alert("Error", "Please enter both username and password");
-//       return;
-//     }
-
-//     try {
-//       const response = await axios.post("/login", {
-//         username,
-//         password,
-//       });
-
-//       if (response.data.access_token) {
-//         SecureStore.setItemAsync("token", response.data.access_token);
-//         router.replace("tabs/explore");
-//       } else {
-//         Alert.alert("Error", "Invalid username or password");
-//       }
-//     } catch (error) {
-//       console.error("Error logging in", error);
-//       Alert.alert("Error", "Invalid username or password");
-//     }
-//   };
-
-//   return (
-//     <Screen style={styles.container}>
-//       <View style={styles.imageContainer}>
-//         <Image source={CheffreyLogo} style={styles.image} />
-//       </View>
-//       <Text style={styles.title}>Cheffrey</Text>
-//       <Pressable onPress={() => Keyboard.dismiss()}>
-//         <View>
-//           <TextInput
-//             style={styles.input}
-//             placeholder="Username"
-//             onChangeText={(text) => setUsername(text)}
-//             value={username}
-//             placeholderTextColor="grey"
-//             autoCapitalize="none"
-//           />
-//         </View>
-//       </Pressable>
-
-//       <Pressable onPress={() => Keyboard.dismiss()}>
-//         <TextInput
-//           style={styles.input}
-//           placeholder="Password"
-//           secureTextEntry
-//           onChangeText={(text) => setPassword(text)}
-//           value={password}
-//           placeholderTextColor="grey"
-//         />
-//       </Pressable>
-
-//       <LoginButton onPress={handleLogin} />
-//     </Screen>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#faf1e4",
-//     alignItems: "center",
-//   },
-//   imageContainer: {
-//     paddingTop: 30,
-//   },
-//   image: {
-//     width: 320,
-//     height: 320,
-//     borderRadius: 18,
-//   },
-//   title: {
-//     fontSize: 36,
-//     color: "#435334",
-//     marginTop: 20,
-//     textAlign: "center",
-//     marginBottom: 0,
-//     paddingBottom: 0,
-//   },
-//   input: {
-//     height: 40,
-//     width: 120,
-//     borderColor: "gray",
-//     borderWidth: 1,
-//     marginBottom: 10,
-//     paddingLeft: 10,
-//   },
-//   buttonText: {
-//     color: "white",
-//     fontSize: 16,
-//     textAlign: "center",
-//   },
-// });
-
-// export default LoginScreen;

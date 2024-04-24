@@ -1,13 +1,11 @@
 import { React, useEffect, useState, useContext } from "react";
 import { StyleSheet, ActivityIndicator, Text } from "react-native";
-import LottieActivityIndicator from "../components/ActivityIndicator";
 import RecipeGrid from "../components/RecipeGrid";
 import colors from "../config/colors";
 import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
-import { Button } from "../components/Button";
 import Message from "../components/Message";
-import routes from "../navigation/routes";
+import routeNames from "../navigation/routeNames";
 
 const FavoritesScreen = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -37,7 +35,11 @@ const FavoritesScreen = ({ navigation }) => {
   if (pageLoading) {
     return (
       <Screen style={styles.screen}>
-        <LottieActivityIndicator key="loading1" visible={pageLoading} />
+        <ActivityIndicator
+          style={styles.loading}
+          size="large"
+          color={colors.primary}
+        />
       </Screen>
     );
   }
@@ -50,7 +52,7 @@ const FavoritesScreen = ({ navigation }) => {
         <RecipeGrid
           recipes={recipes}
           navigation={navigation}
-          navigateScreen={routes.FAVORITES_RECIPE_DETAILS}
+          navigateScreen={routeNames.FAVORITES_RECIPE_DETAILS}
           onScrollToBottom={handleScrollToBottom}
           onRefresh={onRefresh}
         />
@@ -65,7 +67,7 @@ const styles = StyleSheet.create({
   },
   loading: {
     position: "absolute",
-    bottom: 16,
+    top: "50%",
     alignSelf: "center",
   },
 });

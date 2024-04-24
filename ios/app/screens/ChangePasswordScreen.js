@@ -4,8 +4,7 @@ import * as Yup from "yup";
 
 import Screen from "../components/Screen";
 import { Form, FormField, SubmitButton } from "../components/forms";
-import accountAPI from "../api/account";
-import useAuth from "../auth/useAuth";
+import usersAPI from "../api/users";
 
 const validationSchema = Yup.object().shape({
   currentPassword: Yup.string().required().label("Current Password"),
@@ -20,11 +19,7 @@ function ChangePasswordScreen({ navigation }) {
   const [changePasswordFailed, setChangePasswordFailed] = useState(false);
 
   const handleChangePassword = async ({ currentPassword, newPassword }) => {
-    console.log(currentPassword, newPassword);
-    const result = await accountAPI.changePassword(
-      currentPassword,
-      newPassword
-    );
+    const result = await usersAPI.changePassword(currentPassword, newPassword);
 
     if (!result.ok) {
       setChangePasswordFailed(true);

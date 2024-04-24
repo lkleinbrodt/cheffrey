@@ -1,3 +1,4 @@
+import datetime
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from sqlalchemy import DateTime
@@ -41,6 +42,14 @@ class User(UserMixin, db.Model):
     )
 
     email_verified = db.Column(db.Boolean, default=False)
+
+    # TODO: I dont like this implementation, using deeplinking would be better
+    # but that is more complex and requires more setup
+    can_change_password = db.Column(db.Boolean, default=False)
+    can_change_password_expiry = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow
+    )
+    change_password_code = db.Column(db.String(6), nullable=True)
 
     def add_cooked_recipe(self, recipe):
         if recipe not in self.cooked_recipes:

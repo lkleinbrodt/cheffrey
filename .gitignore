@@ -4,6 +4,7 @@ flask_session/
 app.db
 .flaskenv
 data/
+*.dump
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

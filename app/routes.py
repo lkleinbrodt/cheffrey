@@ -41,8 +41,6 @@ import os
 limiter = Limiter(app=app, key_func=get_remote_address)
 serializer = URLSafeTimedSerializer(os.getenv("SECRET_KEY"))
 
-# logger = create_logger(__name__, level="DEBUG")
-
 
 @app.before_request
 def before_request():
@@ -79,7 +77,7 @@ def refresh_explore():
 @app.route("/load-more-recipes/<int:page>")
 @login_required
 def load_more_recipes(page):
-    per_page = 10  # Adjust as needed
+    per_page = 12  # Adjust as needed
     max_pages = 10
 
     if "explore_recipes" not in session:
@@ -287,6 +285,8 @@ def register_api():
             user.role = "admin"
         else:
             user.role = "user"
+
+        send_verification_email(email)
 
         db.session.add(user)
         db.session.commit()
@@ -899,8 +899,8 @@ def send_verification_email(email):
     if user is None:
         return jsonify({"error": "Email not found"}), 404
 
-    subject = "GuitarPic: Verify Your Email"
-    url = url_for("main.verify_email", token=token, _external=True)
+    subject = "Cheffrey: Verify Your Email"
+    url = url_for("app.verify_email", token=token, _external=True)
     body = f"Click the following link to verify your email: {url}"
 
     mailer.send_email(subject, body, email)
@@ -944,7 +944,7 @@ def verify_email():
         return jsonify({"error": "Unable to verify email"}), 400
 
 
-@app.route("/forgot-password", methods=["POST"])
+@app.route("/api/forgot-password", methods=["POST"])
 def send_forget_password_email():
     data = request.json
     email = data.get("email")
@@ -954,7 +954,7 @@ def send_forget_password_email():
 
     current_expiration = user.can_change_password_expiry
     if current_expiration is not None:
-        if current_expiration > datetime.utcnow():
+        if current_expiration > datetime.datetime.utcnow():
             return (
                 jsonify(
                     {
@@ -966,24 +966,57 @@ def send_forget_password_email():
 
     token = str(random.randint(100000, 999999))
     mailer = MailBot()
-    subject = "GuitarPic: Reset Your Password"
+    subject = "Cheffrey: Reset Your Password"
     body = f"Use the following code to reset your password: {token}"
     try:
         mailer.send_email(subject, body, email)
     except Exception as e:
-        # logger.error(f"Error sending forget password email: {e}")
+        app.logger.error(f"Error sending forget password email: {e}")
         return jsonify({"error": "Error sending forget password email"}), 500
 
     try:
         user.can_change_password = True
-        user.can_change_password_expiry = datetime.utcnow() + datetime.timedelta(
-            minutes=30
+        user.can_change_password_expiry = (
+            datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
         )
         user.change_password_code = token
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        # logger.error(f"Error updating user: {e}")
+        app.logger.error(f"Error updating user: {e}")
         return jsonify({"error": "Error updating user"}), 500
 
     return jsonify({"message": "Forget password email sent"}), 200
+
+
+@app.route("/api/change-forgot-password", methods=["POST"])
+def change_forgot_password():
+    data = request.json
+    code = data.get("verificationCode", "").strip()
+    new_password = data.get("newPassword", "").strip()
+    email = data.get("email", "").strip()
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if not user.can_change_password:
+        return jsonify({"error": "Change password code expired"}), 400
+
+    if user.can_change_password_expiry < datetime.datetime.utcnow():
+        return jsonify({"error": "Change password code expired"}), 400
+
+    if user.change_password_code != code:
+        app.logger.debug(code)
+        app.logger.debug(user.change_password_code)
+        return jsonify({"error": "Invalid code"}), 400
+
+    try:
+        user.set_password(new_password)
+        user.can_change_password = False
+        user.can_change_password_expiry = datetime.datetime.utcnow()
+        db.session.commit()
+        return jsonify({"message": "Password changed successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Error changing password"}), 500

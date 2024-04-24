@@ -33,6 +33,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 10,
     paddingHorizontal: 30,
+    //fully transparent background
   },
   inputContainer: {
     flex: 1,

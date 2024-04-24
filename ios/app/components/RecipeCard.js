@@ -32,7 +32,7 @@ const RecipeCard = ({ recipe, onPress }) => {
           style={styles.cardImage}
           alt={recipe.title}
           tint="light"
-          preview={{ uri: "../assets/chef.png" }}
+          preview={{ uri: "../assets/platter_stamp.png" }}
         />
 
         <View style={styles.cardBody}>
@@ -122,10 +122,11 @@ const styles = {
     flex: 1,
     marginRight: 5,
   },
+
   saveButton: {
     padding: 10,
     borderRadius: 5,
-    flex: 1,
+    flex: 0.75,
     marginRight: 5,
   },
   favoriteButton: {

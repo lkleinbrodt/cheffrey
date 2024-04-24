@@ -114,7 +114,6 @@ import {
   Button,
 } from "react-native";
 import RecipeCard from "./RecipeCard";
-import routes from "../navigation/routes";
 import colors from "../config/colors";
 
 const RecipeGrid = ({
@@ -165,7 +164,7 @@ const RecipeGrid = ({
         }
         ListHeaderComponent={searchBar}
         ListFooterComponent={
-          footer ?? (
+          footer & !refreshing ?? (
             <TouchableOpacity
               style={styles.scrollToTopButton}
               onPress={scrollToTop}

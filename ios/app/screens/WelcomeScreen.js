@@ -2,13 +2,19 @@ import React from "react";
 import { ImageBackground, StyleSheet, View, Image, Text } from "react-native";
 import Screen from "../components/Screen";
 import Button from "../components/Button";
+import colors from "../config/colors";
+import defaultStyles from "../config/styles";
 
 function WelcomeScreen({ navigation }) {
   return (
     <Screen style={styles.screen}>
       <View style={styles.logoContainer}>
-        <Image style={styles.logo} source={require("../assets/chef.png")} />
-        <Text style={styles.tagline}>Your AI sous-chef.</Text>
+        <Text style={styles.title}>Cheffrey</Text>
+        <Image
+          style={styles.logo}
+          source={require("../assets/logo_stamp.png")}
+        />
+        <Text style={styles.tagline}>What are we cooking?</Text>
       </View>
       <View style={styles.buttonsContainer}>
         <Button title="Login" onPress={() => navigation.navigate("Login")} />
@@ -26,26 +32,36 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     justifyContent: "flex-end",
-    alignItems: "center",
   },
   buttonsContainer: {
-    padding: 20,
-    width: "100%",
+    paddingHorizontal: 30,
     alignItems: "center",
+    marginBottom: 50,
+    width: "100%",
   },
   logo: {
-    width: 100,
-    height: 100,
+    height: 200,
+    resizeMode: "contain",
   },
   logoContainer: {
-    position: "absolute",
-    top: 70,
     alignItems: "center",
+    marginBottom: 75,
   },
   tagline: {
+    ...defaultStyles.text,
     fontSize: 25,
+    fontWeight: "300",
+    paddingVertical: 20,
+    fontStyle: "italic",
+  },
+  title: {
+    ...defaultStyles.text,
+    fontSize: 50,
     fontWeight: "600",
     paddingVertical: 20,
+    color: colors.primary,
+    fontStyle: "italic",
+    fontWeight: "bold",
   },
 });
 

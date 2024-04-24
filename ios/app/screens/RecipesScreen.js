@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Button,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import RecipeGrid from "../components/RecipeGrid";
 import colors from "../config/colors";
@@ -13,9 +14,7 @@ import Screen from "../components/Screen";
 import recipesAPI from "../api/recipes";
 import useAuth from "../auth/useAuth";
 import Message from "../components/Message";
-import LottieActivityIndicator from "../components/ActivityIndicator";
-
-import routes from "../navigation/routes";
+import routeNames from "../navigation/routeNames";
 
 const RecipeList = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -62,7 +61,11 @@ const RecipeList = ({ navigation }) => {
   if (loading) {
     return (
       <Screen style={styles.screen}>
-        <LottieActivityIndicator key="loading" visible={loading} />
+        <ActivityIndicator
+          style={styles.loading}
+          size="large"
+          color={colors.primary}
+        />
       </Screen>
     );
   }
@@ -84,7 +87,7 @@ const RecipeList = ({ navigation }) => {
         <RecipeGrid
           recipes={recipes}
           navigation={navigation}
-          navigateScreen={routes.RECIPES_RECIPE_DETAILS}
+          navigateScreen={routeNames.RECIPES_RECIPE_DETAILS}
           onScrollToBottom={() => {}}
           onRefresh={() => {}}
           footer={
@@ -115,6 +118,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 16,
     textAlign: "center",
+  },
+  loading: {
+    position: "absolute",
+    top: "50%",
+    alignSelf: "center",
   },
 });
 export default RecipeList;
