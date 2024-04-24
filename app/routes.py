@@ -30,7 +30,7 @@ from flask_jwt_extended import (
 )
 from urllib.parse import urlsplit
 from werkzeug.security import check_password_hash
-from app.models import User, Recipe, RecipeList, Favorite
+from app.models import User, Recipe, RecipeList, Favorite, CookBook
 from app.forms import LoginForm, RegistrationForm, SettingsForm
 import datetime
 from sqlalchemy.sql import func
@@ -715,7 +715,11 @@ def shopping_list_api():
 
     n_ingredients = 0
     for recipe in recipe_list:
-        for ingredient in eval(recipe.ingredients):
+        print(recipe.ingredients)
+        ingredients = json.loads(recipe.ingredients)
+        if isinstance(ingredients, str):
+            ingredients = [ingredients]
+        for ingredient in ingredients:
             category = ingredient2category.get(ingredient, "Other")
             ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
             n_ingredients += 1
@@ -1020,3 +1024,142 @@ def change_forgot_password():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Error changing password"}), 500
+
+
+@app.route("/api/cookbook", methods=["GET"])
+@jwt_required()
+def cookbook():
+    user_id = get_jwt_identity()
+
+    users_cookbook = CookBook.query.filter_by(user_id=user_id).all()
+    recipe_list = RecipeList.query.filter_by(user_id=user_id).all()
+
+    recipes = []
+
+    for recipe in users_cookbook:
+        recipe = recipe.recipe.to_dict()
+
+        if recipe in recipe_list:
+            recipe["in_list"] = True
+        else:
+            recipe["in_list"] = False
+
+        recipes.append(recipe)
+
+    return jsonify({"recipes": recipes}), 200
+
+
+@app.route("/api/add-to-cookbook/", methods=["POST"])
+@jwt_required()
+def add_to_cookbook():
+    user_id = get_jwt_identity()
+    recipe_id = request.json.get("recipe_id")
+    print(recipe_id)
+
+    recipe = Recipe.query.get(recipe_id)
+    if not recipe:
+        return jsonify({"error": "Recipe not found"}), 404
+
+    cookbook_item = CookBook(user_id=user_id, recipe_id=recipe_id)
+    db.session.add(cookbook_item)
+    db.session.commit()
+
+    return jsonify({"message": "Recipe added to cookbook"}), 200
+
+
+@app.route("/api/remove-from-cookbook/", methods=["POST"])
+@jwt_required()
+def remove_from_cookbook():
+    user_id = get_jwt_identity()
+    recipe_id = request.json.get("recipe_id")
+
+    cookbook_item = CookBook.query.filter_by(
+        user_id=user_id, recipe_id=recipe_id
+    ).first()
+    if not cookbook_item:
+        return jsonify({"error": "Recipe not found in cookbook"}), 404
+
+    db.session.delete(cookbook_item)
+    db.session.commit()
+
+    return jsonify({"message": "Recipe removed from cookbook"}), 200
+
+
+@app.route("/api/toggle-in-cookbook/", methods=["POST"])
+@jwt_required()
+def toggle_in_cookbook():
+    user_id = get_jwt_identity()
+    recipe_id = request.json.get("recipe_id")
+
+    cookbook_item = CookBook.query.filter_by(
+        user_id=user_id, recipe_id=recipe_id
+    ).first()
+    if cookbook_item:
+        db.session.delete(cookbook_item)
+        db.session.commit()
+        return jsonify({"message": "Recipe removed from cookbook"}), 200
+    else:
+        cookbook_item = CookBook(user_id=user_id, recipe_id=recipe_id)
+        db.session.add(cookbook_item)
+        db.session.commit()
+        return jsonify({"message": "Recipe added to cookbook"}), 200
+
+
+@app.route("/api/create-recipe", methods=["POST"])
+@jwt_required()
+def create_recipe():
+    user_id = get_jwt_identity()
+    data = request.json
+
+    data["author"] = user_id
+
+    recipe_id = data.get("id")
+    if recipe_id:
+        recipe = Recipe.query.get(recipe_id)
+        if recipe:
+            return jsonify({"error": "Recipe already exists"}), 400
+
+    if Recipe.query.filter_by(title=data["title"]).first():
+        return jsonify({"error": "Recipe with that title already exists"}), 400
+    try:
+        recipe = Recipe(**data)
+    except Exception as e:
+        app.logger.exception(f"Error creating recipe: {e}")
+        return jsonify({"error": "Error creating recipe"}), 500
+    try:
+        db.session.add(recipe)
+        db.session.commit()
+    except Exception as e:
+        app.logger.exception(f"Error adding recipe to database: {e}")
+        db.session.rollback()
+        return jsonify({"error": "Error adding recipe to database"}), 500
+
+    return jsonify({"message": "Recipe added successfully", "id": recipe.id}), 200
+
+
+@app.route("/api/update-recipe", methods=["POST"])
+@jwt_required()
+def update_recipe():
+    user_id = get_jwt_identity()
+    data = request.json
+
+    recipe_id = data.get("id")
+    if not recipe_id:
+        return jsonify({"error": "Recipe ID not provided"}), 400
+
+    recipe = Recipe.query.get(recipe_id)
+    if not recipe:
+        return jsonify({"error": "Recipe not found"}), 404
+
+    if recipe.author != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        recipe.update(data)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error(f"Error updating recipe: {e}")
+        db.session.rollback()
+        return jsonify({"error": "Error updating recipe"}), 500
+
+    return jsonify({"message": "Recipe updated successfully"}), 200

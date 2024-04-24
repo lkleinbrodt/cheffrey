@@ -34,6 +34,7 @@ class User(UserMixin, db.Model):
 
     favorites = so.relationship("Favorite", back_populates="user")
     recipe_list = so.relationship("RecipeList", back_populates="user")
+    cookbook = so.relationship("CookBook", back_populates="user")
 
     cooked_recipes = db.relationship(
         "Recipe",
@@ -79,9 +80,11 @@ class Recipe(db.Model):
     instructions_list = sa.Column(sa.String(10000))
     total_time = sa.Column(sa.Integer)
     yields = sa.Column(sa.String(64))
+    is_public = sa.Column(sa.Boolean, default=True)
 
     favorited_by = so.relationship("Favorite", back_populates="recipe")
     selected_by = so.relationship("RecipeList", back_populates="recipe")
+    in_cookbook = so.relationship("CookBook", back_populates="recipe")
 
     def __repr__(self):
         return f"<Recipe {self.title}>"
@@ -100,6 +103,7 @@ class Recipe(db.Model):
             "instructions_list": self.instructions_list,
             "total_time": self.total_time,
             "yields": self.yields,
+            "is_public": self.is_public,
         }
         if as_str:
             d = str(d)
@@ -129,6 +133,7 @@ class Recipe(db.Model):
             instructions_list=data["instructions_list"],
             total_time=data["total_time"],
             yields=data["yields"],
+            is_public=data["is_public"],
         )
 
 
@@ -195,6 +200,16 @@ class RecipeList(db.Model):
 
     def __repr__(self):
         return f"<RecipeList {self.id}>"
+
+
+class CookBook(db.Model):
+    __tablename__ = "cookbooks"
+    id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"))
+    recipe_id = sa.Column(sa.Integer, sa.ForeignKey("recipes.id"))
+
+    user = so.relationship("User", back_populates="cookbook")
+    recipe = so.relationship("Recipe", back_populates="in_cookbook")
 
 
 @login.user_loader

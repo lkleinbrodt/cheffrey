@@ -38,6 +38,27 @@ function loadShoppingList() {
 function searchRecipes(query, page) {
   return client.post("/search-recipes/", { query, page });
 }
+
+function loadCookbook() {
+  return client.get("/cookbook");
+}
+
+function createRecipe(recipe) {
+  return client.post("/create-recipe", recipe);
+}
+
+function updateRecipe(recipe) {
+  return client.post("/update-recipe", recipe);
+}
+
+function addToCookbook(recipe_id) {
+  return client.post("/add-to-cookbook/", { recipe_id });
+}
+
+function toggleInCookbook(recipe_id) {
+  return client.post("/toggle-in-cookbook/", { recipe_id });
+}
+
 export default {
   loadRandomRecipes,
   loadRecipeList,
@@ -49,4 +70,9 @@ export default {
   loadCooked,
   loadShoppingList,
   searchRecipes,
+  loadCookbook,
+  createRecipe,
+  updateRecipe,
+  addToCookbook,
+  toggleInCookbook,
 };

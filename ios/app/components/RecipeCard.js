@@ -6,10 +6,12 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from "react-native";
-import { Image } from "react-native-expo-image-cache";
 import colors from "../config/colors";
 import recipesAPI from "../api/recipes";
 import { FontAwesome } from "@expo/vector-icons"; // Import the required icon from Expo Vector Icons
+import { Image } from "expo-image";
+
+const blurhash = "L9E:C[ae3GbX?wjZEMRjt-ofw}nj";
 
 const RecipeCard = ({ recipe, onPress }) => {
   const [isSaved, setIsSaved] = useState(recipe.in_list);
@@ -28,11 +30,10 @@ const RecipeCard = ({ recipe, onPress }) => {
     <TouchableWithoutFeedback onPress={onPress}>
       <View style={styles.card}>
         <Image
-          uri={recipe.image_url}
           style={styles.cardImage}
+          source={recipe.image_url}
+          placeholder={blurhash}
           alt={recipe.title}
-          tint="light"
-          preview={{ uri: "../assets/platter_stamp.png" }}
         />
 
         <View style={styles.cardBody}>
