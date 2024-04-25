@@ -1,10 +1,11 @@
 import datetime
 import sqlalchemy as sa
 import sqlalchemy.orm as so
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, and_
 from sqlalchemy.sql import func
 from werkzeug.security import generate_password_hash, check_password_hash
 from typing import Tuple, Optional
+
 
 from flask_login import UserMixin
 from app import db, login, app
@@ -65,6 +66,56 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def get_cookbook(self, as_json=False):
+
+        joined_query = (
+            db.session.query(CookBook, RecipeList)
+            .outerjoin(
+                RecipeList,
+                and_(
+                    CookBook.user_id == RecipeList.user_id,
+                    CookBook.recipe_id == RecipeList.recipe_id,
+                ),
+            )
+            .filter(CookBook.user_id == self.id)
+        )
+
+        output = []
+        for cookbook, recipe_list in joined_query:
+            cookbook.recipe.in_cookbook = True
+            cookbook.recipe.in_recipe_list = recipe_list is not None
+            if as_json:
+                output.append(cookbook.recipe.to_dict())
+            else:
+                output.append(cookbook.recipe)
+
+        return output
+
+    def get_recipe_list(self, as_json=False):
+
+        joined_query = (
+            db.session.query(RecipeList, CookBook)
+            .outerjoin(
+                CookBook,
+                and_(
+                    CookBook.user_id == RecipeList.user_id,
+                    CookBook.recipe_id == RecipeList.recipe_id,
+                ),
+            )
+            .filter(RecipeList.user_id == self.id)
+        )
+
+        output = []
+        for cookbook, recipe_list in joined_query:
+            recipe_list.recipe.in_cookbook = cookbook is not None
+            recipe_list.recipe.in_recipe_list = True
+            if as_json:
+                output.append(recipe_list.recipe.to_dict())
+            else:
+                output.append(recipe_list.recipe)
+
+        return output
+
 
 class Recipe(db.Model):
     __tablename__ = "recipes"
@@ -85,7 +136,7 @@ class Recipe(db.Model):
 
     favorited_by = so.relationship("Favorite", back_populates="recipe")
     selected_by = so.relationship("RecipeList", back_populates="recipe")
-    in_cookbook = so.relationship("CookBook", back_populates="recipe")
+    cookbooked_by = so.relationship("CookBook", back_populates="recipe")
 
     def __repr__(self):
         return f"<Recipe {self.title}>"
@@ -105,6 +156,11 @@ class Recipe(db.Model):
             "yields": self.yields,
             "is_public": self.is_public,
         }
+        if "in_cookbook" in self.__dict__:
+            d["in_cookbook"] = self.in_cookbook
+        if "in_recipe_list" in self.__dict__:
+            d["in_recipe_list"] = self.in_recipe_list
+
         if as_str:
             d = str(d)
         return d
@@ -185,7 +241,7 @@ class CookBook(db.Model):
     recipe_id = sa.Column(sa.Integer, sa.ForeignKey("recipes.id"))
 
     user = so.relationship("User", back_populates="cookbook")
-    recipe = so.relationship("Recipe", back_populates="in_cookbook")
+    recipe = so.relationship("Recipe", back_populates="cookbooked_by")
 
 
 @login.user_loader

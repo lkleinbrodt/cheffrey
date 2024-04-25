@@ -92,9 +92,9 @@ def load_more_recipes(page):
             user_id=current_user.id, recipe_id=recipe["id"]
         ).first()
         if recipe_list_item:
-            recipe["in_list"] = True
+            recipe["in_recipe_list"] = True
         else:
-            recipe["in_list"] = False
+            recipe["in_recipe_list"] = False
         favorite_item = Favorite.query.filter_by(
             user_id=current_user.id, recipe_id=recipe["id"]
         ).first()
@@ -128,16 +128,24 @@ def load_more_recipes_api():
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
         if recipe_list_item:
-            recipe["in_list"] = True
+            recipe["in_recipe_list"] = True
         else:
-            recipe["in_list"] = False
-        favorite_item = Favorite.query.filter_by(
+            recipe["in_recipe_list"] = False
+        # favorite_item = Favorite.query.filter_by(
+        #     user_id=user_id, recipe_id=recipe["id"]
+        # ).first()
+        # if favorite_item:
+        #     recipe["in_favorites"] = True
+        # else:
+        #     recipe["in_favorites"] = False
+
+        cookbook_item = CookBook.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
-        if favorite_item:
-            recipe["in_favorites"] = True
+        if cookbook_item:
+            recipe["in_cookbook"] = True
         else:
-            recipe["in_favorites"] = False
+            recipe["in_cookbook"] = False
 
     return jsonify({"recipes": recipes})
 
@@ -451,7 +459,7 @@ def submit_cooked_recipes():
 
 @app.route("/toggle-recipe-in-list/<int:recipe_id>")
 @login_required
-def toggle_recipe_in_list(recipe_id):
+def toggle_recipe_in_recipe_list(recipe_id):
     recipe_list_item = RecipeList.query.filter_by(
         user_id=current_user.id, recipe_id=recipe_id
     ).first()
@@ -468,7 +476,7 @@ def toggle_recipe_in_list(recipe_id):
 
 @app.route("/api/toggle-recipe-in-list/", methods=["POST"])
 @jwt_required()
-def toggle_recipe_in_list_api():
+def toggle_recipe_in_recipe_list_api():
     user_id = get_jwt_identity()
     recipe_id = request.json["recipe_id"]
     recipe_list_item = RecipeList.query.filter_by(
@@ -551,9 +559,9 @@ def get_cooked_api():
         ).first()
 
         if recipe_list_item:
-            recipe.in_list = True
+            recipe.in_recipe_list = True
         else:
-            recipe.in_list = False
+            recipe.in_recipe_list = False
         if recipe in favorites:
             recipe.in_favorites = True
         else:
@@ -572,9 +580,9 @@ def saved():
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
         if recipe_list_item:
-            recipe.in_list = True
+            recipe.in_recipe_list = True
         else:
-            recipe.in_list = False
+            recipe.in_recipe_list = False
         recipe.in_favorites = True
 
     cooked = current_user.cooked_recipes
@@ -584,9 +592,9 @@ def saved():
         ).first()
 
         if recipe_list_item:
-            recipe.in_list = True
+            recipe.in_recipe_list = True
         else:
-            recipe.in_list = False
+            recipe.in_recipe_list = False
         if recipe in favorites:
             recipe.in_favorites = True
         else:
@@ -603,7 +611,7 @@ def recipe_list():
     for recipe_list_item in recipe_list:
 
         recipe = recipe_list_item.recipe
-        recipe.in_list = True
+        recipe.in_recipe_list = True
         favorite_item = Favorite.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
@@ -623,7 +631,7 @@ def recipe_list_api():
     recipes = []
     for recipe in recipe_list:
         recipe = recipe.recipe.to_dict()
-        recipe["in_list"] = True
+        recipe["in_recipe_list"] = True
         favorite_item = Favorite.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
@@ -786,7 +794,7 @@ def get_recipe_list():
             recipe.in_favorites = True
         else:
             recipe.in_favorites = False
-        recipe.in_list = True
+        recipe.in_recipe_list = True
         recipes.append(recipe)
     return jsonify({"recipes": recipes})
 
@@ -819,9 +827,9 @@ def search_api():
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
         if recipe_list_item:
-            recipe["in_list"] = True
+            recipe["in_recipe_list"] = True
         else:
-            recipe["in_list"] = False
+            recipe["in_recipe_list"] = False
         favorite_item = Favorite.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
@@ -843,9 +851,9 @@ def search():
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
         if recipe_list_item:
-            recipe.in_list = True
+            recipe.in_recipe_list = True
         else:
-            recipe.in_list = False
+            recipe.in_recipe_list = False
         favorite_item = Favorite.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
@@ -999,24 +1007,9 @@ def change_forgot_password():
 def cookbook():
     user_id = get_jwt_identity()
 
-    users_cookbook = CookBook.query.filter_by(user_id=user_id).all()
-    recipe_list = RecipeList.query.filter_by(user_id=user_id).all()
+    user = User.query.get(user_id)
 
-    recipes = []
-
-    for recipe in users_cookbook:
-        try:
-            recipe = recipe.recipe.to_dict()
-
-            # TODO: validate if this in works
-            if recipe in recipe_list:
-                recipe["in_list"] = True
-            else:
-                recipe["in_list"] = False
-
-            recipes.append(recipe)
-        except Exception as e:
-            app.logger.exception(f"Error getting recipe: {e}")
+    recipes = user.get_cookbook(as_json=True)
 
     return jsonify({"recipes": recipes}), 200
 
@@ -1026,7 +1019,6 @@ def cookbook():
 def add_to_cookbook():
     user_id = get_jwt_identity()
     recipe_id = request.json.get("recipe_id")
-    print(recipe_id)
 
     recipe = Recipe.query.get(recipe_id)
     if not recipe:

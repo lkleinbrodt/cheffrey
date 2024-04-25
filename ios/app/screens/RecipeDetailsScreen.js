@@ -6,8 +6,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const RecipeDetailsScreen = ({ route }) => {
   const recipe = route.params.recipe;
-  const [isSaved, setIsSaved] = useState(recipe.in_list);
-  const [isInCookbook, setIsInCookbook] = useState(recipe.in_favorites);
+  const [isSaved, setIsSaved] = useState(recipe.in_recipe_list);
+  const [isInCookbook, setIsInCookbook] = useState(recipe.in_cookbook);
 
   const handleSavePress = () => {
     recipesAPI.toggleRecipeInList(recipe.id);

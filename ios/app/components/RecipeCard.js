@@ -15,8 +15,8 @@ import { Image } from "expo-image";
 const blurhash = "L9E:C[ae3GbX?wjZEMRjt-ofw}nj";
 
 const RecipeCard = ({ recipe, onPress }) => {
-  const [isSaved, setIsSaved] = useState(recipe.in_list);
-  const [isInCookbook, setIsInCookbook] = useState(recipe.in_favorites);
+  const [isSaved, setIsSaved] = useState(recipe.in_recipe_list);
+  const [isInCookbook, setIsInCookbook] = useState(recipe.in_cookbook);
 
   const handleSavePress = () => {
     recipesAPI.toggleRecipeInList(recipe.id);

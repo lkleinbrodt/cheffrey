@@ -150,11 +150,11 @@
         </a>
         <button
           type="button"
-          class="btn {% if recipe.in_list %}danger{% else %}btn-secondary{% endif %} save-btn"
+          class="btn {% if recipe.in_recipe_list %}danger{% else %}btn-secondary{% endif %} save-btn"
           data-recipe-id="{{ recipe.id }}"
         >
-          {% if recipe.in_list %}Remove from List{% else %}Save to List{% endif
-          %}
+          {% if recipe.in_recipe_list %}Remove from List{% else %}Save to List{%
+          endif %}
         </button>
         <i
           type="button"
