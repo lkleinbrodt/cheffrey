@@ -1,10 +1,11 @@
 import datetime
 import sqlalchemy as sa
 import sqlalchemy.orm as so
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, and_
 from sqlalchemy.sql import func
 from werkzeug.security import generate_password_hash, check_password_hash
 from typing import Tuple, Optional
+
 
 from flask_login import UserMixin
 from app import db, login, app
@@ -34,6 +35,7 @@ class User(UserMixin, db.Model):
 
     favorites = so.relationship("Favorite", back_populates="user")
     recipe_list = so.relationship("RecipeList", back_populates="user")
+    cookbook = so.relationship("CookBook", back_populates="user")
 
     cooked_recipes = db.relationship(
         "Recipe",
@@ -64,6 +66,56 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def get_cookbook(self, as_json=False):
+
+        joined_query = (
+            db.session.query(CookBook, RecipeList)
+            .outerjoin(
+                RecipeList,
+                and_(
+                    CookBook.user_id == RecipeList.user_id,
+                    CookBook.recipe_id == RecipeList.recipe_id,
+                ),
+            )
+            .filter(CookBook.user_id == self.id)
+        )
+
+        output = []
+        for cookbook, recipe_list in joined_query:
+            cookbook.recipe.in_cookbook = True
+            cookbook.recipe.in_recipe_list = recipe_list is not None
+            if as_json:
+                output.append(cookbook.recipe.to_dict())
+            else:
+                output.append(cookbook.recipe)
+
+        return output
+
+    def get_recipe_list(self, as_json=False):
+
+        joined_query = (
+            db.session.query(RecipeList, CookBook)
+            .outerjoin(
+                CookBook,
+                and_(
+                    CookBook.user_id == RecipeList.user_id,
+                    CookBook.recipe_id == RecipeList.recipe_id,
+                ),
+            )
+            .filter(RecipeList.user_id == self.id)
+        )
+
+        output = []
+        for cookbook, recipe_list in joined_query:
+            recipe_list.recipe.in_cookbook = cookbook is not None
+            recipe_list.recipe.in_recipe_list = True
+            if as_json:
+                output.append(recipe_list.recipe.to_dict())
+            else:
+                output.append(recipe_list.recipe)
+
+        return output
+
 
 class Recipe(db.Model):
     __tablename__ = "recipes"
@@ -73,15 +125,18 @@ class Recipe(db.Model):
     canonical_url = sa.Column(sa.String(256))
     category = sa.Column(sa.String(256))
     image_url = sa.Column(sa.String(255))
-    ingredients = sa.Column(sa.String(5000))
     description = sa.Column(sa.String(1024))
     instructions = sa.Column(sa.String(10000))
-    instructions_list = sa.Column(sa.String(10000))
+    ingredients = sa.Column(
+        sa.String(5000)
+    )  # yes we could use a relationship here, but that would be overkill, just honestly dont need it. will implmement later if it's helpful
     total_time = sa.Column(sa.Integer)
     yields = sa.Column(sa.String(64))
+    is_public = sa.Column(sa.Boolean, default=True)
 
     favorited_by = so.relationship("Favorite", back_populates="recipe")
     selected_by = so.relationship("RecipeList", back_populates="recipe")
+    cookbooked_by = so.relationship("CookBook", back_populates="recipe")
 
     def __repr__(self):
         return f"<Recipe {self.title}>"
@@ -94,16 +149,31 @@ class Recipe(db.Model):
             "canonical_url": self.canonical_url,
             "category": self.category,
             "image_url": self.image_url,
-            "ingredients": self.ingredients,
             "description": self.description,
-            "instructions": self.instructions,
-            "instructions_list": self.instructions_list,
+            "instructions": self.get_instructions(),
+            "ingredients": self.get_ingredients(),
             "total_time": self.total_time,
             "yields": self.yields,
+            "is_public": self.is_public,
         }
+        if "in_cookbook" in self.__dict__:
+            d["in_cookbook"] = self.in_cookbook
+        if "in_recipe_list" in self.__dict__:
+            d["in_recipe_list"] = self.in_recipe_list
+
         if as_str:
             d = str(d)
         return d
+
+    @property
+    def ingredient_list(self):
+        return self.get_ingredients()
+
+    def get_ingredients(self):
+        return self.ingredients.split(",")
+
+    def get_instructions(self):
+        return self.instructions.split("\n")
 
     @classmethod
     def from_dict(cls, data):
@@ -123,45 +193,12 @@ class Recipe(db.Model):
             canonical_url=data["canonical_url"],
             category=data["category"],
             image_url=data["image_url"],
-            ingredients=data["ingredients"],
             description=data["description"],
             instructions=data["instructions"],
-            instructions_list=data["instructions_list"],
             total_time=data["total_time"],
             yields=data["yields"],
+            is_public=data["is_public"],
         )
-
-
-class Ingredient(db.Model):
-    __tablename__ = "ingredients"
-    id = sa.Column(sa.Integer, primary_key=True)
-    name = sa.Column(sa.String(255), index=True, unique=True)
-    category = sa.Column(sa.String(255))
-
-    def __repr__(self):
-        return f"<Ingredient {self.name}>"
-
-    def to_dict(self, as_str=False):
-        d = {"id": self.id, "name": self.name, "description": self.description}
-        if as_str:
-            d = str(d)
-        return d
-
-    @classmethod
-    def from_dict(cls, data):
-        """
-        Create a Ingredient object from a dictionary.
-
-        Parameters:
-        - data (dict): Dictionary containing ingredient data.
-
-        Returns:
-        - Ingredient: A Ingredient object.
-        """
-        return cls(id=data["id"], name=data["name"], description=data["description"])
-
-    def __repr__(self):
-        return f"<Ingredient {self.name}>"
 
 
 class Favorite(db.Model):
@@ -195,6 +232,16 @@ class RecipeList(db.Model):
 
     def __repr__(self):
         return f"<RecipeList {self.id}>"
+
+
+class CookBook(db.Model):
+    __tablename__ = "cookbooks"
+    id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"))
+    recipe_id = sa.Column(sa.Integer, sa.ForeignKey("recipes.id"))
+
+    user = so.relationship("User", back_populates="cookbook")
+    recipe = so.relationship("Recipe", back_populates="cookbooked_by")
 
 
 @login.user_loader

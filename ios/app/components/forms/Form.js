@@ -7,6 +7,7 @@ function AppForm({
   validationSchema,
   children,
   innerRef,
+  enableReinitialize = false,
 }) {
   return (
     <Formik
@@ -14,6 +15,7 @@ function AppForm({
       onSubmit={onSubmit}
       validationSchema={validationSchema}
       innerRef={innerRef}
+      enableReinitialize={enableReinitialize}
     >
       {() => <>{children}</>}
     </Formik>

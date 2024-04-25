@@ -15,7 +15,6 @@ from flask_limiter.util import get_remote_address
 import sqlalchemy as sa
 from config import Config
 from sqlalchemy.exc import IntegrityError
-from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRecipe
 from app import app, db, admin, jwt
 import json
 from flask_cors import cross_origin
@@ -30,11 +29,12 @@ from flask_jwt_extended import (
 )
 from urllib.parse import urlsplit
 from werkzeug.security import check_password_hash
-from app.models import User, Recipe, RecipeList, Favorite
+from app.models import User, Recipe, RecipeList, Favorite, CookBook
 from app.forms import LoginForm, RegistrationForm, SettingsForm
 import datetime
 from sqlalchemy.sql import func
 from app.MailBot import MailBot
+from app.RecipeReader import RecipeReader
 import os
 
 
@@ -86,29 +86,23 @@ def load_more_recipes(page):
         # recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
 
     recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
-    recipes = [Recipe.from_dict(recipe) for recipe in recipes]
 
-    ##TODO: improve
     for recipe in recipes:
-        # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
+
         recipe_list_item = RecipeList.query.filter_by(
-            user_id=current_user.id, recipe_id=recipe.id
+            user_id=current_user.id, recipe_id=recipe["id"]
         ).first()
         if recipe_list_item:
-            recipe.in_list = True
+            recipe["in_recipe_list"] = True
         else:
-            recipe.in_list = False
+            recipe["in_recipe_list"] = False
         favorite_item = Favorite.query.filter_by(
-            user_id=current_user.id, recipe_id=recipe.id
+            user_id=current_user.id, recipe_id=recipe["id"]
         ).first()
         if favorite_item:
-            recipe.in_favorites = True
+            recipe["in_favorites"] = True
         else:
-            recipe.in_favorites = False
-
-    # TODO: improve
+            recipe["in_favorites"] = False
 
     return render_template("recipe_partial.html", recipes=recipes)
 
@@ -130,22 +124,29 @@ def load_more_recipes_api():
     recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
 
     ##TODO: improve
-    # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
     for recipe in recipes:
         recipe_list_item = RecipeList.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
         if recipe_list_item:
-            recipe["in_list"] = True
+            recipe["in_recipe_list"] = True
         else:
-            recipe["in_list"] = False
-        favorite_item = Favorite.query.filter_by(
+            recipe["in_recipe_list"] = False
+        # favorite_item = Favorite.query.filter_by(
+        #     user_id=user_id, recipe_id=recipe["id"]
+        # ).first()
+        # if favorite_item:
+        #     recipe["in_favorites"] = True
+        # else:
+        #     recipe["in_favorites"] = False
+
+        cookbook_item = CookBook.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
-        if favorite_item:
-            recipe["in_favorites"] = True
+        if cookbook_item:
+            recipe["in_cookbook"] = True
         else:
-            recipe["in_favorites"] = False
+            recipe["in_cookbook"] = False
 
     return jsonify({"recipes": recipes})
 
@@ -459,7 +460,7 @@ def submit_cooked_recipes():
 
 @app.route("/toggle-recipe-in-list/<int:recipe_id>")
 @login_required
-def toggle_recipe_in_list(recipe_id):
+def toggle_recipe_in_recipe_list(recipe_id):
     recipe_list_item = RecipeList.query.filter_by(
         user_id=current_user.id, recipe_id=recipe_id
     ).first()
@@ -476,7 +477,7 @@ def toggle_recipe_in_list(recipe_id):
 
 @app.route("/api/toggle-recipe-in-list/", methods=["POST"])
 @jwt_required()
-def toggle_recipe_in_list_api():
+def toggle_recipe_in_recipe_list_api():
     user_id = get_jwt_identity()
     recipe_id = request.json["recipe_id"]
     recipe_list_item = RecipeList.query.filter_by(
@@ -554,16 +555,14 @@ def get_cooked_api():
     favorites = [favorite.recipe for favorite in favorites]
 
     for recipe in cooked:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
             user_id=user.id, recipe_id=recipe.id
         ).first()
 
         if recipe_list_item:
-            recipe.in_list = True
+            recipe.in_recipe_list = True
         else:
-            recipe.in_list = False
+            recipe.in_recipe_list = False
         if recipe in favorites:
             recipe.in_favorites = True
         else:
@@ -578,29 +577,25 @@ def saved():
     favorites = Favorite.query.filter_by(user_id=current_user.id).all()
     favorites = [favorite.recipe for favorite in favorites]
     for recipe in favorites:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
         if recipe_list_item:
-            recipe.in_list = True
+            recipe.in_recipe_list = True
         else:
-            recipe.in_list = False
+            recipe.in_recipe_list = False
         recipe.in_favorites = True
 
     cooked = current_user.cooked_recipes
     for recipe in cooked:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
 
         if recipe_list_item:
-            recipe.in_list = True
+            recipe.in_recipe_list = True
         else:
-            recipe.in_list = False
+            recipe.in_recipe_list = False
         if recipe in favorites:
             recipe.in_favorites = True
         else:
@@ -617,9 +612,7 @@ def recipe_list():
     for recipe_list_item in recipe_list:
 
         recipe = recipe_list_item.recipe
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
-        recipe.in_list = True
+        recipe.in_recipe_list = True
         favorite_item = Favorite.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
@@ -639,7 +632,7 @@ def recipe_list_api():
     recipes = []
     for recipe in recipe_list:
         recipe = recipe.recipe.to_dict()
-        recipe["in_list"] = True
+        recipe["in_recipe_list"] = True
         favorite_item = Favorite.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
@@ -666,35 +659,31 @@ def cooked_recipes():
 def load_meal_plan():
     return render_template("meal_plan_loading.html")
 
+    # @app.route("/generate-meal-plan", methods=["GET"])
+    # @login_required
+    # def generate_meal_plan():
+    raise NotImplementedError("deprecated")
+    # today = datetime.date.today()
+    # app.logger.info("Generating meal plan")
+    # filename = f"Cheffrey Meal Plan {today.strftime('%b %d')}"
 
-@app.route("/generate-meal-plan", methods=["GET"])
-@login_required
-def generate_meal_plan():
-    today = datetime.date.today()
-    app.logger.info("Generating meal plan")
-    filename = f"Cheffrey Meal Plan {today.strftime('%b %d')}"
+    # recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
 
-    recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
+    # recipe_list = [
+    #     HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
+    # ]
 
-    recipe_list = [
-        HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
-    ]
+    # recipe_list = tuple(recipe_list)
 
-    for recipe in recipe_list:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
+    # shopping_list = recipes_to_shopping_list(recipe_list)
 
-    recipe_list = tuple(recipe_list)
+    # meal_plan_html = create_meal_plan_html(shopping_list, recipe_list)
 
-    shopping_list = recipes_to_shopping_list(recipe_list)
+    # response = Response(meal_plan_html, content_type="text/html")
 
-    meal_plan_html = create_meal_plan_html(shopping_list, recipe_list)
-
-    response = Response(meal_plan_html, content_type="text/html")
-
-    response.headers["Content-Disposition"] = f"attachment; filename={filename}.html"
-    app.logger.info("Done generating meal plan")
-    return response
+    # response.headers["Content-Disposition"] = f"attachment; filename={filename}.html"
+    # app.logger.info("Done generating meal plan")
+    # return response
 
 
 @app.route("/api/get-shopping-list", methods=["GET"])
@@ -707,15 +696,12 @@ def shopping_list_api():
     user_id = get_jwt_identity()
     recipe_list_items = RecipeList.query.filter_by(user_id=user_id).all()
 
-    recipe_list = [
-        HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
-    ]
-
     ingredient_dict = {}
 
     n_ingredients = 0
-    for recipe in recipe_list:
-        for ingredient in eval(recipe.ingredients):
+    for recipe_list_item in recipe_list_items:
+        recipe = recipe_list_item.recipe
+        for ingredient in recipe.ingredient_list:
             category = ingredient2category.get(ingredient, "Other")
             ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
             n_ingredients += 1
@@ -737,15 +723,12 @@ def shopping_list():
 
     recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
 
-    recipe_list = [
-        HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
-    ]
-
     ingredient_dict = {}
 
     n_ingredients = 0
-    for recipe in recipe_list:
-        for ingredient in eval(recipe.ingredients):
+    for recipe_list_item in recipe_list_items:
+        recipe = recipe_list_item.recipe
+        for ingredient in recipe.ingredient_list:
             category = ingredient2category.get(ingredient, "Other")
             ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
             n_ingredients += 1
@@ -812,7 +795,7 @@ def get_recipe_list():
             recipe.in_favorites = True
         else:
             recipe.in_favorites = False
-        recipe.in_list = True
+        recipe.in_recipe_list = True
         recipes.append(recipe)
     return jsonify({"recipes": recipes})
 
@@ -845,9 +828,9 @@ def search_api():
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
         if recipe_list_item:
-            recipe["in_list"] = True
+            recipe["in_recipe_list"] = True
         else:
-            recipe["in_list"] = False
+            recipe["in_recipe_list"] = False
         favorite_item = Favorite.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
         ).first()
@@ -865,15 +848,13 @@ def search():
     recipes = Recipe.query.filter(Recipe.title.ilike(f"%{query}%")).all()
 
     for recipe in recipes:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
         if recipe_list_item:
-            recipe.in_list = True
+            recipe.in_recipe_list = True
         else:
-            recipe.in_list = False
+            recipe.in_recipe_list = False
         favorite_item = Favorite.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
@@ -1020,3 +1001,153 @@ def change_forgot_password():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Error changing password"}), 500
+
+
+@app.route("/api/cookbook", methods=["GET"])
+@jwt_required()
+def cookbook():
+    user_id = get_jwt_identity()
+
+    user = User.query.get(user_id)
+
+    recipes = user.get_cookbook(as_json=True)
+
+    return jsonify({"recipes": recipes}), 200
+
+
+@app.route("/api/add-to-cookbook/", methods=["POST"])
+@jwt_required()
+def add_to_cookbook():
+    user_id = get_jwt_identity()
+    recipe_id = request.json.get("recipe_id")
+
+    recipe = Recipe.query.get(recipe_id)
+    if not recipe:
+        return jsonify({"error": "Recipe not found"}), 404
+
+    cookbook_item = CookBook(user_id=user_id, recipe_id=recipe_id)
+    db.session.add(cookbook_item)
+    db.session.commit()
+
+    return jsonify({"message": "Recipe added to cookbook"}), 200
+
+
+@app.route("/api/remove-from-cookbook/", methods=["POST"])
+@jwt_required()
+def remove_from_cookbook():
+    user_id = get_jwt_identity()
+    recipe_id = request.json.get("recipe_id")
+
+    cookbook_item = CookBook.query.filter_by(
+        user_id=user_id, recipe_id=recipe_id
+    ).first()
+    if not cookbook_item:
+        return jsonify({"error": "Recipe not found in cookbook"}), 404
+
+    db.session.delete(cookbook_item)
+    db.session.commit()
+
+    return jsonify({"message": "Recipe removed from cookbook"}), 200
+
+
+@app.route("/api/toggle-in-cookbook/", methods=["POST"])
+@jwt_required()
+def toggle_in_cookbook():
+    user_id = get_jwt_identity()
+    recipe_id = request.json.get("recipe_id")
+
+    cookbook_item = CookBook.query.filter_by(
+        user_id=user_id, recipe_id=recipe_id
+    ).first()
+    if cookbook_item:
+        db.session.delete(cookbook_item)
+        db.session.commit()
+        return jsonify({"message": "Recipe removed from cookbook"}), 200
+    else:
+        cookbook_item = CookBook(user_id=user_id, recipe_id=recipe_id)
+        db.session.add(cookbook_item)
+        db.session.commit()
+        return jsonify({"message": "Recipe added to cookbook"}), 200
+
+
+@app.route("/api/create-recipe", methods=["POST"])
+@jwt_required()
+def create_recipe():
+    user_id = get_jwt_identity()
+    data = request.json
+
+    data["author"] = user_id
+
+    recipe_id = data.get("id")
+    if recipe_id:
+        recipe = Recipe.query.get(recipe_id)
+        if recipe:
+            return jsonify({"error": "Recipe already exists"}), 400
+
+    if Recipe.query.filter_by(title=data["title"]).first():
+        return jsonify({"error": "Recipe with that title already exists"}), 400
+    try:
+        recipe = Recipe(**data)
+    except Exception as e:
+        app.logger.exception(f"Error creating recipe: {e}")
+        return jsonify({"error": "Error creating recipe"}), 500
+    try:
+        db.session.add(recipe)
+        db.session.commit()
+    except Exception as e:
+        app.logger.exception(f"Error adding recipe to database: {e}")
+        db.session.rollback()
+        return jsonify({"error": "Error adding recipe to database"}), 500
+
+    return jsonify({"message": "Recipe added successfully", "id": recipe.id}), 200
+
+
+@app.route("/api/update-recipe", methods=["POST"])
+@jwt_required()
+def update_recipe():
+    user_id = get_jwt_identity()
+    data = request.json
+
+    recipe_id = data.get("id")
+    if not recipe_id:
+        return jsonify({"error": "Recipe ID not provided"}), 400
+
+    recipe = Recipe.query.get(recipe_id)
+    if not recipe:
+        return jsonify({"error": "Recipe not found"}), 404
+
+    if recipe.author != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        recipe.update(data)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error(f"Error updating recipe: {e}")
+        db.session.rollback()
+        return jsonify({"error": "Error updating recipe"}), 500
+
+    return jsonify({"message": "Recipe updated successfully"}), 200
+
+
+@app.route("/api/extract-recipe-info/", methods=["POST"])
+@jwt_required()
+def extract_recipe():
+
+    image_encodings = request.json.get("image_encodings")
+
+    if not image_encodings:
+        return jsonify({"error": "No image provided"}), 400
+
+    recipe_reader = RecipeReader(image_encodings=image_encodings)
+    recipe_info = recipe_reader.extract_info()
+
+    recipe_info = recipe_info[recipe_info.find("{") : recipe_info.rfind("}") + 1]
+
+    try:
+        recipe_info = json.loads(recipe_info)
+    except Exception as e:
+        app.logger.exception(f"Error parsing recipe info: {e}")
+        return jsonify({"error": "Error parsing recipe info"}), 500
+
+    return jsonify(recipe_info), 200

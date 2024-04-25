@@ -35,10 +35,12 @@ function AppFormPicker({
       <Picker
         items={items}
         numberOfColumns={numberOfColumns}
-        onSelectItem={(item) => setFieldValue(name, item)}
+        onSelectItem={(item) => setFieldValue(name, item.value)}
         PickerItemComponent={PickerItemComponent}
         placeholder={placeholder}
-        selectedItem={values[name]}
+        //this below solution enables us to set the value to just the value (instead of all the other metadata that sits inside the picker item)
+        //but perhaps it is not performant on large lists
+        selectedItem={items.find((item) => item.value === values[name])}
         width={width}
         icon={icon}
       />

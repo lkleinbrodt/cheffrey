@@ -150,11 +150,11 @@
         </a>
         <button
           type="button"
-          class="btn {% if recipe.in_list %}danger{% else %}btn-secondary{% endif %} save-btn"
+          class="btn {% if recipe.in_recipe_list %}danger{% else %}btn-secondary{% endif %} save-btn"
           data-recipe-id="{{ recipe.id }}"
         >
-          {% if recipe.in_list %}Remove from List{% else %}Save to List{% endif
-          %}
+          {% if recipe.in_recipe_list %}Remove from List{% else %}Save to List{%
+          endif %}
         </button>
         <i
           type="button"
@@ -204,7 +204,7 @@
               />
               <h4>Ingredients:</h4>
               <ul>
-                {% for ingredient in recipe.ingredient_list %}
+                {% for ingredient in recipe.ingredients %}
                 <li>{{ ingredient }}</li>
                 {% endfor %}
               </ul>
@@ -213,7 +213,7 @@
               <p>{{ recipe.description }}</p>
               <h4>Instructions:</h4>
               <ul>
-                {% for instruction in recipe.instruction_list %}
+                {% for instruction in recipe.instructions %}
                 <li>{{ instruction }}</li>
                 {% endfor %}
               </ul>
