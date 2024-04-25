@@ -8,7 +8,7 @@ const Stack = createStackNavigator();
 
 const RecipeListNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="RecipeList" component={RecipesScreen} />
+    <Stack.Screen name={routeNames.RECIPE_LIST} component={RecipesScreen} />
     <Stack.Screen
       name={routeNames.RECIPES_RECIPE_DETAILS}
       component={RecipeDetailsScreen}

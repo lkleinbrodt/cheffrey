@@ -85,25 +85,23 @@ def load_more_recipes(page):
         # recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
 
     recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
-    recipes = [Recipe.from_dict(recipe) for recipe in recipes]
 
-    ##TODO: improve
     for recipe in recipes:
 
         recipe_list_item = RecipeList.query.filter_by(
-            user_id=current_user.id, recipe_id=recipe.id
+            user_id=current_user.id, recipe_id=recipe["id"]
         ).first()
         if recipe_list_item:
-            recipe.in_list = True
+            recipe["in_list"] = True
         else:
-            recipe.in_list = False
+            recipe["in_list"] = False
         favorite_item = Favorite.query.filter_by(
-            user_id=current_user.id, recipe_id=recipe.id
+            user_id=current_user.id, recipe_id=recipe["id"]
         ).first()
         if favorite_item:
-            recipe.in_favorites = True
+            recipe["in_favorites"] = True
         else:
-            recipe.in_favorites = False
+            recipe["in_favorites"] = False
 
     return render_template("recipe_partial.html", recipes=recipes)
 
@@ -1007,14 +1005,18 @@ def cookbook():
     recipes = []
 
     for recipe in users_cookbook:
-        recipe = recipe.recipe.to_dict()
+        try:
+            recipe = recipe.recipe.to_dict()
 
-        if recipe in recipe_list:
-            recipe["in_list"] = True
-        else:
-            recipe["in_list"] = False
+            # TODO: validate if this in works
+            if recipe in recipe_list:
+                recipe["in_list"] = True
+            else:
+                recipe["in_list"] = False
 
-        recipes.append(recipe)
+            recipes.append(recipe)
+        except Exception as e:
+            app.logger.exception(f"Error getting recipe: {e}")
 
     return jsonify({"recipes": recipes}), 200
 

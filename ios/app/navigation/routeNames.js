@@ -13,4 +13,5 @@ export default Object.freeze({
   COOKBOOK_RECIPES: "Cookbook Recipes",
   COOKBOOK_RECIPE_DETAILS: "Cookbook Recipe Details",
   COOKBOOK_EDIT_RECIPE: "Cookbook Edit Recipe",
+  RECIPE_LIST: "Recipe List",
 });

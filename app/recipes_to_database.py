@@ -259,7 +259,7 @@ def clear_recipes():
     confirmation = input("Are you sure you want to clear all recipes? (y/n): ")
     if confirmation.lower() == "y":
         with app.app_context():
-            Recipe.query.delete()
+            db.session.query(Recipe).delete()
             db.session.commit()
 
 

@@ -55,6 +55,7 @@ admin.add_view(myModelView(models.User, db.session))
 admin.add_view(myModelView(models.Recipe, db.session))
 admin.add_view(myModelView(models.Favorite, db.session))
 admin.add_view(myModelView(models.RecipeList, db.session))
+admin.add_view(myModelView(models.CookBook, db.session))
 
 with app.app_context():
     db.create_all()

@@ -89,7 +89,7 @@ const RecipeList = ({ navigation }) => {
           navigation={navigation}
           navigateScreen={routeNames.RECIPES_RECIPE_DETAILS}
           onScrollToBottom={() => {}}
-          onRefresh={() => {}}
+          onRefresh={fetchRecipes}
           footer={
             <TouchableOpacity style={styles.clearButton} onPress={clearList}>
               <Text style={styles.clearButtonText}>Clear List</Text>

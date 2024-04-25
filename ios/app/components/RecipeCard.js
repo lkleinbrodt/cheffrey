@@ -8,22 +8,23 @@ import {
 } from "react-native";
 import colors from "../config/colors";
 import recipesAPI from "../api/recipes";
-import { FontAwesome } from "@expo/vector-icons"; // Import the required icon from Expo Vector Icons
+
+import { MaterialCommunityIcons } from "@expo/vector-icons"; // Import the required icon from Expo Vector Icons
 import { Image } from "expo-image";
 
 const blurhash = "L9E:C[ae3GbX?wjZEMRjt-ofw}nj";
 
 const RecipeCard = ({ recipe, onPress }) => {
   const [isSaved, setIsSaved] = useState(recipe.in_list);
-  const [isFavorite, setIsFavorite] = useState(recipe.in_favorites);
+  const [isInCookbook, setIsInCookbook] = useState(recipe.in_favorites);
 
   const handleSavePress = () => {
     recipesAPI.toggleRecipeInList(recipe.id);
     setIsSaved(!isSaved);
   };
-  const handleFavoritesPress = () => {
-    recipesAPI.toggleRecipeInFavorites(recipe.id);
-    setIsFavorite(!isFavorite);
+  const handleCookbookPress = () => {
+    recipesAPI.toggleInCookbook(recipe.id);
+    setIsInCookbook(!isInCookbook);
   };
 
   return (
@@ -64,13 +65,31 @@ const RecipeCard = ({ recipe, onPress }) => {
                 padding: 10,
                 borderRadius: 50,
               }}
-              onPress={handleFavoritesPress}
+              onPress={handleCookbookPress}
             >
-              <FontAwesome
-                name={isFavorite ? "heart" : "heart-o"}
-                size={30}
-                color={isFavorite ? "red" : colors.primary}
-              />
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialCommunityIcons
+                  name={isInCookbook ? "notebook" : "notebook-outline"}
+                  size={32}
+                  color={colors.primary}
+                />
+                <View
+                  style={[
+                    styles.iconBadge,
+                    {
+                      backgroundColor: isInCookbook
+                        ? colors.danger
+                        : colors.primary,
+                    }, // Add a comma after the closing square bracket
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={isInCookbook ? "minus" : "plus"}
+                    size={12}
+                    color={colors.white}
+                  />
+                </View>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -116,13 +135,6 @@ const styles = {
     gap: 50,
     marginLeft: 30,
   },
-  viewRecipeButton: {
-    backgroundColor: "#007bff",
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
-    marginRight: 5,
-  },
 
   saveButton: {
     padding: 10,
@@ -130,14 +142,16 @@ const styles = {
     flex: 0.75,
     marginRight: 5,
   },
-  favoriteButton: {
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
-  },
   buttonText: {
     color: "#ffffff",
     textAlign: "center",
+  },
+  iconBadge: {
+    borderRadius: 12,
+    position: "absolute",
+    backgroundColor: colors.primary,
+    bottom: -3,
+    right: -3,
   },
 };
 
