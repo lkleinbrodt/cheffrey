@@ -5,10 +5,12 @@ from openai import OpenAI
 from app.models import Recipe
 from functools import lru_cache
 
+
 def css_style():
-    with open(Config.ROOT_DIR+ "/app/static/meal_plan_style.css", "r") as f:
+    with open(Config.ROOT_DIR + "/app/static/meal_plan_style.css", "r") as f:
         x = f.read()
     return x
+
 
 def char_to_price(n_chars):
     """estimates the price to embed this many chars using openai"""
@@ -18,7 +20,8 @@ def char_to_price(n_chars):
     price = price_per_token * n_tokens
     return price
 
-#TODO: is this a bad hack or a good hack?
+
+# TODO: is this a bad hack or a good hack?
 class HashableRecipe:
     def __init__(self, recipe: Recipe):
         self.id = recipe.id
@@ -30,13 +33,12 @@ class HashableRecipe:
         self.ingredients = recipe.ingredients
         self.description = recipe.description
         self.instructions = recipe.instructions
-        self.instructions_list = recipe.instructions_list
         self.total_time = recipe.total_time
         self.yields = recipe.yields
-    
+
     def __hash__(self):
         return hash(self.id)
-    
+
     def __eq__(self, other):
         return self.id == other.id
 
@@ -45,36 +47,37 @@ def recipes_to_shopping_list(recipes: tuple[HashableRecipe]):
     shopping_list = []
     for recipe in recipes:
         shopping_list += recipe.ingredient_list
-        
+
     return shopping_list
-    
+
+
 # @lru_cache(maxsize=32)
 # def recipes_to_shopping_list(recipes: tuple[HashableRecipe]):
 #     client = OpenAI()
 #     ingredient_str = ''
 #     for recipe in recipes:
 #         ingredient_str += recipe.ingredients + '\n'
-        
+
 #     print('estimated price to create shopping list:', char_to_price(len(ingredient_str)))
-        
+
 #     completion = client.chat.completions.create(
 #         model = 'gpt-3.5-turbo',
 #         messages = [
 #             {'role':'user',  'content': """
-#              Condense the following list of ingredients into a shopping list. 
+#              Condense the following list of ingredients into a shopping list.
 #              Add the ingredients together and sum them correctly (for example if you see "1 cup of flour" and "2 cups of flour" you should sum them to "3 cups of flour").
 #              Group similar ingredients together (for example, vegetables go together, spices go together, etc.)
-#              Separate each line with a "\n". 
-#              Make sure not to leave out any ingredients and ensure to add them together properly to sum correctly.  
+#              Separate each line with a "\n".
+#              Make sure not to leave out any ingredients and ensure to add them together properly to sum correctly.
 #              Ingredients:
 #             \n\n
 #              """ + ingredient_str}
 #         ]
 #     )
-    
+
 #     shopping_list = completion.choices[0].message.content.split('\n')
 #     return shopping_list
-    
+
 
 def create_meal_plan_html(shopping_list: list, recipes: tuple[HashableRecipe]):
 
@@ -129,6 +132,7 @@ def getsizes(uri):
             p.feed(data)
             if p.image:
                 return p.image.size
+
 
 def create_recipe_html(recipe, standalone=False):
     if standalone:
