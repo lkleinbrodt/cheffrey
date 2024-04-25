@@ -14,7 +14,6 @@ import { View } from "react-native";
 const Cookbook = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
   //   const [page, setPage] = useState(1);
-  const [pageLoading, setPageLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   //   const [maxPages, setMaxPages] = useState(10);
   const [error, setError] = useState(false);
@@ -79,17 +78,14 @@ const Cookbook = ({ navigation }) => {
   };
 
   useEffect(() => {
-    setPageLoading(true);
     fetchRecipes();
-    setPageLoading(false);
   }, []);
 
-  if (pageLoading) {
+  if (loading) {
     return (
       <Screen style={styles.screen}>
-        <SearchBar onSearch={onSearch} />
         <ActivityIndicator
-          style={styles.pageLoading}
+          style={styles.loading}
           size="large"
           color={colors.primary}
         />
@@ -120,8 +116,6 @@ const Cookbook = ({ navigation }) => {
 
   return (
     <Screen style={styles.screen}>
-      {/* button to add new recipe */}
-
       <RecipeGrid
         recipes={recipes}
         navigation={navigation}
@@ -130,13 +124,6 @@ const Cookbook = ({ navigation }) => {
         onRefresh={onRefresh}
         searchBar={Header}
       />
-      {loading && (
-        <ActivityIndicator
-          style={styles.loading}
-          size="large"
-          color={colors.primary}
-        />
-      )}
     </Screen>
   );
 };
@@ -157,14 +144,9 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingVertical: 100,
   },
-  pageLoading: {
-    position: "absolute",
-    top: "50%",
-    alignSelf: "center",
-  },
   loading: {
     position: "absolute",
-    bottom: 20,
+    top: "50%",
     alignSelf: "center",
   },
 });
