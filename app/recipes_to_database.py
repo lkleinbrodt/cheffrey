@@ -52,33 +52,34 @@ def add_recipes_to_db():
         with open(Config.ROOT_DIR + "/data/recipes.json") as file:
             recipes_data = json.load(file)
 
+        def clean_ingredient(s: str):
+            """removes any problematic characters from the string such as , ' " \ / etc."""
+            return (
+                s.replace(",", "")
+                .replace("'", "")
+                .replace('"', "")
+                .replace("\\", "")
+                .replace("/", "")
+            )
+
         for recipe_data in recipes_data.values():
             title = recipe_data.get("title")[:255]
             existing_recipe = Recipe.query.filter_by(title=title).first()
 
             if existing_recipe:
+
                 existing_recipe.author = recipe_data.get("author")
                 existing_recipe.canonical_url = recipe_data.get("canonical_url")
                 existing_recipe.category = recipe_data.get("category")
                 existing_recipe.image_url = recipe_data.get("image")
-                existing_recipe.ingredients = str(recipe_data.get("ingredients"))[
-                    :5_000
-                ]
+                existing_recipe.ingredients = clean_ingredient(
+                    existing_recipe.ingredients
+                )
                 existing_recipe.description = recipe_data.get("description")
                 existing_recipe.instructions = recipe_data.get("instructions")[:10_000]
                 existing_recipe.total_time = recipe_data.get("total_time")
                 existing_recipe.yields = recipe_data.get("yields")
             else:
-
-                def clean_ingredient(s: str):
-                    """removes any problematic characters from the string such as , ' " \ / etc."""
-                    return (
-                        s.replace(",", "")
-                        .replace("'", "")
-                        .replace('"', "")
-                        .replace("\\", "")
-                        .replace("/", "")
-                    )
 
                 ingredients = ",".join(
                     [
