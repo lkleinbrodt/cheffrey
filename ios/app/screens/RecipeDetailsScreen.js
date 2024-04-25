@@ -21,6 +21,9 @@ const RecipeDetailsScreen = ({ route }) => {
   if (typeof recipe.ingredients === "string") {
     recipe.ingredients = recipe.ingredients.split(", ");
   }
+  if (typeof recipe.instructions === "string") {
+    recipe.instructions = recipe.instructions.split("\n");
+  }
 
   const renderIngredientItem = ({ item, key }) => (
     <Text key={key} style={styles.ingredientsItem}>{`\u2022 ${item}`}</Text>

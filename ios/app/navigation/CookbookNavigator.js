@@ -4,6 +4,7 @@ import CookbookScreen from "../screens/CookbookScreen";
 import RecipeDetailsScreen from "../screens/RecipeDetailsScreen";
 import routeNames from "./routeNames";
 import EditRecipeScreen from "../screens/EditRecipeScreen";
+import CameraScreen from "../screens/CameraScreen";
 
 const Stack = createStackNavigator();
 
@@ -25,6 +26,16 @@ const CookbookNavigator = () => (
       options={({ route }) => ({
         headerShown: true,
         title: route.params.title ? route.params.title : "Edit Recipe",
+      })}
+    />
+    <Stack.Screen
+      name={routeNames.CAMERA}
+      component={CameraScreen}
+      options={({ route }) => ({
+        headerShown: true,
+        headerBackTitle: "Cancel",
+        title: "",
+        headerTransparent: true,
       })}
     />
   </Stack.Navigator>
