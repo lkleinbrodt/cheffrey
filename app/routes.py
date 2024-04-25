@@ -15,7 +15,6 @@ from flask_limiter.util import get_remote_address
 import sqlalchemy as sa
 from config import Config
 from sqlalchemy.exc import IntegrityError
-from app.src import recipes_to_shopping_list, create_meal_plan_html, HashableRecipe
 from app import app, db, admin, jwt
 import json
 from flask_cors import cross_origin
@@ -90,9 +89,7 @@ def load_more_recipes(page):
 
     ##TODO: improve
     for recipe in recipes:
-        # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
+
         recipe_list_item = RecipeList.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
@@ -107,8 +104,6 @@ def load_more_recipes(page):
             recipe.in_favorites = True
         else:
             recipe.in_favorites = False
-
-    # TODO: improve
 
     return render_template("recipe_partial.html", recipes=recipes)
 
@@ -130,7 +125,6 @@ def load_more_recipes_api():
     recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
 
     ##TODO: improve
-    # TODO: make a decision regarding eval here vs eval in to_dict and just using a dict here
     for recipe in recipes:
         recipe_list_item = RecipeList.query.filter_by(
             user_id=user_id, recipe_id=recipe["id"]
@@ -554,8 +548,6 @@ def get_cooked_api():
     favorites = [favorite.recipe for favorite in favorites]
 
     for recipe in cooked:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
             user_id=user.id, recipe_id=recipe.id
         ).first()
@@ -578,8 +570,6 @@ def saved():
     favorites = Favorite.query.filter_by(user_id=current_user.id).all()
     favorites = [favorite.recipe for favorite in favorites]
     for recipe in favorites:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
@@ -591,8 +581,6 @@ def saved():
 
     cooked = current_user.cooked_recipes
     for recipe in cooked:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()
@@ -617,8 +605,6 @@ def recipe_list():
     for recipe_list_item in recipe_list:
 
         recipe = recipe_list_item.recipe
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe.in_list = True
         favorite_item = Favorite.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
@@ -666,35 +652,31 @@ def cooked_recipes():
 def load_meal_plan():
     return render_template("meal_plan_loading.html")
 
+    # @app.route("/generate-meal-plan", methods=["GET"])
+    # @login_required
+    # def generate_meal_plan():
+    raise NotImplementedError("deprecated")
+    # today = datetime.date.today()
+    # app.logger.info("Generating meal plan")
+    # filename = f"Cheffrey Meal Plan {today.strftime('%b %d')}"
 
-@app.route("/generate-meal-plan", methods=["GET"])
-@login_required
-def generate_meal_plan():
-    today = datetime.date.today()
-    app.logger.info("Generating meal plan")
-    filename = f"Cheffrey Meal Plan {today.strftime('%b %d')}"
+    # recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
 
-    recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
+    # recipe_list = [
+    #     HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
+    # ]
 
-    recipe_list = [
-        HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
-    ]
+    # recipe_list = tuple(recipe_list)
 
-    for recipe in recipe_list:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
+    # shopping_list = recipes_to_shopping_list(recipe_list)
 
-    recipe_list = tuple(recipe_list)
+    # meal_plan_html = create_meal_plan_html(shopping_list, recipe_list)
 
-    shopping_list = recipes_to_shopping_list(recipe_list)
+    # response = Response(meal_plan_html, content_type="text/html")
 
-    meal_plan_html = create_meal_plan_html(shopping_list, recipe_list)
-
-    response = Response(meal_plan_html, content_type="text/html")
-
-    response.headers["Content-Disposition"] = f"attachment; filename={filename}.html"
-    app.logger.info("Done generating meal plan")
-    return response
+    # response.headers["Content-Disposition"] = f"attachment; filename={filename}.html"
+    # app.logger.info("Done generating meal plan")
+    # return response
 
 
 @app.route("/api/get-shopping-list", methods=["GET"])
@@ -707,19 +689,12 @@ def shopping_list_api():
     user_id = get_jwt_identity()
     recipe_list_items = RecipeList.query.filter_by(user_id=user_id).all()
 
-    recipe_list = [
-        HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
-    ]
-
     ingredient_dict = {}
 
     n_ingredients = 0
-    for recipe in recipe_list:
-        print(recipe.ingredients)
-        ingredients = json.loads(recipe.ingredients)
-        if isinstance(ingredients, str):
-            ingredients = [ingredients]
-        for ingredient in ingredients:
+    for recipe_list_item in recipe_list_items:
+        recipe = recipe_list_item.recipe
+        for ingredient in recipe.ingredient_list:
             category = ingredient2category.get(ingredient, "Other")
             ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
             n_ingredients += 1
@@ -741,15 +716,12 @@ def shopping_list():
 
     recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
 
-    recipe_list = [
-        HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
-    ]
-
     ingredient_dict = {}
 
     n_ingredients = 0
-    for recipe in recipe_list:
-        for ingredient in eval(recipe.ingredients):
+    for recipe_list_item in recipe_list_items:
+        recipe = recipe_list_item.recipe
+        for ingredient in recipe.ingredient_list:
             category = ingredient2category.get(ingredient, "Other")
             ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
             n_ingredients += 1
@@ -869,8 +841,6 @@ def search():
     recipes = Recipe.query.filter(Recipe.title.ilike(f"%{query}%")).all()
 
     for recipe in recipes:
-        recipe.ingredient_list = eval(recipe.ingredients)
-        recipe.instruction_list = eval(recipe.instructions_list)
         recipe_list_item = RecipeList.query.filter_by(
             user_id=current_user.id, recipe_id=recipe.id
         ).first()

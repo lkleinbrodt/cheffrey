@@ -74,10 +74,11 @@ class Recipe(db.Model):
     canonical_url = sa.Column(sa.String(256))
     category = sa.Column(sa.String(256))
     image_url = sa.Column(sa.String(255))
-    ingredients = sa.Column(sa.String(5000))
     description = sa.Column(sa.String(1024))
     instructions = sa.Column(sa.String(10000))
-    instructions_list = sa.Column(sa.String(10000))
+    ingredients = sa.Column(
+        sa.String(5000)
+    )  # yes we could use a relationship here, but that would be overkill, just honestly dont need it. will implmement later if it's helpful
     total_time = sa.Column(sa.Integer)
     yields = sa.Column(sa.String(64))
     is_public = sa.Column(sa.Boolean, default=True)
@@ -97,10 +98,9 @@ class Recipe(db.Model):
             "canonical_url": self.canonical_url,
             "category": self.category,
             "image_url": self.image_url,
-            "ingredients": self.ingredients,
             "description": self.description,
-            "instructions": self.instructions,
-            "instructions_list": self.instructions_list,
+            "instructions": self.get_instructions(),
+            "ingredients": self.get_ingredients(),
             "total_time": self.total_time,
             "yields": self.yields,
             "is_public": self.is_public,
@@ -108,6 +108,16 @@ class Recipe(db.Model):
         if as_str:
             d = str(d)
         return d
+
+    @property
+    def ingredient_list(self):
+        return self.get_ingredients()
+
+    def get_ingredients(self):
+        return self.ingredients.split(",")
+
+    def get_instructions(self):
+        return self.instructions.split("\n")
 
     @classmethod
     def from_dict(cls, data):
@@ -127,46 +137,12 @@ class Recipe(db.Model):
             canonical_url=data["canonical_url"],
             category=data["category"],
             image_url=data["image_url"],
-            ingredients=data["ingredients"],
             description=data["description"],
             instructions=data["instructions"],
-            instructions_list=data["instructions_list"],
             total_time=data["total_time"],
             yields=data["yields"],
             is_public=data["is_public"],
         )
-
-
-class Ingredient(db.Model):
-    __tablename__ = "ingredients"
-    id = sa.Column(sa.Integer, primary_key=True)
-    name = sa.Column(sa.String(255), index=True, unique=True)
-    category = sa.Column(sa.String(255))
-
-    def __repr__(self):
-        return f"<Ingredient {self.name}>"
-
-    def to_dict(self, as_str=False):
-        d = {"id": self.id, "name": self.name, "description": self.description}
-        if as_str:
-            d = str(d)
-        return d
-
-    @classmethod
-    def from_dict(cls, data):
-        """
-        Create a Ingredient object from a dictionary.
-
-        Parameters:
-        - data (dict): Dictionary containing ingredient data.
-
-        Returns:
-        - Ingredient: A Ingredient object.
-        """
-        return cls(id=data["id"], name=data["name"], description=data["description"])
-
-    def __repr__(self):
-        return f"<Ingredient {self.name}>"
 
 
 class Favorite(db.Model):
