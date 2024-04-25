@@ -34,6 +34,7 @@ from app.forms import LoginForm, RegistrationForm, SettingsForm
 import datetime
 from sqlalchemy.sql import func
 from app.MailBot import MailBot
+from app.RecipeReader import RecipeReader
 import os
 
 
@@ -1127,3 +1128,26 @@ def update_recipe():
         return jsonify({"error": "Error updating recipe"}), 500
 
     return jsonify({"message": "Recipe updated successfully"}), 200
+
+
+@app.route("/api/extract-recipe-info/", methods=["POST"])
+@jwt_required()
+def extract_recipe():
+
+    image_encodings = request.json.get("image_encodings")
+
+    if not image_encodings:
+        return jsonify({"error": "No image provided"}), 400
+
+    recipe_reader = RecipeReader(image_encodings=image_encodings)
+    recipe_info = recipe_reader.extract_info()
+
+    recipe_info = recipe_info[recipe_info.find("{") : recipe_info.rfind("}") + 1]
+
+    try:
+        recipe_info = json.loads(recipe_info)
+    except Exception as e:
+        app.logger.exception(f"Error parsing recipe info: {e}")
+        return jsonify({"error": "Error parsing recipe info"}), 500
+
+    return jsonify(recipe_info), 200

@@ -80,7 +80,7 @@ const RecipeCard = ({ recipe, onPress }) => {
                       backgroundColor: isInCookbook
                         ? colors.danger
                         : colors.primary,
-                    }, // Add a comma after the closing square bracket
+                    },
                   ]}
                 >
                   <MaterialCommunityIcons

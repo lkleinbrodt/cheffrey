@@ -6,6 +6,7 @@ import useAuth from "../auth/useAuth";
 import Icon from "../components/Icon";
 import colors from "../config/colors";
 import ActivityIndicator from "../components/ActivityIndicator";
+import routenames from "../navigation/routeNames";
 
 function AccountScreen({ navigation }) {
   const { user, logOut } = useAuth();
@@ -62,7 +63,7 @@ function AccountScreen({ navigation }) {
                 backgroundColor={colors.secondary}
               />
             }
-            onPress={() => navigation.navigate("Change Password")}
+            onPress={() => navigation.navigate(routenames.UPDATE_PASSWORD)}
           />
           <ListItem
             title="Log Out"

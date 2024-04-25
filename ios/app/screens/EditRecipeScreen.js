@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
 import {
   Form,
   FormField,
@@ -15,6 +22,7 @@ import colors from "../config/colors";
 import * as Yup from "yup";
 import routeNames from "../navigation/routeNames";
 import recipesAPI from "../api/recipes";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().required().min(1).label("Title"),
@@ -34,6 +42,15 @@ const initializeFormData = (initialFormData) => {
   //if it does not, add it to initialFormData with a value of ""
   //you have to do this because Formik requires all fields to have initial values
   //and it only uses initial values on first mount, so they have to be ready immediately
+
+  //do this elsewhere
+  //if instructions is in initialFormData, and if it's an array, join it with newlines
+  if (initialFormData.instructions) {
+    if (Array.isArray(initialFormData.instructions)) {
+      initialFormData.instructions = initialFormData.instructions.join("\n");
+    }
+  }
+
   const schemaKeys = Object.keys(validationSchema.fields);
   const initialFormDataKeys = Object.keys(initialFormData);
   const missingKeys = schemaKeys.filter(
@@ -41,7 +58,6 @@ const initializeFormData = (initialFormData) => {
   );
   const newInitialFormData = { ...initialFormData };
   missingKeys.forEach((key) => {
-    //if key is ingredients, set it to an empty array
     if (key === "ingredients") newInitialFormData[key] = [];
     else if (key === "is_public") newInitialFormData[key] = true;
     else newInitialFormData[key] = "";
@@ -54,7 +70,18 @@ const EditRecipeScreen = ({ navigation, route }) => {
   const [recipeData, setRecipeData] = useState(
     initializeFormData(route.params.recipe)
   );
+  console.log(route.params);
   const formRef = useRef();
+
+  const goToCamera = () => {
+    navigation.navigate(routeNames.CAMERA);
+  };
+
+  useEffect(() => {
+    if (route.params.recipe) {
+      setRecipeData(initializeFormData(route.params.recipe));
+    }
+  }, [route.params.recipe]);
 
   const handleSubmit = async () => {
     const values = formRef.current.values;
@@ -111,7 +138,15 @@ const EditRecipeScreen = ({ navigation, route }) => {
   return (
     <Screen style={styles.container}>
       <ScrollView>
+        <TouchableOpacity style={styles.cameraButton} onPress={goToCamera}>
+          <MaterialCommunityIcons
+            name="camera"
+            size={40}
+            color={colors.primary}
+          />
+        </TouchableOpacity>
         <Form
+          enableReinitialize={true}
           initialValues={recipeData}
           onSubmit={handleSubmit}
           validationSchema={validationSchema}

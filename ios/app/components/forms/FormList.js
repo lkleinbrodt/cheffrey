@@ -70,6 +70,7 @@ function AppFormList({
                         name="trash-can-outline"
                         size={20}
                         color="red"
+                        key={"icon" + index}
                       />
                     </TouchableOpacity>
                   </View>

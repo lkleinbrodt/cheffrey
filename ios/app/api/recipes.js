@@ -59,6 +59,10 @@ function toggleInCookbook(recipe_id) {
   return client.post("/toggle-in-cookbook/", { recipe_id });
 }
 
+function extractRecipeInfo(image_encodings) {
+  return client.post("/extract-recipe-info/", { image_encodings });
+}
+
 export default {
   loadRandomRecipes,
   loadRecipeList,
@@ -74,5 +78,7 @@ export default {
   createRecipe,
   updateRecipe,
   addToCookbook,
+
   toggleInCookbook,
+  extractRecipeInfo,
 };
