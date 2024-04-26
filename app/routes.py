@@ -26,6 +26,7 @@ from flask_jwt_extended import (
     jwt_required,
     verify_jwt_in_request,
     decode_token,
+    current_user as jwt_current_user,
 )
 from urllib.parse import urlsplit
 from werkzeug.security import check_password_hash
@@ -81,7 +82,13 @@ def load_more_recipes(page):
     max_pages = 10
 
     if "explore_recipes" not in session:
-        recipes = Recipe.query.order_by(func.random()).limit(per_page * max_pages)
+        recipes = (
+            Recipe.query.filter(
+                (Recipe.is_public == True) | (Recipe.user_id == current_user.id)
+            )
+            .order_by(func.random())
+            .limit(per_page * max_pages)
+        )
         session["explore_recipes"] = [recipe.to_dict() for recipe in recipes]
         # recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
 
@@ -113,40 +120,21 @@ def load_more_recipes_api():
     page = int(request.args.get("page", 1))
     per_page = 6  # Adjust as needed
     max_pages = 10
-    user_id = get_jwt_identity()
 
     if "explore_recipes" not in session:
-        print("no recipes in session yet")
-        recipes = Recipe.query.order_by(func.random()).limit(per_page * max_pages)
-        session["explore_recipes"] = [recipe.to_dict() for recipe in recipes]
+        recipes = (
+            Recipe.query.filter(
+                (Recipe.is_public == True) | (Recipe.user_id == current_user.id)
+            )
+            .order_by(func.random())
+            .limit(per_page * max_pages)
+        )
+
+        session["explore_recipes"] = recipes
         # recipes = Recipe.query.paginate(page=page, per_page=per_page, error_out=False).items
 
     recipes = session["explore_recipes"][per_page * (page - 1) : per_page * page]
-
-    ##TODO: improve
-    for recipe in recipes:
-        recipe_list_item = RecipeList.query.filter_by(
-            user_id=user_id, recipe_id=recipe["id"]
-        ).first()
-        if recipe_list_item:
-            recipe["in_recipe_list"] = True
-        else:
-            recipe["in_recipe_list"] = False
-        # favorite_item = Favorite.query.filter_by(
-        #     user_id=user_id, recipe_id=recipe["id"]
-        # ).first()
-        # if favorite_item:
-        #     recipe["in_favorites"] = True
-        # else:
-        #     recipe["in_favorites"] = False
-
-        cookbook_item = CookBook.query.filter_by(
-            user_id=user_id, recipe_id=recipe["id"]
-        ).first()
-        if cookbook_item:
-            recipe["in_cookbook"] = True
-        else:
-            recipe["in_cookbook"] = False
+    recipes = jwt_current_user.tag_recipes(recipes, as_json=True)
 
     return jsonify({"recipes": recipes})
 
@@ -294,7 +282,7 @@ def register_api():
         return jsonify(access_token=access_token), 200
 
     except Exception as e:
-        print(e)
+        app.logger.exception(e)
         db.session.rollback()
         return jsonify({"message": "Error creating user"}), 500
 
@@ -302,9 +290,7 @@ def register_api():
 @app.route("/api/change-password", methods=["POST"])
 @jwt_required()
 def change_password_api():
-    print("changing password")
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = jwt_current_user
     data = request.json
     old_password = data.get("currentPassword", "").strip()
     new_password = data.get("newPassword", "").strip()
@@ -319,7 +305,7 @@ def change_password_api():
         user.set_password(new_password)
         db.session.commit()
     except Exception as e:
-        print(e)
+        app.logger.exception(e)
         db.session.rollback()
         return jsonify({"message": "Error changing password"}), 500
     return jsonify({"message": "Password changed successfully"}), 200
@@ -546,8 +532,7 @@ def get_favorites_api():
 @app.route("/api/get-cooked", methods=["GET"])
 @jwt_required()
 def get_cooked_api():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = jwt_current_user
     cooked = user.cooked_recipes
 
     # TODO: bad way to do this
@@ -620,28 +605,16 @@ def recipe_list():
             recipe.in_favorites = True
         else:
             recipe.in_favorites = False
-        recipes.append(recipe)
+        recipes.append(recipe.to_dict())
     return render_template("recipe_list.html", recipes=recipes)
 
 
 @app.route("/api/recipe-list")
 @jwt_required()
 def recipe_list_api():
-    user_id = get_jwt_identity()
-    recipe_list = RecipeList.query.filter_by(user_id=user_id).all()
-    recipes = []
-    for recipe in recipe_list:
-        recipe = recipe.recipe.to_dict()
-        recipe["in_recipe_list"] = True
-        favorite_item = Favorite.query.filter_by(
-            user_id=user_id, recipe_id=recipe["id"]
-        ).first()
-        if favorite_item:
-            recipe["in_favorites"] = True
-        else:
-            recipe["in_favorites"] = False
-        recipes.append(recipe)
-    print("returning")
+
+    recipes = jwt_current_user.get_recipe_list(as_json=True)
+
     return jsonify({"recipes": recipes}), 200
 
 
@@ -659,31 +632,32 @@ def cooked_recipes():
 def load_meal_plan():
     return render_template("meal_plan_loading.html")
 
-    # @app.route("/generate-meal-plan", methods=["GET"])
-    # @login_required
-    # def generate_meal_plan():
-    raise NotImplementedError("deprecated")
-    # today = datetime.date.today()
-    # app.logger.info("Generating meal plan")
-    # filename = f"Cheffrey Meal Plan {today.strftime('%b %d')}"
 
-    # recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
+# @app.route("/generate-meal-plan", methods=["GET"])
+# @login_required
+# def generate_meal_plan():
+# raise NotImplementedError("deprecated")
+# today = datetime.date.today()
+# app.logger.info("Generating meal plan")
+# filename = f"Cheffrey Meal Plan {today.strftime('%b %d')}"
 
-    # recipe_list = [
-    #     HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
-    # ]
+# recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
 
-    # recipe_list = tuple(recipe_list)
+# recipe_list = [
+#     HashableRecipe(recipe_item.recipe) for recipe_item in recipe_list_items
+# ]
 
-    # shopping_list = recipes_to_shopping_list(recipe_list)
+# recipe_list = tuple(recipe_list)
 
-    # meal_plan_html = create_meal_plan_html(shopping_list, recipe_list)
+# shopping_list = recipes_to_shopping_list(recipe_list)
 
-    # response = Response(meal_plan_html, content_type="text/html")
+# meal_plan_html = create_meal_plan_html(shopping_list, recipe_list)
 
-    # response.headers["Content-Disposition"] = f"attachment; filename={filename}.html"
-    # app.logger.info("Done generating meal plan")
-    # return response
+# response = Response(meal_plan_html, content_type="text/html")
+
+# response.headers["Content-Disposition"] = f"attachment; filename={filename}.html"
+# app.logger.info("Done generating meal plan")
+# return response
 
 
 @app.route("/api/get-shopping-list", methods=["GET"])
@@ -693,15 +667,13 @@ def shopping_list_api():
     with open("data/ingredient2category.json", "r") as f:
         ingredient2category = json.load(f)
 
-    user_id = get_jwt_identity()
-    recipe_list_items = RecipeList.query.filter_by(user_id=user_id).all()
+    recipes = jwt_current_user.get_recipe_list(as_json=True)
 
     ingredient_dict = {}
 
     n_ingredients = 0
-    for recipe_list_item in recipe_list_items:
-        recipe = recipe_list_item.recipe
-        for ingredient in recipe.ingredient_list:
+    for recipe in recipes:
+        for ingredient in recipe["ingredients"]:
             category = ingredient2category.get(ingredient, "Other")
             ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
             n_ingredients += 1
@@ -721,14 +693,13 @@ def shopping_list():
     with open("data/ingredient2category.json", "r") as f:
         ingredient2category = json.load(f)
 
-    recipe_list_items = RecipeList.query.filter_by(user_id=current_user.id).all()
+    recipes = current_user.get_recipe_list(as_json=True)
 
     ingredient_dict = {}
 
     n_ingredients = 0
-    for recipe_list_item in recipe_list_items:
-        recipe = recipe_list_item.recipe
-        for ingredient in recipe.ingredient_list:
+    for recipe in recipes:
+        for ingredient in recipe.ingredients:
             category = ingredient2category.get(ingredient, "Other")
             ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
             n_ingredients += 1
@@ -781,25 +752,6 @@ def get_recipe_list_count():
     return jsonify({"count": count})
 
 
-@app.route("/api/get-recipe-list", methods=["GET"])
-@login_required
-def get_recipe_list():
-    recipe_list = RecipeList.query.filter_by(user_id=current_user.id).all()
-    recipes = []
-    for recipe_list_item in recipe_list:
-        recipe = recipe_list_item.recipe
-        favorite_item = Favorite.query.filter_by(
-            user_id=current_user.id, recipe_id=recipe.id
-        ).first()
-        if favorite_item:
-            recipe.in_favorites = True
-        else:
-            recipe.in_favorites = False
-        recipe.in_recipe_list = True
-        recipes.append(recipe)
-    return jsonify({"recipes": recipes})
-
-
 @app.route("/api/search-recipes/", methods=["POST"])
 @jwt_required(optional=True)
 def search_api():
@@ -810,8 +762,10 @@ def search_api():
     page = request.json.get("page", None)
 
     if ("search_recipes" not in session) or (query != session["search_query"]):
-        recipes = Recipe.query.filter(Recipe.title.ilike(f"%{query}%")).all()
-        session["search_recipes"] = [recipe.to_dict() for recipe in recipes]
+        recipes = Recipe.query.filter(
+            ((Recipe.is_public == True) | (Recipe.user_id == jwt_current_user.id))
+            & (Recipe.title.ilike(f"%{query}%"))
+        ).all()
         session["search_query"] = query
 
     recipes = session["search_recipes"]
@@ -821,31 +775,20 @@ def search_api():
             return jsonify({"recipes": []})
         recipes = recipes[start_idx : per_page * page]
 
-    user_id = get_jwt_identity()
-
-    for recipe in recipes:
-        recipe_list_item = RecipeList.query.filter_by(
-            user_id=user_id, recipe_id=recipe["id"]
-        ).first()
-        if recipe_list_item:
-            recipe["in_recipe_list"] = True
-        else:
-            recipe["in_recipe_list"] = False
-        favorite_item = Favorite.query.filter_by(
-            user_id=user_id, recipe_id=recipe["id"]
-        ).first()
-        if favorite_item:
-            recipe["in_favorites"] = True
-        else:
-            recipe["in_favorites"] = False
+    recipes = jwt_current_user.tag_recipes(recipes, as_json=True)
 
     return jsonify({"recipes": recipes})
 
 
 @app.route("/search", methods=["GET"])
+@login_required
 def search():
     query = request.args.get("q")
-    recipes = Recipe.query.filter(Recipe.title.ilike(f"%{query}%")).all()
+
+    recipes = Recipe.query.filter(
+        ((Recipe.is_public == True) | (Recipe.user_id == current_user.id))
+        & (Recipe.title.ilike(f"%{query}%"))
+    ).all()
 
     for recipe in recipes:
         recipe_list_item = RecipeList.query.filter_by(

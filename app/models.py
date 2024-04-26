@@ -17,106 +17,6 @@ cooked_recipes_table = db.Table(
 )
 
 
-class User(UserMixin, db.Model):
-    __tablename__ = "users"
-    id = sa.Column(sa.Integer, primary_key=True)
-    email = sa.Column(sa.String(128), index=True, unique=True)
-    password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
-
-    phone_number = db.Column(db.String(15), unique=True, nullable=True)
-    verification_code = db.Column(db.String(6))
-    verification_code_timestamp = db.Column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
-    last_seen = sa.Column(DateTime, default=func.now())
-
-    role = db.Column(db.String(80), default="user")
-
-    favorites = so.relationship("Favorite", back_populates="user")
-    recipe_list = so.relationship("RecipeList", back_populates="user")
-    cookbook = so.relationship("CookBook", back_populates="user")
-
-    cooked_recipes = db.relationship(
-        "Recipe",
-        secondary=cooked_recipes_table,
-        backref=db.backref("cooking_users", lazy="dynamic"),
-    )
-
-    email_verified = db.Column(db.Boolean, default=False)
-
-    # TODO: I dont like this implementation, using deeplinking would be better
-    # but that is more complex and requires more setup
-    can_change_password = db.Column(db.Boolean, default=False)
-    can_change_password_expiry = db.Column(
-        db.DateTime, default=datetime.datetime.utcnow
-    )
-    change_password_code = db.Column(db.String(6), nullable=True)
-
-    def add_cooked_recipe(self, recipe):
-        if recipe not in self.cooked_recipes:
-            self.cooked_recipes.append(recipe)
-
-    def __repr__(self):
-        return f"<User {self.email}>"
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-    def get_cookbook(self, as_json=False):
-
-        joined_query = (
-            db.session.query(CookBook, RecipeList)
-            .outerjoin(
-                RecipeList,
-                and_(
-                    CookBook.user_id == RecipeList.user_id,
-                    CookBook.recipe_id == RecipeList.recipe_id,
-                ),
-            )
-            .filter(CookBook.user_id == self.id)
-        )
-
-        output = []
-        for cookbook, recipe_list in joined_query:
-            cookbook.recipe.in_cookbook = True
-            cookbook.recipe.in_recipe_list = recipe_list is not None
-            if as_json:
-                output.append(cookbook.recipe.to_dict())
-            else:
-                output.append(cookbook.recipe)
-
-        return output
-
-    def get_recipe_list(self, as_json=False):
-
-        joined_query = (
-            db.session.query(RecipeList, CookBook)
-            .outerjoin(
-                CookBook,
-                and_(
-                    CookBook.user_id == RecipeList.user_id,
-                    CookBook.recipe_id == RecipeList.recipe_id,
-                ),
-            )
-            .filter(RecipeList.user_id == self.id)
-        )
-
-        output = []
-        for cookbook, recipe_list in joined_query:
-            recipe_list.recipe.in_cookbook = cookbook is not None
-            recipe_list.recipe.in_recipe_list = True
-            if as_json:
-                output.append(recipe_list.recipe.to_dict())
-            else:
-                output.append(recipe_list.recipe)
-
-        return output
-
-
 class Recipe(db.Model):
     __tablename__ = "recipes"
     id = sa.Column(sa.Integer, primary_key=True)
@@ -199,6 +99,128 @@ class Recipe(db.Model):
             yields=data["yields"],
             is_public=data["is_public"],
         )
+
+
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+    id = sa.Column(sa.Integer, primary_key=True)
+    email = sa.Column(sa.String(128), index=True, unique=True)
+    password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
+
+    phone_number = db.Column(db.String(15), unique=True, nullable=True)
+    verification_code = db.Column(db.String(6))
+    verification_code_timestamp = db.Column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    last_seen = sa.Column(DateTime, default=func.now())
+
+    role = db.Column(db.String(80), default="user")
+
+    favorites = so.relationship("Favorite", back_populates="user")
+    recipe_list = so.relationship("RecipeList", back_populates="user")
+    cookbook = so.relationship("CookBook", back_populates="user")
+
+    cooked_recipes = db.relationship(
+        "Recipe",
+        secondary=cooked_recipes_table,
+        backref=db.backref("cooking_users", lazy="dynamic"),
+    )
+
+    email_verified = db.Column(db.Boolean, default=False)
+
+    # TODO: I dont like this implementation, using deeplinking would be better
+    # but that is more complex and requires more setup
+    can_change_password = db.Column(db.Boolean, default=False)
+    can_change_password_expiry = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow
+    )
+    change_password_code = db.Column(db.String(6), nullable=True)
+
+    def add_cooked_recipe(self, recipe):
+        if recipe not in self.cooked_recipes:
+            self.cooked_recipes.append(recipe)
+
+    def __repr__(self):
+        return f"<User {self.email}>"
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def tag_recipes(self, recipes: list[Recipe], as_json=False) -> list[Recipe]:
+        """
+        Tags the recipes in the list with whether or not they are in the user's cookbook or recipe list.
+        """
+        if isinstance(recipes[0], dict):
+            cookbook_ids = [cb.recipe.id for cb in self.cookbook]
+            recipe_ids = [rl.recipe.id for rl in self.recipe_list]
+            for recipe in recipes:
+                recipe["in_cookbook"] = recipe["id"] in cookbook_ids
+                recipe["in_recipe_list"] = recipe["id"] in recipe_ids
+                if not as_json:
+                    recipe = Recipe.from_dict(recipe)
+        else:
+            for recipe in recipes:
+                recipe.in_cookbook = recipe in self.cookbook
+                recipe.in_recipe_list = recipe in self.recipe_list
+                if as_json:
+                    recipe = recipe.to_dict()
+        return recipes
+
+    def get_cookbook(self, as_json=False):
+
+        joined_query = (
+            db.session.query(CookBook, RecipeList)
+            .outerjoin(
+                RecipeList,
+                and_(
+                    CookBook.user_id == RecipeList.user_id,
+                    CookBook.recipe_id == RecipeList.recipe_id,
+                ),
+            )
+            .filter(CookBook.user_id == self.id)
+        )
+
+        output = []
+
+        for cookbook, recipe_list in joined_query:
+            cookbook.recipe.in_cookbook = True
+            cookbook.recipe.in_recipe_list = recipe_list is not None
+            if as_json:
+                output.append(cookbook.recipe.to_dict())
+            else:
+                output.append(cookbook.recipe)
+
+        return output
+
+    def get_recipe_list(self, as_json=False):
+
+        joined_query = (
+            db.session.query(RecipeList, CookBook)
+            .outerjoin(
+                CookBook,
+                and_(
+                    CookBook.user_id == RecipeList.user_id,
+                    CookBook.recipe_id == RecipeList.recipe_id,
+                ),
+            )
+            .filter(RecipeList.user_id == self.id)
+        )
+
+        output = []
+
+        for recipe_list, cookbook in joined_query:
+            recipe_list.recipe.in_cookbook = cookbook is not None
+            recipe_list.recipe.in_recipe_list = True
+            if as_json:
+                output.append(recipe_list.recipe.to_dict())
+            else:
+                output.append(recipe_list.recipe)
+
+        return output
 
 
 class Favorite(db.Model):
