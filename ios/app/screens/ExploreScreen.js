@@ -107,7 +107,7 @@ const Explore = ({ navigation }) => {
         navigateScreen={routeNames.FEED_RECIPE_DETAILS}
         onScrollToBottom={handleScrollToBottom}
         onRefresh={onRefresh}
-        searchBar={<SearchBar onSearch={onSearch} />}
+        header={<SearchBar onSearch={onSearch} />}
       />
       {loading && (
         <ActivityIndicator

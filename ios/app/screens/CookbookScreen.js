@@ -13,28 +13,19 @@ import { View } from "react-native";
 
 const Cookbook = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
-  //   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  //   const [maxPages, setMaxPages] = useState(10);
   const [error, setError] = useState(false);
   const [query, setQuery] = useState("");
 
   const onSearch = async (query) => {
-    console.log("not implemented");
-    // setQuery(query);
-    // if (!query) {
-    // //   setMaxPages(10);
-    // //   setPage(1);
-    //   setPageLoading(true);
-    //   fetchExploreRecipes(1);
-    //   setPageLoading(false);
-    // } else {
-    //   setPageLoading(true);
-    //   setRecipes([]);
-    //   setPage(1);
-    //   fetchSearchRecipes(query, 1);
-    //   setPageLoading(false);
-    // }
+    console.log(query);
+    setQuery(query);
+    if (!query) {
+      fetchRecipes();
+    } else {
+      setRecipes([]);
+      fetchSearchRecipes(query);
+    }
   };
 
   const onRefresh = async () => {
@@ -51,18 +42,18 @@ const Cookbook = ({ navigation }) => {
     setLoading(false);
   };
 
-  //   const fetchSearchRecipes = async (query, pageNumber) => {
-  //     setLoading(true);
-  //     const response = await recipesAPI.searchRecipes(query, pageNumber);
-  //     if (!response.ok) return setError(true);
-  //     setRecipes((prevRecipes) => [...prevRecipes, ...response.data.recipes]);
-  //     setLoading(false);
-  //   };
+  const fetchSearchRecipes = async (query) => {
+    setLoading(true);
+    const response = await recipesAPI.searchCookbook(query);
+    if (!response.ok) return setError(true);
+    setRecipes((prevRecipes) => [...prevRecipes, ...response.data]);
+    setLoading(false);
+  };
 
   const Header = () => {
     return (
       <View style={styles.header}>
-        <SearchBar onSearch={onSearch} />
+        <SearchBar onSearch={onSearch} query={query} />
         <Button title="Add New Recipe" onPress={addNewRecipe} width="50%" />
       </View>
     );
@@ -80,6 +71,13 @@ const Cookbook = ({ navigation }) => {
   useEffect(() => {
     fetchRecipes();
   }, []);
+  //if you want to refresh the page every time you navigate to it
+  // useEffect(() => {
+  //   const unsubscribe = navigation.addListener("focus", () => {
+  //     fetchRecipes();
+  //   });
+  //   return unsubscribe;
+  // }, [navigation]);
 
   if (loading) {
     return (
@@ -93,7 +91,7 @@ const Cookbook = ({ navigation }) => {
     );
   }
 
-  if (recipes.length === 0) {
+  if ((recipes.length === 0) & (query === "")) {
     return (
       <Screen style={styles.emptyScreen}>
         <Message message="Your cookbook is empty!" />
@@ -112,7 +110,16 @@ const Cookbook = ({ navigation }) => {
         />
       </Screen>
     );
+  } else if (recipes.length === 0) {
+    return (
+      <Screen style={styles.screen}>
+        <Header />
+        <Message message="No matching recipes" />
+      </Screen>
+    );
   }
+
+  console.log(query);
 
   return (
     <Screen style={styles.screen}>
@@ -122,7 +129,7 @@ const Cookbook = ({ navigation }) => {
         navigateScreen={routeNames.COOKBOOK_RECIPE_DETAILS}
         onScrollToBottom={() => {}}
         onRefresh={onRefresh}
-        searchBar={Header}
+        header={Header}
       />
     </Screen>
   );

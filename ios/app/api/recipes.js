@@ -39,6 +39,10 @@ function searchRecipes(query, page) {
   return client.post("/search-recipes/", { query, page });
 }
 
+function searchCookbook(query) {
+  return client.post("/search-cookbook/", { query });
+}
+
 function loadCookbook() {
   return client.get("/cookbook");
 }
@@ -78,7 +82,7 @@ export default {
   createRecipe,
   updateRecipe,
   addToCookbook,
-
+  searchCookbook,
   toggleInCookbook,
   extractRecipeInfo,
 };

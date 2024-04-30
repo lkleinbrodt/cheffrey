@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import RecipeListNavigator from "./RecipeListNavigator.js";
 import ShoppingScreen from "../screens/ShoppingScreen.js";
-
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 const Tab = createMaterialTopTabNavigator();
 
 const ListNavigator = () => {
@@ -40,18 +40,17 @@ const ListNavigator = () => {
       <Tab.Screen
         name="Shopping List"
         component={ShoppingScreen}
-        options={{
-          unmountOnBlur: true,
-        }}
-        // options={{
-        //   tabBarIcon: ({ color, size }) => (
-        //     <MaterialCommunityIcons
-        //       name="silverware-fork-knife"
-        //       color={color}
-        //       size={size}
-        //     />
-        //   ),
-        // }}
+        options={
+          {
+            // tabBarIcon: ({ color, size }) => (
+            //   <MaterialCommunityIcons
+            //     name="silverware-fork-knife"
+            //     color={color}
+            //     size={size}
+            //   />
+            // ),
+          }
+        }
       />
     </Tab.Navigator>
   );

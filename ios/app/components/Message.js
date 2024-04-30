@@ -17,11 +17,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
-  image: {
-    width: 150,
-    height: 150,
-    marginBottom: 20,
-  },
   message: {
     fontSize: 22,
     fontWeight: "bold",

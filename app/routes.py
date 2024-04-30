@@ -84,7 +84,7 @@ def load_more_recipes(page):
     if "explore_recipes" not in session:
         recipes = (
             Recipe.query.filter(
-                (Recipe.is_public == True) | (Recipe.user_id == current_user.id)
+                (Recipe.is_public == True) | (Recipe.author == current_user.id)
             )
             .order_by(func.random())
             .limit(per_page * max_pages)
@@ -124,7 +124,7 @@ def load_more_recipes_api():
     if "explore_recipes" not in session:
         recipes = (
             Recipe.query.filter(
-                (Recipe.is_public == True) | (Recipe.user_id == current_user.id)
+                (Recipe.is_public == True) | (Recipe.author == jwt_current_user.id)
             )
             .order_by(func.random())
             .limit(per_page * max_pages)
@@ -763,10 +763,11 @@ def search_api():
 
     if ("search_recipes" not in session) or (query != session["search_query"]):
         recipes = Recipe.query.filter(
-            ((Recipe.is_public == True) | (Recipe.user_id == jwt_current_user.id))
+            ((Recipe.is_public == True) | (Recipe.author == jwt_current_user.id))
             & (Recipe.title.ilike(f"%{query}%"))
         ).all()
         session["search_query"] = query
+        session["search_recipes"] = recipes
 
     recipes = session["search_recipes"]
     if page is not None:
@@ -780,13 +781,29 @@ def search_api():
     return jsonify({"recipes": recipes})
 
 
+@app.route("/api/search-cookbook/", methods=["POST"])
+@jwt_required()
+def search_cookbook_api():
+    query = request.json["query"]
+
+    cookbook_recipes = jwt_current_user.get_cookbook(as_json=True)
+
+    recipes = [
+        recipe
+        for recipe in cookbook_recipes
+        if query.lower() in recipe["title"].lower()
+    ]
+
+    return jsonify(recipes)
+
+
 @app.route("/search", methods=["GET"])
 @login_required
 def search():
     query = request.args.get("q")
 
     recipes = Recipe.query.filter(
-        ((Recipe.is_public == True) | (Recipe.user_id == current_user.id))
+        ((Recipe.is_public == True) | (Recipe.author == current_user.id))
         & (Recipe.title.ilike(f"%{query}%"))
     ).all()
 
@@ -1059,8 +1076,12 @@ def update_recipe():
     if not recipe:
         return jsonify({"error": "Recipe not found"}), 404
 
-    if recipe.author != user_id:
+    if str(recipe.author) != str(user_id):
         return jsonify({"error": "Unauthorized"}), 403
+
+    existing_recipe = Recipe.query.filter_by(title=data["title"]).first()
+    if existing_recipe and existing_recipe.id != recipe_id:
+        return jsonify({"error": "Recipe with that title already exists"}), 400
 
     try:
         recipe.update(data)

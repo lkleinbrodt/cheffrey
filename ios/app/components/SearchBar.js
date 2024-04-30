@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { View, TextInput, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome"; // Import magnifying glass icon from FontAwesome
 
-const SearchBar = ({ onSearch }) => {
-  const [searchText, setSearchText] = useState("");
+const SearchBar = ({ onSearch, query }) => {
+  const [searchText, setSearchText] = useState(query || "");
 
   const handleSearch = () => {
     onSearch(searchText);

@@ -75,6 +75,23 @@ class Recipe(db.Model):
     def get_instructions(self):
         return self.instructions.split("\n")
 
+    def update(self, data: dict):
+        """
+        Update the recipe with the data in the dictionary.
+
+        Parameters:
+        - data (dict): Dictionary containing the new recipe data.
+        """
+        self.title = data.get("title", self.title)
+        self.category = data.get("category", self.category)
+        self.image_url = data.get("image_url", self.image_url)
+        self.description = data.get("description", self.description)
+        self.instructions = data.get("instructions", self.instructions)
+        self.ingredients = data.get("ingredients", self.ingredients)
+        self.total_time = data.get("total_time", self.total_time)
+        self.yields = data.get("yields", self.yields)
+        self.is_public = data.get("is_public", self.is_public)
+
     @classmethod
     def from_dict(cls, data):
         """
@@ -154,6 +171,7 @@ class User(UserMixin, db.Model):
         """
         Tags the recipes in the list with whether or not they are in the user's cookbook or recipe list.
         """
+        output = []
         if isinstance(recipes[0], dict):
             cookbook_ids = [cb.recipe.id for cb in self.cookbook]
             recipe_ids = [rl.recipe.id for rl in self.recipe_list]
@@ -162,13 +180,15 @@ class User(UserMixin, db.Model):
                 recipe["in_recipe_list"] = recipe["id"] in recipe_ids
                 if not as_json:
                     recipe = Recipe.from_dict(recipe)
+                output.append(recipe)
         else:
             for recipe in recipes:
                 recipe.in_cookbook = recipe in self.cookbook
                 recipe.in_recipe_list = recipe in self.recipe_list
                 if as_json:
                     recipe = recipe.to_dict()
-        return recipes
+                output.append(recipe)
+        return output
 
     def get_cookbook(self, as_json=False):
 
@@ -194,6 +214,12 @@ class User(UserMixin, db.Model):
             else:
                 output.append(cookbook.recipe)
 
+        # sort output by title
+        # TODO: should this just be done in the query?
+        if not as_json:
+            output = sorted(output, key=lambda x: x.title)
+        else:
+            output = sorted(output, key=lambda x: x["title"])
         return output
 
     def get_recipe_list(self, as_json=False):

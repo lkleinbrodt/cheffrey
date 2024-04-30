@@ -29,7 +29,7 @@ const AppNavigator = () => (
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="notebook" color={color} size={size} />
           ),
-          unmountOnBlur: true,
+          // unmountOnBlur: true,
         }}
       />
       <Tab.Screen

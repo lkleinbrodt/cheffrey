@@ -30,20 +30,24 @@ const RecipeCard = ({ recipe, onPress }) => {
   return (
     <TouchableWithoutFeedback onPress={onPress}>
       <View style={styles.card}>
-        <Image
-          style={styles.cardImage}
-          source={recipe.image_url}
-          placeholder={blurhash}
-          alt={recipe.title}
-        />
+        {recipe.image_url && (
+          <Image
+            style={styles.cardImage}
+            source={recipe.image_url}
+            placeholder={blurhash}
+            alt={recipe.title}
+          />
+        )}
 
         <View style={styles.cardBody}>
           <View style={styles.textContainer}>
             <Text style={styles.cardTitle}>{recipe.title}</Text>
             <View style={styles.hr} />
-            <Text style={styles.cardText} numberOfLines={5}>
-              {recipe.description}
-            </Text>
+            {recipe.description && (
+              <Text style={styles.cardText} numberOfLines={5}>
+                {recipe.description}
+              </Text>
+            )}
           </View>
           <View style={styles.buttonContainer}>
             <TouchableOpacity

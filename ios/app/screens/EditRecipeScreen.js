@@ -89,14 +89,9 @@ const EditRecipeScreen = ({ navigation, route }) => {
     const newRecipeData = { ...recipeData, ...values };
 
     //take the array and remove commas from every item, then join them back together with commas
-    //then turn surround in []
-    //todo: there's gotta be a better way of handling this
-    newRecipeData.ingredients =
-      "[" +
-      newRecipeData.ingredients
-        .map((ingredient) => ingredient.replace(",", ""))
-        .join(", ") +
-      "]";
+    newRecipeData.ingredients = newRecipeData.ingredients
+      .map((ingredient) => ingredient.replace(",", ""))
+      .join(", ");
 
     if (recipeData.id) {
       newRecipeData.id = recipeData.id;

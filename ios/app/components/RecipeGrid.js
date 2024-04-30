@@ -122,7 +122,7 @@ const RecipeGrid = ({
   navigateScreen,
   onScrollToBottom,
   onRefresh,
-  searchBar,
+  header,
   footer,
 }) => {
   const [refreshing, setRefreshing] = useState(false);
@@ -162,7 +162,7 @@ const RecipeGrid = ({
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
-        ListHeaderComponent={searchBar}
+        ListHeaderComponent={header}
         ListFooterComponent={
           footer & !refreshing ?? (
             <TouchableOpacity
