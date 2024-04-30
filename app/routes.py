@@ -699,7 +699,7 @@ def shopping_list():
 
     n_ingredients = 0
     for recipe in recipes:
-        for ingredient in recipe.ingredients:
+        for ingredient in recipe["ingredients"]:
             category = ingredient2category.get(ingredient, "Other")
             ingredient_dict[category] = ingredient_dict.get(category, []) + [ingredient]
             n_ingredients += 1
