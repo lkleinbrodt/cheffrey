@@ -69,13 +69,18 @@ def add_recipes_to_db():
 
             if existing_recipe:
 
+                ingredients = ",".join(
+                    [
+                        clean_ingredient(ingredient)
+                        for ingredient in recipe_data.get("ingredients")
+                    ]
+                )
+
                 existing_recipe.author = recipe_data.get("author")
                 existing_recipe.canonical_url = recipe_data.get("canonical_url")
                 existing_recipe.category = recipe_data.get("category")
                 existing_recipe.image_url = recipe_data.get("image")
-                existing_recipe.ingredients = clean_ingredient(
-                    existing_recipe.ingredients
-                )
+                existing_recipe.ingredients = ingredients[:5_000]
                 existing_recipe.description = recipe_data.get("description")
                 existing_recipe.instructions = recipe_data.get("instructions")[:10_000]
                 existing_recipe.total_time = recipe_data.get("total_time")
