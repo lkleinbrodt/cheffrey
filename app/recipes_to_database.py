@@ -85,6 +85,7 @@ def add_recipes_to_db():
                 existing_recipe.instructions = recipe_data.get("instructions")[:10_000]
                 existing_recipe.total_time = recipe_data.get("total_time")
                 existing_recipe.yields = recipe_data.get("yields")
+                existing_recipe.is_public = recipe_data.get("is_public", True)
             else:
 
                 ingredients = ",".join(
@@ -105,6 +106,7 @@ def add_recipes_to_db():
                     instructions=recipe_data.get("instructions")[:10_000],
                     total_time=recipe_data.get("total_time"),
                     yields=recipe_data.get("yields"),
+                    is_public=True,
                 )
                 db.session.add(recipe)
 
