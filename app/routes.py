@@ -84,7 +84,7 @@ def load_more_recipes(page):
     if "explore_recipes" not in session:
         recipes = (
             Recipe.query.filter(
-                (Recipe.is_public == True) | (Recipe.author == current_user.id)
+                (Recipe.is_public == True) | (Recipe.author == str(current_user.id))
             )
             .order_by(func.random())
             .limit(per_page * max_pages)
@@ -124,7 +124,7 @@ def load_more_recipes_api():
     if "explore_recipes" not in session:
         recipes = (
             Recipe.query.filter(
-                (Recipe.is_public == True) | (Recipe.author == jwt_current_user.id)
+                (Recipe.is_public == True) | (Recipe.author == str(jwt_current_user.id))
             )
             .order_by(func.random())
             .limit(per_page * max_pages)
@@ -763,7 +763,7 @@ def search_api():
 
     if ("search_recipes" not in session) or (query != session["search_query"]):
         recipes = Recipe.query.filter(
-            ((Recipe.is_public == True) | (Recipe.author == jwt_current_user.id))
+            ((Recipe.is_public == True) | (Recipe.author == str(jwt_current_user.id)))
             & (Recipe.title.ilike(f"%{query}%"))
         ).all()
         session["search_query"] = query
@@ -803,7 +803,7 @@ def search():
     query = request.args.get("q")
 
     recipes = Recipe.query.filter(
-        ((Recipe.is_public == True) | (Recipe.author == current_user.id))
+        ((Recipe.is_public == True) | (Recipe.author == str(current_user.id)))
         & (Recipe.title.ilike(f"%{query}%"))
     ).all()
 
