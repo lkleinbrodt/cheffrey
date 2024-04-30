@@ -7,6 +7,7 @@ import json
 import random
 from openai import OpenAI
 import datetime
+import argparse
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -256,17 +257,24 @@ def add_recipe_descriptions():
 # %%
 
 
-def clear_recipes():
-    confirmation = input("Are you sure you want to clear all recipes? (y/n): ")
-    if confirmation.lower() == "y":
-        with app.app_context():
-            db.session.query(Recipe).delete()
-            db.session.commit()
+def clear_recipes(override=False):
+    if not override:
+        confirmation = input("Are you sure you want to clear all recipes? (y/n): ")
+        if confirmation.lower() != "y":
+            return
+    with app.app_context():
+        db.session.query(Recipe).delete()
+        db.session.commit()
 
 
 if __name__ == "__main__":
-    logger.info("Start")
-    # clear_recipes()
-    # add_recipe_descriptions()
-    # refine_recipe_descriptions()
-    add_recipes_to_db()
+    parser = argparse.ArgumentParser(description="Process some integers.")
+    parser.add_argument("--clear", action="store_true", help="Clear all recipes")
+    args = parser.parse_args()
+
+    if args.clear:
+        clear_recipes(override=True)
+    else:
+        # add_recipe_descriptions()
+        # refine_recipe_descriptions()
+        add_recipes_to_db()

@@ -585,7 +585,8 @@ def saved():
             recipe.in_favorites = True
         else:
             recipe.in_favorite = False
-
+    favorites = [recipe.to_dict() for recipe in favorites]
+    cooked = [recipe.to_dict() for recipe in cooked]
     return render_template("saved.html", favorites=favorites, cooked=cooked)
 
 
