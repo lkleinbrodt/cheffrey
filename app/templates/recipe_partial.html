@@ -63,6 +63,11 @@
     align-items: center;
   }
 
+  .modal-title {
+    color: var(--primary-color);
+    font-size: 2rem;
+    font-weight: bold;
+  }
   .modal-dialog {
     max-width: 80%;
     margin-top: 10vh;
@@ -181,9 +186,20 @@
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
+        {% if recipe.canonical_url and recipe.canonical_url != "" %}
+        <h2 class="modal-title" id="recipeModalLabel{{ recipe.id }}">
+          <a
+            href="{{ recipe.canonical_url }}"
+            target="_blank"
+            style="color: inherit; text-decoration: none"
+            >{{ recipe.title }}</a
+          >
+        </h2>
+        {% else %}
         <h2 class="modal-title" id="recipeModalLabel{{ recipe.id }}">
           {{ recipe.title }}
         </h2>
+        {% endif %}
         <button
           type="button"
           class="close"
