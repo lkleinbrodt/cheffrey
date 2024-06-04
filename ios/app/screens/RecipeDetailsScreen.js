@@ -5,7 +5,8 @@ import recipesAPI from "../api/recipes";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import useAuth from "../auth/useAuth";
 import routeNames from "../navigation/routeNames";
-import Message from "../components/Message";
+import { Linking } from "react-native";
+import Icon from "../components/Icon";
 
 const RecipeDetailsScreen = ({ navigation, route }) => {
   const recipe = route.params.recipe;
@@ -50,6 +51,12 @@ const RecipeDetailsScreen = ({ navigation, route }) => {
     }. ${item}`}</Text>
   );
 
+  const openRecipeWebpage = () => {
+    if (recipe.canonical_url) {
+      Linking.openURL(recipe.canonical_url);
+    }
+  };
+
   return (
     <ScrollView>
       {/* if no image_url, show placeholder */}
@@ -66,7 +73,15 @@ const RecipeDetailsScreen = ({ navigation, route }) => {
       )}
 
       <View style={styles.detailsContainer}>
-        <Text style={styles.title}>{recipe.title}</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{recipe.title}</Text>
+          <Icon
+            name="web"
+            size={24}
+            color={colors.primary}
+            onPress={openRecipeWebpage}
+          />
+        </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[
@@ -187,6 +202,11 @@ const styles = {
     fontSize: 16,
     color: "#333333",
   },
+  titleContainer: {
+    flexDirection: "row",
+    gap: 10,
+  },
+
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-evenly",

@@ -7,6 +7,8 @@ import recipesAPI from "../api/recipes";
 import SearchBar from "../components/SearchBar";
 import routeNames from "../navigation/routeNames";
 import { ScrollView } from "react-native-gesture-handler";
+import { Text } from "react-native";
+import Icon from "../components/Icon";
 
 const Explore = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -35,6 +37,8 @@ const Explore = ({ navigation }) => {
   };
 
   const onRefresh = async () => {
+    setError(false);
+    console.log("refreshing");
     // setPageLoading(true);
     setRecipes([]);
     setQuery("");
@@ -45,9 +49,13 @@ const Explore = ({ navigation }) => {
   };
 
   const fetchExploreRecipes = async (pageNumber) => {
+    setError(false);
     setLoading(true);
     const response = await recipesAPI.loadRandomRecipes(pageNumber);
-    if (!response.ok) return setError(true);
+    if (!response.ok) {
+      setLoading(false);
+      return setError(true);
+    }
 
     //remove any recipes in the response that are already in the list
     //#TODO: can we be more efficient here?
@@ -60,9 +68,14 @@ const Explore = ({ navigation }) => {
   };
 
   const fetchSearchRecipes = async (query, pageNumber) => {
+    setError(false);
     setLoading(true);
     const response = await recipesAPI.searchRecipes(query, pageNumber);
-    if (!response.ok) return setError(true);
+    if (!response.ok) {
+      setLoading(false);
+
+      return setError(true);
+    }
     setRecipes((prevRecipes) => [...prevRecipes, ...response.data.recipes]);
     setLoading(false);
   };
@@ -95,6 +108,48 @@ const Explore = ({ navigation }) => {
           size="large"
           color={colors.primary}
         />
+      </Screen>
+    );
+  }
+
+  if (error) {
+    return (
+      <Screen style={styles.screen}>
+        <SearchBar onSearch={onSearch} />
+        <ScrollView
+          contentContainerStyle={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            alignSelf: "center",
+            textAlign: "center",
+            gap: 20,
+            padding: 20,
+          }}
+        >
+          <Text
+            style={{
+              textAlign: "center",
+            }}
+          >
+            There was an error loading recipes.
+          </Text>
+          <Icon
+            name="refresh"
+            size={50}
+            color={colors.danger}
+            backgroundColor={colors.primary}
+            onPress={onRefresh}
+          />
+          <Text
+            style={{
+              textAlign: "center",
+            }}
+          >
+            If the problem persists, try closing and reopening the app.
+          </Text>
+          <Text>{error}</Text>
+        </ScrollView>
       </Screen>
     );
   }

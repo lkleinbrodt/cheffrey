@@ -9,10 +9,10 @@ function WelcomeScreen({ navigation }) {
   return (
     <Screen style={styles.screen}>
       <View style={styles.logoContainer}>
-        <Text style={styles.title}>Cheffrey</Text>
+        {/* <Text style={styles.title}>Cheffrey</Text> */}
         <Image
           style={styles.logo}
-          source={require("../assets/logo_stamp.png")}
+          source={require("../assets/chef_hat_stamp.png")}
         />
         <Text style={styles.tagline}>What are we cooking?</Text>
       </View>
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 75,
+    marginBottom: 35,
   },
   tagline: {
     ...defaultStyles.text,

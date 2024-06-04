@@ -33,7 +33,7 @@ const AppNavigator = () => (
         }}
       />
       <Tab.Screen
-        name="Meal Plan"
+        name="My List"
         component={ListNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
