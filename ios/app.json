@@ -5,7 +5,7 @@
     "scheme": "myapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/logo_stamp_square.png",
+    "icon": "./app/assets/app_icon.png",
     "userInterfaceStyle": "light",
     "plugins": [
       "expo-apple-authentication",
@@ -27,13 +27,13 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./app/assets/adaptive-icon.png",
+        "foregroundImage": "./app/assets/app_icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.lkleinbrodt.cheffrey"
     },
     "web": {
-      "favicon": "./app/assets/logo_stamp.png"
+      "favicon": "./app/assets/icon_no_border.png"
     },
     "extra": {
       "router": {
